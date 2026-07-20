@@ -104,31 +104,5 @@ Train a classifier that takes 7 soil/climate readings as input and outputs a rec
 | Confusion Matrix | Shows exactly which crops get confused with which |
 | 5-Fold Cross-Validation | Confirms the model generalizes, not just memorizes one split |
 
-## Repository Structure
 
-```
-Smart-Crop-Recommendation-System/
-├── Dataset/
-│   └── Crop_recommendation.csv
-├── Notebook/
-│   └── crop_recommendation_model.ipynb
-├── Model/
-│   └── crop_recommendation_model.pkl
-├── Documentation/
-│   └── project_report.pdf
-└── README.md
-```
 
-## How to Run
-
-```bash
-git clone https://github.com/abdullahpi912/Smart-Crop-Recommendation-System.git
-cd Smart-Crop-Recommendation-System
-pip install pandas numpy scikit-learn matplotlib seaborn
-jupyter notebook Notebook/crop_recommendation_model.ipynb
-```
-
-## Author
-
-**Abdullah P I** — B.Tech AI & Data Science, B.S. Abdur Rahman Crescent Institute of Science and Technology
-Full Stack AI Developer Program Intern, Innolift Ventures (Crescent-Batch-1)
