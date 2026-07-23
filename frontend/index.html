@@ -1,0 +1,123 @@
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>AgriSense | Smart Crop Advisory Platform</title>
+
+    <link rel="stylesheet" href="css/style.css">
+
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.2/css/all.min.css">
+
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link href="https://fonts.googleapis.com/css2?family=Poppins:wght@300;400;500;600;700&family=JetBrains+Mono:wght@400;500;600&display=swap"
+        rel="stylesheet">
+</head>
+
+<body>
+
+    <header>
+        <nav class="navbar">
+
+            <a class="logo" href="index.html">
+                <i class="fa-solid fa-seedling"></i>
+                AgriSense
+            </a>
+
+            <input type="checkbox" id="navToggle" class="nav-toggle-checkbox">
+            <label class="nav-toggle" for="navToggle" aria-label="Toggle navigation menu">
+                <span></span>
+                <span></span>
+                <span></span>
+            </label>
+
+            <ul class="nav-links">
+                <li><a class="current" href="index.html">Home</a></li>
+                <li><a href="index.html#how-it-works">How It Works</a></li>
+                <li><a href="index.html#about">About</a></li>
+                <li><a class="nav-cta" href="recommend.html">Get Recommendation</a></li>
+            </ul>
+
+        </nav>
+    </header>
+
+    <main>
+
+        <section class="hero" id="home">
+            <p class="hero-eyebrow">Smart Crop Advisory Platform</p>
+            <h1>Know what to grow, before you grow it.</h1>
+            <p>
+                AgriSense recommends the best crop for your land using soil nutrients,
+                temperature, humidity, rainfall, and pH — helping farmers make
+                data-backed decisions instead of guesswork.
+            </p>
+            <div class="hero-buttons">
+                <a href="recommend.html" class="btn">Get a Recommendation</a>
+                <a href="#how-it-works" class="btn-outline">How It Works</a>
+            </div>
+        </section>
+
+        <section id="how-it-works">
+            <h2 class="section-title">How It Works</h2>
+            <p class="section-subtitle">
+                Three simple steps stand between your field data and a confident crop decision.
+            </p>
+
+            <div class="card-grid">
+
+                <article class="step-card">
+                    <div class="step-icon"><i class="fa-solid fa-flask"></i></div>
+                    <h3>1. Enter Field Data</h3>
+                    <p>Soil nutrients (N, P, K), temperature, humidity, pH, and rainfall.</p>
+                </article>
+
+                <article class="step-card">
+                    <div class="step-icon"><i class="fa-solid fa-brain"></i></div>
+                    <h3>2. Model Analyzes It</h3>
+                    <p>A trained ML model matches your conditions against crop-yield patterns.</p>
+                </article>
+
+                <article class="step-card">
+                    <div class="step-icon"><i class="fa-solid fa-wheat-awn"></i></div>
+                    <h3>3. Get Your Recommendation</h3>
+                    <p>See the crop best suited to your land, with confidence you can act on.</p>
+                </article>
+
+            </div>
+        </section>
+
+        <section id="about">
+            <h2 class="section-title">About AgriSense</h2>
+            <div class="about-text">
+                <p>
+                    AgriSense is a full-stack crop advisory platform built as part of the
+                    Innolift Ventures Full Stack AI Developer Program. It pairs a machine
+                    learning model trained on soil and climate data with a simple web
+                    interface so farmers can get a crop recommendation in seconds.
+                </p>
+                <p>
+                    This page is the initial frontend implementation — the interface is in
+                    place, and the ML model and backend will be connected in a later phase
+                    of the build.
+                </p>
+                <div class="tag-list">
+                    <span>Python</span>
+                    <span>Scikit-learn</span>
+                    <span>Pandas</span>
+                    <span>Flask</span>
+                    <span>MySQL</span>
+                    <span>HTML5 &amp; CSS3</span>
+                </div>
+            </div>
+        </section>
+
+    </main>
+
+    <footer>
+        <p>&copy; 2026 AgriSense &mdash; Built by Abdullah P I | Innolift Ventures Internship</p>
+    </footer>
+
+</body>
+
+</html>
