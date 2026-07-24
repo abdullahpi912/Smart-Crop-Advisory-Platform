@@ -4,22 +4,17 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>AgriSense | Smart Crop Advisory Platform</title>
+    <title>AgriSense — Smart Crop Advisory Platform</title>
+    <meta name="description" content="AgriSense recommends optimal crops using soil NPK nutrients, pH, rainfall, and climate data — empowering farmers with data-backed decisions.">
 
     <link rel="stylesheet" href="css/style.css">
-
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.2/css/all.min.css">
-
-    <link rel="preconnect" href="https://fonts.googleapis.com">
-    <link href="https://fonts.googleapis.com/css2?family=Poppins:wght@300;400;500;600;700&family=JetBrains+Mono:wght@400;500;600&display=swap"
-        rel="stylesheet">
 </head>
 
 <body>
 
     <header>
         <nav class="navbar">
-
             <a class="logo" href="index.html">
                 <i class="fa-solid fa-seedling"></i>
                 AgriSense
@@ -35,88 +30,201 @@
             <ul class="nav-links">
                 <li><a class="current" href="index.html">Home</a></li>
                 <li><a href="index.html#how-it-works">How It Works</a></li>
-                <li><a href="index.html#about">About</a></li>
+                <li><a href="index.html#faq">Soil FAQ</a></li>
+                <li><a href="about.html">About</a></li>
+                <li><a href="contact.html">Contact</a></li>
                 <li><a class="nav-cta" href="recommend.html">Get Recommendation</a></li>
             </ul>
-
         </nav>
     </header>
 
     <main>
 
+        <!-- Hero Section -->
         <section class="hero" id="home">
             <div class="hero-content">
-                <p class="hero-eyebrow">Smart Crop Advisory Platform</p>
-                <h1>Know what to grow, before you grow it.</h1>
-                <p>
-                    AgriSense recommends the best crop for your land using soil nutrients,
-                    temperature, humidity, rainfall, and pH — helping farmers make
-                    data-backed decisions instead of guesswork.
+                <span class="section-tag">
+                    <i class="fa-solid fa-leaf"></i> Smart Agriculture AI
+                </span>
+                <h1>Grow smarter, <span>harvest better</span>.</h1>
+                <p class="hero-description">
+                    AgriSense recommends the ideal crop for your specific field using soil nutrients (N, P, K), temperature, humidity, rainfall, and pH — taking the guesswork out of farming decisions.
                 </p>
+
+                <div class="hero-stats">
+                    <div class="hero-stat-card">
+                        <strong>7 Field Inputs</strong>
+                        <span>NPK, Temp, Humidity, pH, Rain</span>
+                    </div>
+                    <div class="hero-stat-card">
+                        <strong>Instant AI</strong>
+                        <span>Recommendation in seconds</span>
+                    </div>
+                    <div class="hero-stat-card">
+                        <strong>Farmer-First</strong>
+                        <span>Simple & actionable insights</span>
+                    </div>
+                </div>
+
                 <div class="hero-buttons">
-                    <a href="recommend.html" class="btn">Get a Recommendation</a>
-                    <a href="#how-it-works" class="btn-outline">How It Works</a>
+                    <a href="recommend.html" class="btn btn-terracotta">
+                        <i class="fa-solid fa-wand-magic-sparkles"></i> Get Recommendation
+                    </a>
+                    <a href="#how-it-works" class="btn-outline">
+                        <i class="fa-solid fa-circle-play"></i> How It Works
+                    </a>
                 </div>
             </div>
-            <figure class="hero-image">
-                <img src="Farmer_image/istockphoto-506164764-170667a.jpg" alt="Tractor working across rows of crops">
-                <figcaption>Better decisions start with better field data.</figcaption>
-            </figure>
-        </section>
 
-        <section id="how-it-works">
-            <h2 class="section-title">How It Works</h2>
-            <p class="section-subtitle">
-                Three simple steps stand between your field data and a confident crop decision.
-            </p>
-
-            <div class="card-grid">
-
-                <article class="step-card">
-                    <img class="step-image" src="Farmer_image/OIP.webp" alt="Healthy crop rows with visible soil layers">
-                    <div class="step-icon"><i class="fa-solid fa-flask"></i></div>
-                    <h3>1. Enter Field Data</h3>
-                    <p>Soil nutrients (N, P, K), temperature, humidity, pH, and rainfall.</p>
-                </article>
-
-                <article class="step-card">
-                    <img class="step-image" src="Farmer_image/R.jpg" alt="Close-up of a growing grain crop">
-                    <div class="step-icon"><i class="fa-solid fa-brain"></i></div>
-                    <h3>2. Model Analyzes It</h3>
-                    <p>A trained ML model matches your conditions against crop-yield patterns.</p>
-                </article>
-
-                <article class="step-card">
-                    <img class="step-image" src="Farmer_image/569133-agriculture.jpg" alt="Mature grain ready for harvest">
-                    <div class="step-icon"><i class="fa-solid fa-wheat-awn"></i></div>
-                    <h3>3. Get Your Recommendation</h3>
-                    <p>See the crop best suited to your land, with confidence you can act on.</p>
-                </article>
-
+            <div class="hero-image-wrapper">
+                <figure class="hero-image">
+                    <img src="Farmer_image/istockphoto-506164764-170667a.jpg" alt="Tractor working across vibrant agricultural farmland">
+                    <div class="hero-badge">
+                        <i class="fa-solid fa-wheat-awn"></i>
+                        <p><strong>Maximizing Crop Yields:</strong> Data-driven soil analysis for sustainable farming.</p>
+                    </div>
+                </figure>
             </div>
         </section>
 
-        <section id="about">
-            <h2 class="section-title">About AgriSense</h2>
-            <div class="about-text">
-                <p>
-                    AgriSense is a full-stack crop advisory platform built as part of the
-                    Innolift Ventures Full Stack AI Developer Program. It pairs a machine
-                    learning model trained on soil and climate data with a simple web
-                    interface so farmers can get a crop recommendation in seconds.
+        <!-- Why AgriSense Section -->
+        <section id="why">
+            <div class="section-header">
+                <span class="section-tag"><i class="fa-solid fa-shield-halved"></i> Key Benefits</span>
+                <h2 class="section-title">Why Choose AgriSense?</h2>
+                <p class="section-subtitle">
+                    A specialized platform designed to give farmers and agricultural researchers a clear, data-backed starting point before committing time and capital to a crop.
                 </p>
-                <p>
-                    This page is the initial frontend implementation — the interface is in
-                    place, and the ML model and backend will be connected in a later phase
-                    of the build.
+            </div>
+
+            <div class="card-grid">
+                <article class="feature-card">
+                    <div class="feature-icon"><i class="fa-solid fa-chart-line"></i></div>
+                    <h3>Data-Backed Accuracy</h3>
+                    <p>Recommendations are grounded in real soil chemical balances and climate patterns rather than intuition.</p>
+                </article>
+
+                <article class="feature-card">
+                    <div class="feature-icon"><i class="fa-solid fa-bolt"></i></div>
+                    <h3>Lightning Fast Insights</h3>
+                    <p>Input your parameters and receive immediate crop suggestions tuned for maximum seasonal suitability.</p>
+                </article>
+
+                <article class="feature-card">
+                    <div class="feature-icon"><i class="fa-solid fa-hand-holding-hand"></i></div>
+                    <h3>Farmer-Friendly UI</h3>
+                    <p>Clean, accessible interface formatted clearly for farmers, field agents, and agricultural students alike.</p>
+                </article>
+
+                <article class="feature-card">
+                    <div class="feature-icon"><i class="fa-solid fa-droplet"></i></div>
+                    <h3>Resource Conservation</h3>
+                    <p>Avoid planting crops ill-fitted to your local rainfall or soil pH, conserving water and fertilizer expenditure.</p>
+                </article>
+            </div>
+        </section>
+
+        <!-- How It Works Pipeline -->
+        <section id="how-it-works">
+            <div class="section-header">
+                <span class="section-tag"><i class="fa-solid fa-diagram-project"></i> Simple 3-Step Process</span>
+                <h2 class="section-title">How AgriSense Works</h2>
+                <p class="section-subtitle">
+                    Three simple steps stand between your field test data and a confident, high-yield planting decision.
                 </p>
-                <div class="tag-list">
-                    <span>Python</span>
-                    <span>Scikit-learn</span>
-                    <span>Pandas</span>
-                    <span>Flask</span>
-                    <span>MySQL</span>
-                    <span>HTML5 &amp; CSS3</span>
+            </div>
+
+            <div class="steps-wrapper">
+                <article class="step-card">
+                    <div class="step-thumb">
+                        <img src="Farmer_image/OIP.webp" alt="Soil sample testing layers">
+                        <span class="step-number">Step 01</span>
+                    </div>
+                    <div class="step-body">
+                        <div class="step-icon-badge"><i class="fa-solid fa-flask"></i></div>
+                        <h3>1. Input Field Readings</h3>
+                        <p>Enter your Nitrogen, Phosphorus, Potassium levels along with temperature, humidity, pH, and average rainfall.</p>
+                    </div>
+                </article>
+
+                <article class="step-card">
+                    <div class="step-thumb">
+                        <img src="Farmer_image/R.jpg" alt="Machine Learning processing crop yield patterns">
+                        <span class="step-number">Step 02</span>
+                    </div>
+                    <div class="step-body">
+                        <div class="step-icon-badge"><i class="fa-solid fa-brain"></i></div>
+                        <h3>2. Machine Learning Analysis</h3>
+                        <p>Our trained Decision Tree classifier matches your soil parameters against thousands of historical crop growth profiles.</p>
+                    </div>
+                </article>
+
+                <article class="step-card">
+                    <div class="step-thumb">
+                        <img src="Farmer_image/569133-agriculture.jpg" alt="Golden harvest wheat field">
+                        <span class="step-number">Step 03</span>
+                    </div>
+                    <div class="step-body">
+                        <div class="step-icon-badge"><i class="fa-solid fa-wheat-awn"></i></div>
+                        <h3>3. Get Crop Recommendation</h3>
+                        <p>Receive your optimal recommended crop profile along with confidence markers to plan your upcoming farming season.</p>
+                    </div>
+                </article>
+            </div>
+        </section>
+
+        <!-- Pure CSS Accordion Section (FAQ & Soil Knowledge) -->
+        <section id="faq">
+            <div class="section-header">
+                <span class="section-tag"><i class="fa-solid fa-circle-question"></i> Soil & Advisory FAQ</span>
+                <h2 class="section-title">Frequently Asked Questions</h2>
+                <p class="section-subtitle">
+                    Learn how key parameters affect crop matching and soil health.
+                </p>
+            </div>
+
+            <div class="faq-list">
+                <details class="faq-item" open>
+                    <summary class="faq-summary">
+                        <span>Why are NPK values critical for crop selection?</span>
+                        <i class="fa-solid fa-chevron-down"></i>
+                    </summary>
+                    <div class="faq-content">
+                        Nitrogen (N) supports leaf development, Phosphorus (P) promotes root vigor and flowering, while Potassium (K) helps drought resistance and disease immunity. Balanced NPK levels determine which crops will thrive without excessive chemical fertilizers.
+                    </div>
+                </details>
+
+                <details class="faq-item">
+                    <summary class="faq-summary">
+                        <span>How does soil pH impact nutrient uptake?</span>
+                        <i class="fa-solid fa-chevron-down"></i>
+                    </summary>
+                    <div class="faq-content">
+                        Soil pH governs the chemical form of nutrients. Highly acidic (pH &lt; 5.5) or alkaline (pH &gt; 7.5) soils can lock nutrients, making them unavailable even if present in the soil. AgriSense takes pH into account to suggest suitable crops.
+                    </div>
+                </details>
+
+                <details class="faq-item">
+                    <summary class="faq-summary">
+                        <span>Can I test preset soil profiles before entering my own readings?</span>
+                        <i class="fa-solid fa-chevron-down"></i>
+                    </summary>
+                    <div class="faq-content">
+                        Yes! Head to the <a href="recommend.html" style="color: var(--accent-terracotta); font-weight:700;">Get Recommendation</a> page to try instant preset soil profiles (like Wetland Paddy, Highland Coffee, or Semi-Arid Cotton).
+                    </div>
+                </details>
+            </div>
+        </section>
+
+        <!-- Call to Action Banner -->
+        <section id="cta">
+            <div class="cta-banner">
+                <div class="cta-content">
+                    <h2>Ready to see what fits your field?</h2>
+                    <p>Enter your soil and climate readings to preview data-driven crop recommendations tailored to your land.</p>
+                    <a href="recommend.html" class="btn btn-terracotta">
+                        <i class="fa-solid fa-seedling"></i> Test Recommendation Engine
+                    </a>
                 </div>
             </div>
         </section>
@@ -124,7 +232,15 @@
     </main>
 
     <footer>
-        <p>&copy; 2026 AgriSense &mdash; Built by Abdullah P I | Innolift Ventures Internship</p>
+        <div class="footer-content">
+            <div class="footer-logo">
+                <i class="fa-solid fa-seedling" style="color: var(--accent-terracotta);"></i>
+                AgriSense
+            </div>
+            <p class="footer-text">
+                &copy; 2026 <strong>AgriSense</strong> &mdash; Designed by <strong>Abdullah P I</strong> | Built during the Innolift Ventures Internship
+            </p>
+        </div>
     </footer>
 
 </body>

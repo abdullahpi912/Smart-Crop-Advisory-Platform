@@ -1,0 +1,196 @@
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>About — AgriSense</title>
+    <meta name="description" content="Learn about AgriSense platform architecture, machine learning model details, tech stack, and project roadmap.">
+
+    <link rel="stylesheet" href="css/style.css">
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.2/css/all.min.css">
+</head>
+
+<body>
+
+    <header>
+        <nav class="navbar">
+            <a class="logo" href="index.html">
+                <i class="fa-solid fa-seedling"></i>
+                AgriSense
+            </a>
+
+            <input type="checkbox" id="navToggle" class="nav-toggle-checkbox">
+            <label class="nav-toggle" for="navToggle" aria-label="Toggle navigation menu">
+                <span></span>
+                <span></span>
+                <span></span>
+            </label>
+
+            <ul class="nav-links">
+                <li><a href="index.html">Home</a></li>
+                <li><a href="index.html#how-it-works">How It Works</a></li>
+                <li><a href="index.html#faq">Soil FAQ</a></li>
+                <li><a class="current" href="about.html">About</a></li>
+                <li><a href="contact.html">Contact</a></li>
+                <li><a class="nav-cta" href="recommend.html">Get Recommendation</a></li>
+            </ul>
+        </nav>
+    </header>
+
+    <main>
+
+        <!-- About Intro Section -->
+        <section id="about">
+            <div class="section-header">
+                <span class="section-tag"><i class="fa-solid fa-graduation-cap"></i> Program Project</span>
+                <h2 class="section-title">About AgriSense</h2>
+                <p class="section-subtitle">
+                    Empowering smallholder farmers with machine learning insights for data-driven precision agriculture.
+                </p>
+            </div>
+
+            <div class="about-intro-grid">
+                <div class="about-text-content">
+                    <p>
+                        <strong>AgriSense</strong> is an end-to-end full-stack crop advisory platform developed as part of the <strong>Innolift Ventures Full Stack AI Developer Program</strong> by <strong>Abdullah P I</strong>.
+                    </p>
+                    <p>
+                        Traditional farming heavily relies on inherited seasonal intuition or historical crop choices, which may fail when local weather anomalies or soil nutrient depletion occur. AgriSense bridges this gap by marrying machine learning classifiers with an intuitive web interface.
+                    </p>
+                    <p>
+                        By analyzing key field indicators — Nitrogen (N), Phosphorus (P), Potassium (K), Temperature, Humidity, Soil pH, and Rainfall — the platform accurately maps complex soil profiles to optimum high-yield crop options.
+                    </p>
+                </div>
+
+                <div class="hero-image-wrapper">
+                    <div class="hero-image" style="height: 340px;">
+                        <img src="Farmer_image/R.jpg" alt="Crop field research and data analysis">
+                    </div>
+                </div>
+            </div>
+        </section>
+
+        <!-- Tech Stack Section -->
+        <section id="tech-stack">
+            <div class="section-header">
+                <span class="section-tag"><i class="fa-solid fa-code"></i> Technology Stack</span>
+                <h2 class="section-title">Built With Precision Tools</h2>
+                <p class="section-subtitle">
+                    A robust stack combining data science, machine learning models, and modern frontend design system.
+                </p>
+            </div>
+
+            <div class="tech-grid">
+                <div class="tech-card">
+                    <div class="tech-icon"><i class="fa-brands fa-python"></i></div>
+                    <div class="tech-info">
+                        <h4>Python 3.11</h4>
+                        <span>Core ML Pipeline</span>
+                    </div>
+                </div>
+
+                <div class="tech-card">
+                    <div class="tech-icon"><i class="fa-solid fa-brain"></i></div>
+                    <div class="tech-info">
+                        <h4>Scikit-Learn</h4>
+                        <span>Decision Tree &amp; Tuning</span>
+                    </div>
+                </div>
+
+                <div class="tech-card">
+                    <div class="tech-icon"><i class="fa-solid fa-table-cells"></i></div>
+                    <div class="tech-info">
+                        <h4>Pandas &amp; NumPy</h4>
+                        <span>Data Preprocessing</span>
+                    </div>
+                </div>
+
+                <div class="tech-card">
+                    <div class="tech-icon"><i class="fa-solid fa-server"></i></div>
+                    <div class="tech-info">
+                        <h4>Flask REST API</h4>
+                        <span>Backend Controller</span>
+                    </div>
+                </div>
+
+                <div class="tech-card">
+                    <div class="tech-icon"><i class="fa-solid fa-database"></i></div>
+                    <div class="tech-info">
+                        <h4>MySQL Database</h4>
+                        <span>Farm Profile Persistence</span>
+                    </div>
+                </div>
+
+                <div class="tech-card">
+                    <div class="tech-icon"><i class="fa-brands fa-html5"></i></div>
+                    <div class="tech-info">
+                        <h4>HTML5 &amp; CSS3</h4>
+                        <span>Modern Organic UI</span>
+                    </div>
+                </div>
+            </div>
+        </section>
+
+        <!-- Project Roadmap & Status Timeline -->
+        <section id="status">
+            <div class="section-header">
+                <span class="section-tag"><i class="fa-solid fa-timeline"></i> Development Milestones</span>
+                <h2 class="section-title">Project Roadmap &amp; Progress</h2>
+                <p class="section-subtitle">
+                    AgriSense is being delivered systematically across the Innolift Ventures Internship.
+                </p>
+            </div>
+
+            <div class="timeline">
+                <div class="timeline-item done">
+                    <div class="timeline-node"></div>
+                    <div class="timeline-card">
+                        <h4>Phase 1: ML Model Training &amp; Hyperparameter Tuning</h4>
+                        <p>Trained Decision Tree Classifier on the official Crop Recommendation Dataset. Achieved high classification accuracy tuned using Scikit-Learn's GridSearchCV.</p>
+                    </div>
+                </div>
+
+                <div class="timeline-item done">
+                    <div class="timeline-node"></div>
+                    <div class="timeline-card">
+                        <h4>Phase 2: Modern Earthy Frontend Redesign (HTML &amp; CSS)</h4>
+                        <p>Created a modern, organic, highly responsive user interface featuring glassmorphic cards, pure-CSS interactive presets, and clean semantic layouts across 4 core pages.</p>
+                    </div>
+                </div>
+
+                <div class="timeline-item upcoming">
+                    <div class="timeline-node"></div>
+                    <div class="timeline-card">
+                        <h4>Phase 3: Flask Backend API &amp; MySQL Database</h4>
+                        <p>Building RESTful endpoints to process form submissions, log farmer query history, and serve real-time model inference predictions.</p>
+                    </div>
+                </div>
+
+                <div class="timeline-item upcoming">
+                    <div class="timeline-node"></div>
+                    <div class="timeline-card">
+                        <h4>Phase 4: Full System Integration &amp; Cloud Deployment</h4>
+                        <p>Connecting frontend components with live model endpoints, adding real-time validation, and hosting the application on cloud infrastructure.</p>
+                    </div>
+                </div>
+            </div>
+        </section>
+
+    </main>
+
+    <footer>
+        <div class="footer-content">
+            <div class="footer-logo">
+                <i class="fa-solid fa-seedling" style="color: var(--accent-terracotta);"></i>
+                AgriSense
+            </div>
+            <p class="footer-text">
+                &copy; 2026 <strong>AgriSense</strong> &mdash; Designed by <strong>Abdullah P I</strong> | Built during the Innolift Ventures Internship
+            </p>
+        </div>
+    </footer>
+
+</body>
+
+</html>
