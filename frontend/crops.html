@@ -1,0 +1,310 @@
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Crop &amp; Fertilizer Library — AgriSense</title>
+    <meta name="description" content="Explore optimal soil, NPK nutrient ratios, pH, climate requirements, and agricultural fertilizer profiles in AgriSense Library.">
+
+    <link rel="stylesheet" href="css/style.css">
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.2/css/all.min.css">
+</head>
+
+<body>
+
+    <!-- Pure CSS Radio Filters for Crop & Fertilizer Categories -->
+    <input type="radio" name="crop-category" id="cat-all" class="crop-cat-radio" checked>
+    <input type="radio" name="crop-category" id="cat-grains" class="crop-cat-radio">
+    <input type="radio" name="crop-category" id="cat-pulses" class="crop-cat-radio">
+    <input type="radio" name="crop-category" id="cat-fruits" class="crop-cat-radio">
+    <input type="radio" name="crop-category" id="cat-commercial" class="crop-cat-radio">
+    <input type="radio" name="crop-category" id="cat-fertilizers" class="crop-cat-radio">
+
+    <header>
+        <nav class="navbar">
+            <a class="logo" href="index.html">
+                <i class="fa-solid fa-seedling"></i>
+                AgriSense
+            </a>
+
+            <input type="checkbox" id="navToggle" class="nav-toggle-checkbox">
+            <label class="nav-toggle" for="navToggle" aria-label="Toggle navigation menu">
+                <span></span>
+                <span></span>
+                <span></span>
+            </label>
+
+            <ul class="nav-links">
+                <li><a href="index.html">Home</a></li>
+                <li><a href="recommend.html">Get Recommendation</a></li>
+                <li><a class="current" href="crops.html">Crop Library</a></li>
+                <li><a href="dashboard.html">History &amp; Dashboard</a></li>
+                <li><a href="about.html">About</a></li>
+                <li><a href="contact.html">Contact</a></li>
+                <li><a href="login.html"><i class="fa-solid fa-right-to-bracket"></i> Sign In</a></li>
+            </ul>
+        </nav>
+    </header>
+
+    <main>
+
+        <!-- Crop Library Hero Section -->
+        <section id="crops-hero">
+            <div class="section-header">
+                <span class="section-tag"><i class="fa-solid fa-book-open"></i> Agronomy Database</span>
+                <h2 class="section-title">Crop &amp; Fertilizer Intelligence Library</h2>
+                <p class="section-subtitle">
+                    Explore soil chemical requirements, rainfall limits, temperature thresholds, and fertilizer composition profiles for supported agricultural crops.
+                </p>
+            </div>
+
+            <!-- Pure-CSS Category Filter Bar -->
+            <div class="crop-filter-wrapper">
+                <span class="filter-label"><i class="fa-solid fa-filter"></i> Filter Category:</span>
+                <div class="crop-filter-tabs">
+                    <label for="cat-all" class="filter-btn">
+                        <i class="fa-solid fa-border-all"></i> All Items
+                    </label>
+                    <label for="cat-grains" class="filter-btn">
+                        🌾 Grains &amp; Cereals
+                    </label>
+                    <label for="cat-pulses" class="filter-btn">
+                        🌱 Pulses &amp; Legumes
+                    </label>
+                    <label for="cat-fruits" class="filter-btn">
+                        🍎 Fruits &amp; Orchard
+                    </label>
+                    <label for="cat-commercial" class="filter-btn">
+                        ☕ Cash Crops
+                    </label>
+                    <label for="cat-fertilizers" class="filter-btn">
+                        🧪 Fertilizers &amp; NPK
+                    </label>
+                </div>
+            </div>
+
+            <!-- Catalog Grid -->
+            <div class="crop-catalog-grid">
+
+                <!-- 1. Rice -->
+                <article class="crop-card cat-grains">
+                    <div class="crop-card-header">
+                        <span class="crop-cat-badge">Grains &amp; Cereals</span>
+                        <div class="crop-card-icon">🌾</div>
+                    </div>
+                    <div class="crop-card-body">
+                        <h3>Paddy Rice</h3>
+                        <p class="crop-tagline">Thrives in clayey moist soils with high water retention and warm temperatures.</p>
+                        
+                        <div class="crop-specs-list">
+                            <div class="spec-row">
+                                <span>Ideal NPK (N-P-K):</span>
+                                <strong>80-40-40 kg/ha</strong>
+                            </div>
+                            <div class="spec-row">
+                                <span>Ideal Temp:</span>
+                                <strong>20 &ndash; 27 &deg;C</strong>
+                            </div>
+                            <div class="spec-row">
+                                <span>Ideal pH:</span>
+                                <strong>5.5 &ndash; 6.8</strong>
+                            </div>
+                            <div class="spec-row">
+                                <span>Rainfall Requirement:</span>
+                                <strong>200 &ndash; 300 mm</strong>
+                            </div>
+                        </div>
+                    </div>
+                    <div class="crop-card-footer">
+                        <a href="recommend.html" class="btn-sm btn-crop-action btn-block"><i class="fa-solid fa-flask-vial"></i> Test Soil Profile</a>
+                    </div>
+                </article>
+
+                <!-- 2. Highland Coffee -->
+                <article class="crop-card cat-commercial">
+                    <div class="crop-card-header">
+                        <span class="crop-cat-badge">Cash Crops</span>
+                        <div class="crop-card-icon">☕</div>
+                    </div>
+                    <div class="crop-card-body">
+                        <h3>Highland Coffee</h3>
+                        <p class="crop-tagline">Perennial commercial crop preferring cool acidic highland soils and high rainfall.</p>
+                        
+                        <div class="crop-specs-list">
+                            <div class="spec-row">
+                                <span>Ideal NPK (N-P-K):</span>
+                                <strong>100-20-30 kg/ha</strong>
+                            </div>
+                            <div class="spec-row">
+                                <span>Ideal Temp:</span>
+                                <strong>23 &ndash; 28 &deg;C</strong>
+                            </div>
+                            <div class="spec-row">
+                                <span>Ideal pH:</span>
+                                <strong>5.5 &ndash; 6.2</strong>
+                            </div>
+                            <div class="spec-row">
+                                <span>Rainfall Requirement:</span>
+                                <strong>1500 &ndash; 2000 mm</strong>
+                            </div>
+                        </div>
+                    </div>
+                    <div class="crop-card-footer">
+                        <a href="recommend.html" class="btn-sm btn-crop-action btn-block"><i class="fa-solid fa-flask-vial"></i> Test Soil Profile</a>
+                    </div>
+                </article>
+
+                <!-- 3. Maize -->
+                <article class="crop-card cat-grains">
+                    <div class="crop-card-header">
+                        <span class="crop-cat-badge">Grains &amp; Cereals</span>
+                        <div class="crop-card-icon">🌽</div>
+                    </div>
+                    <div class="crop-card-body">
+                        <h3>Maize (Corn)</h3>
+                        <p class="crop-tagline">Versatile staple crop requiring rich nitrogen levels and well-drained loamy soil.</p>
+                        
+                        <div class="crop-specs-list">
+                            <div class="spec-row">
+                                <span>Ideal NPK (N-P-K):</span>
+                                <strong>75-38-40 kg/ha</strong>
+                            </div>
+                            <div class="spec-row">
+                                <span>Ideal Temp:</span>
+                                <strong>18 &ndash; 27 &deg;C</strong>
+                            </div>
+                            <div class="spec-row">
+                                <span>Ideal pH:</span>
+                                <strong>5.8 &ndash; 7.0</strong>
+                            </div>
+                            <div class="spec-row">
+                                <span>Rainfall Requirement:</span>
+                                <strong>80 &ndash; 110 mm</strong>
+                            </div>
+                        </div>
+                    </div>
+                    <div class="crop-card-footer">
+                        <a href="recommend.html" class="btn-sm btn-crop-action btn-block"><i class="fa-solid fa-flask-vial"></i> Test Soil Profile</a>
+                    </div>
+                </article>
+
+                <!-- 4. Chickpea -->
+                <article class="crop-card cat-pulses">
+                    <div class="crop-card-header">
+                        <span class="crop-cat-badge">Pulses &amp; Legumes</span>
+                        <div class="crop-card-icon">🌱</div>
+                    </div>
+                    <div class="crop-card-body">
+                        <h3>Chickpea (Gram)</h3>
+                        <p class="crop-tagline">Drought-tolerant pulse that fixes nitrogen into depleted soils during dry seasons.</p>
+                        
+                        <div class="crop-specs-list">
+                            <div class="spec-row">
+                                <span>Ideal NPK (N-P-K):</span>
+                                <strong>40-60-80 kg/ha</strong>
+                            </div>
+                            <div class="spec-row">
+                                <span>Ideal Temp:</span>
+                                <strong>17 &ndash; 22 &deg;C</strong>
+                            </div>
+                            <div class="spec-row">
+                                <span>Ideal pH:</span>
+                                <strong>6.0 &ndash; 7.5</strong>
+                            </div>
+                            <div class="spec-row">
+                                <span>Rainfall Requirement:</span>
+                                <strong>65 &ndash; 90 mm</strong>
+                            </div>
+                        </div>
+                    </div>
+                    <div class="crop-card-footer">
+                        <a href="recommend.html" class="btn-sm btn-crop-action btn-block"><i class="fa-solid fa-flask-vial"></i> Test Soil Profile</a>
+                    </div>
+                </article>
+
+                <!-- 5. Fertilizer: Urea (High Nitrogen) -->
+                <article class="crop-card cat-fertilizers">
+                    <div class="crop-card-header">
+                        <span class="crop-cat-badge" style="background: rgba(59, 110, 71, 0.18); color: var(--primary-dark);">Fertilizer Grade</span>
+                        <div class="crop-card-icon">🧪</div>
+                    </div>
+                    <div class="crop-card-body">
+                        <h3>Urea (46-0-0)</h3>
+                        <p class="crop-tagline">Concentrated nitrogen fertilizer for rapid leaf development and vegetative growth.</p>
+                        
+                        <div class="crop-specs-list">
+                            <div class="spec-row">
+                                <span>Nitrogen (N) Grade:</span>
+                                <strong>46% Amide Nitrogen</strong>
+                            </div>
+                            <div class="spec-row">
+                                <span>Target Deficiency:</span>
+                                <strong>Nitrogen Starved Soils</strong>
+                            </div>
+                            <div class="spec-row">
+                                <span>Best Application:</span>
+                                <strong>Split Basal &amp; Top Dressing</strong>
+                            </div>
+                            <div class="spec-row">
+                                <span>Compatibility:</span>
+                                <strong>Rice, Maize, Wheat, Cotton</strong>
+                            </div>
+                        </div>
+                    </div>
+                    <div class="crop-card-footer">
+                        <a href="recommend.html" class="btn-sm btn-crop-action btn-block"><i class="fa-solid fa-flask-vial"></i> Calculate Dosage</a>
+                    </div>
+                </article>
+
+                <!-- 6. Fertilizer: DAP (High Phosphorus) -->
+                <article class="crop-card cat-fertilizers">
+                    <div class="crop-card-header">
+                        <span class="crop-cat-badge" style="background: rgba(217, 107, 67, 0.18); color: var(--accent-terracotta);">Fertilizer Grade</span>
+                        <div class="crop-card-icon">🧪</div>
+                    </div>
+                    <div class="crop-card-body">
+                        <h3>Di-Ammonium Phosphate (18-46-0)</h3>
+                        <p class="crop-tagline">Primary source of phosphorus for root establishment, seed germination, and flowering.</p>
+                        
+                        <div class="crop-specs-list">
+                            <div class="spec-row">
+                                <span>NPK Ratio:</span>
+                                <strong>18% N - 46% P₂O₅ - 0% K₂O</strong>
+                            </div>
+                            <div class="spec-row">
+                                <span>Target Deficiency:</span>
+                                <strong>Low Soil Phosphorus</strong>
+                            </div>
+                            <div class="spec-row">
+                                <span>Best Application:</span>
+                                <strong>Sowing / Basal Application</strong>
+                            </div>
+                            <div class="spec-row">
+                                <span>Compatibility:</span>
+                                <strong>Pulses, Cereals, Oilseeds</strong>
+                            </div>
+                        </div>
+                    </div>
+                    <div class="crop-card-footer">
+                        <a href="recommend.html" class="btn-sm btn-crop-action btn-block"><i class="fa-solid fa-flask-vial"></i> Calculate Dosage</a>
+                    </div>
+                </article>
+
+            </div>
+        </section>
+
+    </main>
+
+    <footer class="footer-centered">
+        <div class="footer-content-centered">
+            <a class="logo" href="index.html">
+                <i class="fa-solid fa-seedling"></i> AgriSense
+            </a>
+            <p class="footer-tagline">Smart soil-to-crop advisory platform powered by machine learning.</p>
+            <p class="footer-copyright">&copy; 2026 AgriSense Precision Advisory. All rights reserved.</p>
+        </div>
+    </footer>
+
+</body>
+</html>

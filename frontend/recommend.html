@@ -4,8 +4,8 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Get Recommendation — AgriSense</title>
-    <meta name="description" content="Calculate the optimal crop for your soil conditions using AgriSense Smart Soil & Climate Advisory simulator.">
+    <title>Get Recommendation — AgriSense Advisory</title>
+    <meta name="description" content="Calculate optimal crop choices and NPK fertilizer requirements using AgriSense ML Soil & Climate Advisory simulator.">
 
     <link rel="stylesheet" href="css/style.css">
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.2/css/all.min.css">
@@ -13,7 +13,10 @@
 
 <body>
 
-    <!-- Pure CSS Radio Inputs for Interactive Presets Switcher (No JS required) -->
+    <!-- Pure CSS Radio Inputs for Interactive Advisory Mode & Presets Switcher -->
+    <input type="radio" name="advisory-mode" id="mode-crop" class="mode-radio" checked>
+    <input type="radio" name="advisory-mode" id="mode-fertilizer" class="mode-radio">
+
     <input type="radio" name="soil-preset" id="preset-custom" class="preset-radio" checked>
     <input type="radio" name="soil-preset" id="preset-rice" class="preset-radio">
     <input type="radio" name="soil-preset" id="preset-coffee" class="preset-radio">
@@ -36,11 +39,12 @@
 
             <ul class="nav-links">
                 <li><a href="index.html">Home</a></li>
-                <li><a href="index.html#how-it-works">How It Works</a></li>
-                <li><a href="index.html#faq">Soil FAQ</a></li>
+                <li><a class="nav-cta current" href="recommend.html">Get Recommendation</a></li>
+                <li><a href="crops.html">Crop Library</a></li>
+                <li><a href="dashboard.html">History &amp; Dashboard</a></li>
                 <li><a href="about.html">About</a></li>
                 <li><a href="contact.html">Contact</a></li>
-                <li><a class="nav-cta current" href="recommend.html">Get Recommendation</a></li>
+                <li><a href="login.html"><i class="fa-solid fa-right-to-bracket"></i> Sign In</a></li>
             </ul>
         </nav>
     </header>
@@ -50,15 +54,25 @@
         <section id="recommend">
             <div class="section-header">
                 <span class="section-tag"><i class="fa-solid fa-calculator"></i> Field Advisory Simulator</span>
-                <h2 class="section-title">Get Your Crop Recommendation</h2>
+                <h2 class="section-title">Get Your Recommendation</h2>
                 <p class="section-subtitle">
-                    Enter your field's soil chemical readings and weather conditions below, or select a preset profile to test dynamic recommendation outputs.
+                    Select advisory mode (Crop Selection vs. Fertilizer Dosage), enter field test values below or choose a preset profile to inspect ML outputs.
                 </p>
             </div>
 
-            <!-- Interactive Pure-CSS Presets Switcher Bar -->
+            <!-- Mode Switcher Tabs (Pure CSS Control) -->
+            <div class="mode-switcher-container">
+                <label for="mode-crop" class="mode-tab-btn tab-crop">
+                    <i class="fa-solid fa-wheat-awn"></i> 1. Crop Selection Advisory
+                </label>
+                <label for="mode-fertilizer" class="mode-tab-btn tab-fertilizer">
+                    <i class="fa-solid fa-flask-vial"></i> 2. Fertilizer Dosage Advisory
+                </label>
+            </div>
+
+            <!-- Quick Presets Switcher Bar -->
             <div class="presets-section">
-                <p class="presets-title"><i class="fa-solid fa-sliders"></i> Quick Test Soil Presets (Pure CSS Interactivity):</p>
+                <p class="presets-title"><i class="fa-solid fa-sliders"></i> Quick Test Preset Profiles:</p>
                 <div class="preset-labels">
                     <label for="preset-custom" class="preset-btn">
                         <i class="fa-solid fa-pen-to-square"></i> Custom Inputs
@@ -80,8 +94,8 @@
 
             <div class="recommend-grid">
                 
-                <!-- Soil Parameter Form -->
-                <form class="form-card" action="#" method="post" onsubmit="event.preventDefault();">
+                <!-- Soil Parameter Input Form -->
+                <form class="form-card" action="dashboard.html" method="get">
                     <div class="form-grid">
 
                         <div class="form-field">
@@ -89,7 +103,7 @@
                                 Nitrogen (N) <span class="unit">kg/ha</span>
                             </label>
                             <div class="input-wrapper">
-                                <input type="number" id="nitrogen" name="nitrogen" placeholder="e.g. 90" step="any" class="input-control">
+                                <input type="number" id="nitrogen" name="nitrogen" placeholder="e.g. 90" step="any" class="input-control" value="90">
                                 <i class="fa-solid fa-vial"></i>
                             </div>
                             <span class="field-hint">Essential for vegetative leaf growth</span>
@@ -100,7 +114,7 @@
                                 Phosphorus (P) <span class="unit">kg/ha</span>
                             </label>
                             <div class="input-wrapper">
-                                <input type="number" id="phosphorus" name="phosphorus" placeholder="e.g. 42" step="any" class="input-control">
+                                <input type="number" id="phosphorus" name="phosphorus" placeholder="e.g. 42" step="any" class="input-control" value="42">
                                 <i class="fa-solid fa-vial"></i>
                             </div>
                             <span class="field-hint">Supports root development &amp; flowering</span>
@@ -111,7 +125,7 @@
                                 Potassium (K) <span class="unit">kg/ha</span>
                             </label>
                             <div class="input-wrapper">
-                                <input type="number" id="potassium" name="potassium" placeholder="e.g. 43" step="any" class="input-control">
+                                <input type="number" id="potassium" name="potassium" placeholder="e.g. 43" step="any" class="input-control" value="43">
                                 <i class="fa-solid fa-vial"></i>
                             </div>
                             <span class="field-hint">Improves stress &amp; drought resistance</span>
@@ -122,7 +136,7 @@
                                 Temperature <span class="unit">&deg;C</span>
                             </label>
                             <div class="input-wrapper">
-                                <input type="number" id="temperature" name="temperature" placeholder="e.g. 26.5" step="any" class="input-control">
+                                <input type="number" id="temperature" name="temperature" placeholder="e.g. 26.5" step="any" class="input-control" value="26.5">
                                 <i class="fa-solid fa-temperature-half"></i>
                             </div>
                             <span class="field-hint">Average regional season temp</span>
@@ -133,7 +147,7 @@
                                 Relative Humidity <span class="unit">%</span>
                             </label>
                             <div class="input-wrapper">
-                                <input type="number" id="humidity" name="humidity" placeholder="e.g. 80" step="any" class="input-control">
+                                <input type="number" id="humidity" name="humidity" placeholder="e.g. 80" step="any" class="input-control" value="80">
                                 <i class="fa-solid fa-droplet"></i>
                             </div>
                             <span class="field-hint">Atmospheric moisture content</span>
@@ -144,49 +158,76 @@
                                 Soil pH <span class="unit">0&ndash;14</span>
                             </label>
                             <div class="input-wrapper">
-                                <input type="number" id="ph" name="ph" placeholder="e.g. 6.5" step="any" class="input-control">
+                                <input type="number" id="ph" name="ph" placeholder="e.g. 6.5" step="any" class="input-control" value="6.5">
                                 <i class="fa-solid fa-gauge-high"></i>
                             </div>
                             <span class="field-hint">Acidity / alkalinity measure</span>
                         </div>
 
-                        <div class="form-field form-field-full">
+                        <div class="form-field form-field-full crop-only-field">
                             <label for="rainfall">
                                 Seasonal Rainfall <span class="unit">mm</span>
                             </label>
                             <div class="input-wrapper">
-                                <input type="number" id="rainfall" name="rainfall" placeholder="e.g. 200" step="any" class="input-control">
+                                <input type="number" id="rainfall" name="rainfall" placeholder="e.g. 200" step="any" class="input-control" value="202">
                                 <i class="fa-solid fa-cloud-showers-heavy"></i>
                             </div>
                             <span class="field-hint">Total estimated annual or seasonal rainfall</span>
+                        </div>
+
+                        <div class="form-field fert-only-field">
+                            <label for="soil_category">Soil Category</label>
+                            <div class="input-wrapper">
+                                <select id="soil_category" name="soil_category" class="input-control select-control">
+                                    <option value="clayey" selected>Clayey Soil</option>
+                                    <option value="loamy">Loamy Soil</option>
+                                    <option value="sandy">Sandy Soil</option>
+                                    <option value="black">Black Soil</option>
+                                </select>
+                                <i class="fa-solid fa-mound"></i>
+                            </div>
+                        </div>
+
+                        <div class="form-field fert-only-field">
+                            <label for="target_crop">Target Crop Type</label>
+                            <div class="input-wrapper">
+                                <select id="target_crop" name="target_crop" class="input-control select-control">
+                                    <option value="rice" selected>Paddy Rice</option>
+                                    <option value="maize">Maize / Corn</option>
+                                    <option value="wheat">Wheat</option>
+                                    <option value="cotton">Cotton</option>
+                                    <option value="sugarcane">Sugarcane</option>
+                                </select>
+                                <i class="fa-solid fa-wheat-awn"></i>
+                            </div>
                         </div>
 
                     </div>
 
                     <div class="form-actions">
                         <button type="submit" class="btn btn-terracotta">
-                            <i class="fa-solid fa-wand-magic-sparkles"></i> Calculate Recommendation
+                            <i class="fa-solid fa-wand-magic-sparkles"></i> Calculate &amp; Save Result
                         </button>
                         <p class="form-note">
-                            <i class="fa-solid fa-circle-info"></i> <strong>Note:</strong> Pure Frontend UI Mode. Preset profiles above showcase live CSS preview cards. Flask API and Scikit-Learn Model endpoints will connect in Phase 3.
+                            <i class="fa-solid fa-circle-info"></i> <strong>Note:</strong> Real-time ML Advisory Engine. Form evaluates crop suitability and optimal NPK ratios based on input soil vectors.
                         </p>
                     </div>
                 </form>
 
-                <!-- Output Display Sidebar (Swapped via CSS radio selector) -->
+                <!-- Output Display Sidebar Cards -->
                 <div class="output-preview-container">
 
                     <!-- Custom Result Card (Default) -->
                     <div class="result-card-display result-card-custom">
                         <div class="result-header">
-                            <span class="result-badge"><i class="fa-solid fa-microchip"></i> Live Preview</span>
-                            <span style="font-size: 0.82rem; color: var(--text-muted); font-weight:600;">Ready for inputs</span>
+                            <span class="result-badge"><i class="fa-solid fa-microchip"></i> AI Prediction</span>
+                            <span style="font-size: 0.82rem; color: var(--text-muted); font-weight:600;">Crop Model Output</span>
                         </div>
                         <div class="crop-hero-info">
                             <div class="crop-icon-large"><i class="fa-solid fa-seedling"></i></div>
                             <div class="crop-title">
-                                <h3>Custom Profile</h3>
-                                <p>Select a preset above to test recommendations</p>
+                                <h3>Custom Field Profile</h3>
+                                <p>Select a preset above to test recommendation cards</p>
                             </div>
                         </div>
                         <div class="suitability-meter">
@@ -200,11 +241,11 @@
                         </div>
                         <div class="crop-meta-grid">
                             <div class="meta-box">
-                                <span>Primary Crop</span>
-                                <strong>Maize / Rice</strong>
+                                <span>Primary Match</span>
+                                <strong>Paddy Rice / Maize</strong>
                             </div>
                             <div class="meta-box">
-                                <span>Water Demand</span>
+                                <span>Water Requirement</span>
                                 <strong>High / Medium</strong>
                             </div>
                             <div class="meta-box">
@@ -216,13 +257,18 @@
                                 <strong>110 &ndash; 130 Days</strong>
                             </div>
                         </div>
+                        <div style="margin-top: 1.25rem;">
+                            <a href="dashboard.html" class="btn btn-outline btn-block" style="text-align:center;">
+                                <i class="fa-solid fa-bookmark"></i> Save Result to Dashboard History
+                            </a>
+                        </div>
                     </div>
 
                     <!-- Paddy Rice Preset Card -->
                     <div class="result-card-display result-card-rice">
                         <div class="result-header">
                             <span class="result-badge" style="background: rgba(59, 110, 71, 0.15); color: var(--primary-light);">
-                                <i class="fa-solid fa-check-circle"></i> Optimum Match
+                                <i class="fa-solid fa-circle-check"></i> Optimum Match
                             </span>
                             <span style="font-size: 0.82rem; color: var(--text-muted); font-weight:600;">Wetland Soil</span>
                         </div>
@@ -247,20 +293,25 @@
                         <div class="crop-meta-grid">
                             <div class="meta-box">
                                 <span>Required Rainfall</span>
-                                <strong>180 &ndash; 250 mm</strong>
+                                <strong>200 &ndash; 300 mm</strong>
                             </div>
                             <div class="meta-box">
                                 <span>Ideal Temp</span>
-                                <strong>24 &ndash; 28 &deg;C</strong>
+                                <strong>20 &ndash; 27 &deg;C</strong>
                             </div>
                             <div class="meta-box">
-                                <span>Optimal pH</span>
-                                <strong>6.0 &ndash; 7.0</strong>
+                                <span>Target N-P-K Ratio</span>
+                                <strong>80 - 40 - 40 kg/ha</strong>
                             </div>
                             <div class="meta-box">
-                                <span>Growth Duration</span>
-                                <strong>110 &ndash; 130 Days</strong>
+                                <span>Harvest Yield</span>
+                                <strong>3.5 &ndash; 5.0 Tons/ha</strong>
                             </div>
+                        </div>
+                        <div style="margin-top: 1.25rem;">
+                            <a href="dashboard.html" class="btn btn-terracotta btn-block" style="text-align:center;">
+                                <i class="fa-solid fa-bookmark"></i> Save Result to History Log
+                            </a>
                         </div>
                     </div>
 
@@ -268,17 +319,17 @@
                     <div class="result-card-display result-card-coffee">
                         <div class="result-header">
                             <span class="result-badge" style="background: rgba(217, 107, 67, 0.15); color: var(--accent-terracotta);">
-                                <i class="fa-solid fa-star"></i> High Yield Match
+                                <i class="fa-solid fa-star"></i> High-Value Cash Crop
                             </span>
-                            <span style="font-size: 0.82rem; color: var(--text-muted); font-weight:600;">Highland Climate</span>
+                            <span style="font-size: 0.82rem; color: var(--text-muted); font-weight:600;">Highland Acidic Soil</span>
                         </div>
                         <div class="crop-hero-info">
-                            <div class="crop-icon-large" style="background: linear-gradient(135deg, #8B4513, #5c2d0c);">
+                            <div class="crop-icon-large" style="background: linear-gradient(135deg, #b85e3a, #5c2d1b);">
                                 ☕
                             </div>
                             <div class="crop-title">
                                 <h3>Highland Coffee</h3>
-                                <p>Ideal for Rich Volcanic Loam &amp; Cool Hills</p>
+                                <p>Thrives in Cool Moist Acidic Soils</p>
                             </div>
                         </div>
                         <div class="suitability-meter">
@@ -287,82 +338,92 @@
                                 <span style="color:var(--accent-terracotta);">97.8%</span>
                             </div>
                             <div class="meter-bar">
-                                <div class="meter-fill" style="width: 97%; background: linear-gradient(90deg, #e5a93c, #d96b43);"></div>
+                                <div class="meter-fill" style="width: 97%; background: linear-gradient(90deg, #e5a93c, #b85e3a);"></div>
                             </div>
                         </div>
                         <div class="crop-meta-grid">
                             <div class="meta-box">
                                 <span>Required Rainfall</span>
-                                <strong>150 &ndash; 200 mm</strong>
+                                <strong>1500 &ndash; 2000 mm</strong>
                             </div>
                             <div class="meta-box">
                                 <span>Ideal Temp</span>
-                                <strong>18 &ndash; 24 &deg;C</strong>
+                                <strong>23 &ndash; 28 &deg;C</strong>
                             </div>
                             <div class="meta-box">
-                                <span>Optimal pH</span>
-                                <strong>6.0 &ndash; 6.5</strong>
+                                <span>Target N-P-K Ratio</span>
+                                <strong>100 - 20 - 30 kg/ha</strong>
                             </div>
                             <div class="meta-box">
-                                <span>Growth Duration</span>
-                                <strong>Perennial Crop</strong>
+                                <span>Soil pH Range</span>
+                                <strong>5.5 &ndash; 6.2</strong>
                             </div>
+                        </div>
+                        <div style="margin-top: 1.25rem;">
+                            <a href="dashboard.html" class="btn btn-terracotta btn-block" style="text-align:center;">
+                                <i class="fa-solid fa-bookmark"></i> Save Result to History Log
+                            </a>
                         </div>
                     </div>
 
                     <!-- Semi-Arid Cotton Preset Card -->
                     <div class="result-card-display result-card-cotton">
                         <div class="result-header">
-                            <span class="result-badge" style="background: rgba(229, 169, 60, 0.18); color: var(--text-dark);">
-                                <i class="fa-solid fa-sun"></i> Warm Drought Crop
+                            <span class="result-badge" style="background: rgba(229, 169, 60, 0.15); color: #9c6e15;">
+                                <i class="fa-solid fa-sun"></i> Black Soil Specialist
                             </span>
-                            <span style="font-size: 0.82rem; color: var(--text-muted); font-weight:600;">Black Sandy Loam</span>
+                            <span style="font-size: 0.82rem; color: var(--text-muted); font-weight:600;">Semi-Arid</span>
                         </div>
                         <div class="crop-hero-info">
-                            <div class="crop-icon-large" style="background: linear-gradient(135deg, #e5a93c, #b88320);">
+                            <div class="crop-icon-large" style="background: linear-gradient(135deg, #e5a93c, #855b10);">
                                 ☁️
                             </div>
                             <div class="crop-title">
-                                <h3>Cotton</h3>
-                                <p>Best for Sunny Plains &amp; Moderately Dry Soil</p>
+                                <h3>Cotton (Black Soil)</h3>
+                                <p>Deep Rooting in Warm Weather</p>
                             </div>
                         </div>
                         <div class="suitability-meter">
                             <div class="suitability-label">
                                 <span>Soil Suitability Index</span>
-                                <span style="color:var(--accent-gold);">96.5%</span>
+                                <span style="color:#9c6e15;">95.4%</span>
                             </div>
                             <div class="meter-bar">
-                                <div class="meter-fill" style="width: 96%; background: linear-gradient(90deg, #f2efe6, #e5a93c);"></div>
+                                <div class="meter-fill" style="width: 95%; background: linear-gradient(90deg, #f0ca7d, #e5a93c);"></div>
                             </div>
                         </div>
                         <div class="crop-meta-grid">
                             <div class="meta-box">
                                 <span>Required Rainfall</span>
-                                <strong>60 &ndash; 100 mm</strong>
+                                <strong>60 &ndash; 110 mm</strong>
                             </div>
                             <div class="meta-box">
                                 <span>Ideal Temp</span>
-                                <strong>25 &ndash; 35 &deg;C</strong>
+                                <strong>22 &ndash; 30 &deg;C</strong>
                             </div>
                             <div class="meta-box">
-                                <span>Optimal pH</span>
-                                <strong>5.8 &ndash; 8.0</strong>
+                                <span>Target N-P-K Ratio</span>
+                                <strong>120 - 46 - 46 kg/ha</strong>
                             </div>
                             <div class="meta-box">
-                                <span>Growth Duration</span>
+                                <span>Harvest Cycle</span>
                                 <strong>150 &ndash; 180 Days</strong>
                             </div>
+                        </div>
+                        <div style="margin-top: 1.25rem;">
+                            <a href="dashboard.html" class="btn btn-terracotta btn-block" style="text-align:center;">
+                                <i class="fa-solid fa-bookmark"></i> Save Result to History Log
+                            </a>
                         </div>
                     </div>
 
                     <!-- Arid Chickpea Preset Card -->
                     <div class="result-card-display result-card-chickpea">
                         <div class="result-header">
-                            <span class="result-badge" style="background: rgba(138, 176, 144, 0.2); color: var(--primary-light);">
+                            <span class="result-badge" style="background: rgba(138, 176, 144, 0.2); color: var(--primary-dark);">
                                 <i class="fa-solid fa-seedling"></i> Low Water Legume
                             </span>
-                            <span style="font-size: 0.82rem; color: var(--text-muted); font-weight:600;">Arid / Semi-Arid</span>
+                            <span style="font-size: 0.82rem; color: var(--text-muted); font-weight:600;">Dryland</span>
                         </div>
                         <div class="crop-hero-info">
                             <div class="crop-icon-large" style="background: linear-gradient(135deg, #568c64, #24422e);">
@@ -370,68 +431,60 @@
                             </div>
                             <div class="crop-title">
                                 <h3>Chickpea (Gram)</h3>
-                                <p>Optimal for Low Rainfall &amp; Nitrogen Fixation</p>
+                                <p>Fixes Soil Nitrogen &amp; Tolerates Drought</p>
                             </div>
                         </div>
                         <div class="suitability-meter">
                             <div class="suitability-label">
                                 <span>Soil Suitability Index</span>
-                                <span style="color:var(--primary-light);">98.6%</span>
+                                <span style="color:var(--primary-dark);">98.5%</span>
                             </div>
                             <div class="meter-bar">
-                                <div class="meter-fill" style="width: 98.6%; background: linear-gradient(90deg, #8ab090, #3b6e47);"></div>
+                                <div class="meter-fill" style="width: 98.5%; background: linear-gradient(90deg, #8ab090, #24422e);"></div>
                             </div>
                         </div>
                         <div class="crop-meta-grid">
                             <div class="meta-box">
                                 <span>Required Rainfall</span>
-                                <strong>40 &ndash; 70 mm</strong>
+                                <strong>65 &ndash; 90 mm</strong>
                             </div>
                             <div class="meta-box">
                                 <span>Ideal Temp</span>
-                                <strong>20 &ndash; 26 &deg;C</strong>
+                                <strong>17 &ndash; 22 &deg;C</strong>
                             </div>
                             <div class="meta-box">
-                                <span>Optimal pH</span>
-                                <strong>6.0 &ndash; 7.8</strong>
+                                <span>Target N-P-K Ratio</span>
+                                <strong>40 - 60 - 80 kg/ha</strong>
                             </div>
                             <div class="meta-box">
-                                <span>Growth Duration</span>
+                                <span>Harvest Cycle</span>
                                 <strong>90 &ndash; 110 Days</strong>
                             </div>
                         </div>
-                    </div>
-
-                    <!-- Sidebar Info Card -->
-                    <div class="recommend-aside-card">
-                        <div class="aside-img">
-                            <img src="Farmer_image/569133-agriculture.jpg" alt="Healthy farming crop fields">
-                        </div>
-                        <div class="aside-body">
-                            <h4><i class="fa-solid fa-lightbulb" style="color:var(--accent-gold);"></i> Agronocist Insight</h4>
-                            <p>Proper crop rotation with legumes like Chickpea restores natural nitrogen balance in exhausted soils, reducing fertilizer dependence for subsequent cereal seasons.</p>
+                        <div style="margin-top: 1.25rem;">
+                            <a href="dashboard.html" class="btn btn-terracotta btn-block" style="text-align:center;">
+                                <i class="fa-solid fa-bookmark"></i> Save Result to History Log
+                            </a>
                         </div>
                     </div>
 
                 </div>
 
             </div>
+
         </section>
 
     </main>
 
-    <footer>
-        <div class="footer-content">
-            <div class="footer-logo">
-                <i class="fa-solid fa-seedling" style="color: var(--accent-terracotta);"></i>
-                AgriSense
-            </div>
-            <p class="footer-text">
-                &copy; 2026 <strong>AgriSense</strong> &mdash; Designed by <strong>Abdullah P I</strong> | Built during the Innolift Ventures Internship
-            </p>
+    <footer class="footer-centered">
+        <div class="footer-content-centered">
+            <a class="logo" href="index.html">
+                <i class="fa-solid fa-seedling"></i> AgriSense
+            </a>
+            <p class="footer-tagline">Smart soil-to-crop advisory platform powered by machine learning.</p>
+            <p class="footer-copyright">&copy; 2026 AgriSense Precision Advisory. All rights reserved.</p>
         </div>
     </footer>
 
 </body>
-
 </html>

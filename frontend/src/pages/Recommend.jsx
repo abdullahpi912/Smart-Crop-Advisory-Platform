@@ -1,0 +1,317 @@
+import React, { useState } from 'react';
+import PresetSwitcher from '../components/PresetSwitcher';
+import ResultCard from '../components/ResultCard';
+import { calculateRecommendation } from '../lib/recommendationEngine';
+
+export default function Recommend({ showToast }) {
+  const [mode, setMode] = useState('crop');
+  const [preset, setPreset] = useState('custom');
+
+  const [formData, setFormData] = useState({
+    nitrogen: 90,
+    phosphorus: 42,
+    potassium: 43,
+    temperature: 26.5,
+    humidity: 80,
+    ph: 6.5,
+    rainfall: 202
+  });
+
+  const [result, setResult] = useState(null);
+  const [isLoading, setIsLoading] = useState(false);
+
+  // Preset data mapping
+  const presetProfiles = {
+    custom: { nitrogen: 90, phosphorus: 42, potassium: 43, temperature: 26.5, humidity: 80, ph: 6.5, rainfall: 202 },
+    rice: { nitrogen: 90, phosphorus: 42, potassium: 43, temperature: 26.5, humidity: 82, ph: 6.5, rainfall: 220 },
+    coffee: { nitrogen: 100, phosphorus: 20, potassium: 30, temperature: 25.0, humidity: 75, ph: 5.8, rainfall: 1600 },
+    cotton: { nitrogen: 120, phosphorus: 45, potassium: 40, temperature: 30.5, humidity: 55, ph: 7.2, rainfall: 75 },
+    chickpea: { nitrogen: 20, phosphorus: 60, potassium: 80, temperature: 20.0, humidity: 45, ph: 7.5, rainfall: 40 }
+  };
+
+  const handleSelectPreset = (presetId) => {
+    setPreset(presetId);
+    if (presetProfiles[presetId]) {
+      setFormData(presetProfiles[presetId]);
+      showToast?.(`Loaded ${presetId.toUpperCase()} preset values`, 'info');
+    }
+  };
+
+  const handleChange = (e) => {
+    const { name, value } = e.target;
+    setFormData((prev) => ({ ...prev, [name]: value }));
+    setPreset('custom');
+  };
+
+  const handleSubmit = (e) => {
+    e.preventDefault();
+    setIsLoading(true);
+    setResult(null);
+
+    setTimeout(() => {
+      const computed = calculateRecommendation({
+        ...formData,
+        mode,
+        preset
+      });
+      setResult(computed);
+      setIsLoading(false);
+
+      // Save to localStorage
+      try {
+        const history = JSON.parse(localStorage.getItem('agrisense_history') || '[]');
+        localStorage.setItem('agrisense_history', JSON.stringify([computed, ...history]));
+        showToast?.('Recommendation calculated and saved to farm history log!', 'success');
+      } catch (err) {
+        console.error('Failed to write history log', err);
+      }
+    }, 600);
+  };
+
+  return (
+    <main>
+      <section id="recommend">
+        <div className="section-header">
+          <span className="section-tag"><i className="fa-solid fa-calculator"></i> Field Advisory Simulator</span>
+          <h2 className="section-title">Get Your Recommendation</h2>
+          <p className="section-subtitle">
+            Select advisory mode (Crop Selection vs. Fertilizer Dosage), enter field test values below or choose a preset profile to inspect ML outputs.
+          </p>
+        </div>
+
+        {/* Mode Switcher */}
+        <div className="mode-switcher-container" style={{ display: 'flex', gap: '1rem', justifyContent: 'center', marginBottom: '2rem' }}>
+          <button
+            type="button"
+            className={`mode-tab-btn ${mode === 'crop' ? 'active' : ''}`}
+            onClick={() => setMode('crop')}
+            style={{
+              flex: 1,
+              maxWidth: '320px',
+              padding: '1rem',
+              borderRadius: 'var(--radius-sm)',
+              border: mode === 'crop' ? '2px solid var(--primary-light)' : '1px solid var(--border-subtle)',
+              backgroundColor: mode === 'crop' ? 'var(--primary-dark)' : 'var(--surface-white)',
+              color: mode === 'crop' ? 'var(--accent-gold)' : 'var(--text-dark)',
+              fontSize: '1rem',
+              fontWeight: 700,
+              cursor: 'pointer',
+              display: 'flex',
+              alignItems: 'center',
+              justifyContent: 'center',
+              gap: '0.6rem',
+              transition: 'var(--transition)'
+            }}
+          >
+            <i className="fa-solid fa-wheat-awn"></i> 1. Crop Selection Advisory
+          </button>
+
+          <button
+            type="button"
+            className={`mode-tab-btn ${mode === 'fertilizer' ? 'active' : ''}`}
+            onClick={() => setMode('fertilizer')}
+            style={{
+              flex: 1,
+              maxWidth: '320px',
+              padding: '1rem',
+              borderRadius: 'var(--radius-sm)',
+              border: mode === 'fertilizer' ? '2px solid var(--accent-terracotta)' : '1px solid var(--border-subtle)',
+              backgroundColor: mode === 'fertilizer' ? 'var(--accent-terracotta)' : 'var(--surface-white)',
+              color: mode === 'fertilizer' ? '#fff' : 'var(--text-dark)',
+              fontSize: '1rem',
+              fontWeight: 700,
+              cursor: 'pointer',
+              display: 'flex',
+              alignItems: 'center',
+              justifyContent: 'center',
+              gap: '0.6rem',
+              transition: 'var(--transition)'
+            }}
+          >
+            <i className="fa-solid fa-flask-vial"></i> 2. Fertilizer Dosage Advisory
+          </button>
+        </div>
+
+        {/* Preset Switcher Component */}
+        <PresetSwitcher activePreset={preset} onSelectPreset={handleSelectPreset} />
+
+        <div className="recommend-grid" style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(320px, 1fr))', gap: '2rem', marginTop: '2rem' }}>
+          
+          {/* Soil Parameter Input Form */}
+          <form className="form-card" onSubmit={handleSubmit}>
+            <h3 style={{ marginBottom: '1.2rem', color: 'var(--primary-dark)', fontFamily: 'var(--font-heading)' }}>
+              <i className="fa-solid fa-vial"></i> Enter Field Parameters
+            </h3>
+
+            <div className="form-grid">
+              <div className="form-field">
+                <label htmlFor="nitrogen">
+                  Nitrogen (N) <span className="unit">kg/ha</span>
+                </label>
+                <div className="input-wrapper">
+                  <input
+                    type="number"
+                    id="nitrogen"
+                    name="nitrogen"
+                    placeholder="e.g. 90"
+                    step="any"
+                    required
+                    className="input-control"
+                    value={formData.nitrogen}
+                    onChange={handleChange}
+                  />
+                  <i className="fa-solid fa-vial"></i>
+                </div>
+                <span className="field-hint">Essential for vegetative leaf growth</span>
+              </div>
+
+              <div className="form-field">
+                <label htmlFor="phosphorus">
+                  Phosphorus (P) <span className="unit">kg/ha</span>
+                </label>
+                <div className="input-wrapper">
+                  <input
+                    type="number"
+                    id="phosphorus"
+                    name="phosphorus"
+                    placeholder="e.g. 42"
+                    step="any"
+                    required
+                    className="input-control"
+                    value={formData.phosphorus}
+                    onChange={handleChange}
+                  />
+                  <i className="fa-solid fa-vial"></i>
+                </div>
+                <span className="field-hint">Supports root development &amp; flowering</span>
+              </div>
+
+              <div className="form-field">
+                <label htmlFor="potassium">
+                  Potassium (K) <span className="unit">kg/ha</span>
+                </label>
+                <div className="input-wrapper">
+                  <input
+                    type="number"
+                    id="potassium"
+                    name="potassium"
+                    placeholder="e.g. 43"
+                    step="any"
+                    required
+                    className="input-control"
+                    value={formData.potassium}
+                    onChange={handleChange}
+                  />
+                  <i className="fa-solid fa-vial"></i>
+                </div>
+                <span className="field-hint">Improves stress &amp; drought resistance</span>
+              </div>
+
+              <div className="form-field">
+                <label htmlFor="temperature">
+                  Temperature <span className="unit">&deg;C</span>
+                </label>
+                <div className="input-wrapper">
+                  <input
+                    type="number"
+                    id="temperature"
+                    name="temperature"
+                    placeholder="e.g. 26.5"
+                    step="any"
+                    required
+                    className="input-control"
+                    value={formData.temperature}
+                    onChange={handleChange}
+                  />
+                  <i className="fa-solid fa-temperature-half"></i>
+                </div>
+                <span className="field-hint">Average regional season temp</span>
+              </div>
+
+              <div className="form-field">
+                <label htmlFor="humidity">
+                  Relative Humidity <span className="unit">%</span>
+                </label>
+                <div className="input-wrapper">
+                  <input
+                    type="number"
+                    id="humidity"
+                    name="humidity"
+                    placeholder="e.g. 80"
+                    step="any"
+                    required
+                    className="input-control"
+                    value={formData.humidity}
+                    onChange={handleChange}
+                  />
+                  <i className="fa-solid fa-droplet"></i>
+                </div>
+                <span className="field-hint">Atmospheric moisture content</span>
+              </div>
+
+              <div className="form-field">
+                <label htmlFor="ph">
+                  Soil pH Level <span className="unit">0-14</span>
+                </label>
+                <div className="input-wrapper">
+                  <input
+                    type="number"
+                    id="ph"
+                    name="ph"
+                    placeholder="e.g. 6.5"
+                    step="0.1"
+                    min="0"
+                    max="14"
+                    required
+                    className="input-control"
+                    value={formData.ph}
+                    onChange={handleChange}
+                  />
+                  <i className="fa-solid fa-flask"></i>
+                </div>
+                <span className="field-hint">Acidity / Alkalinity measure</span>
+              </div>
+
+              <div className="form-field form-field-full">
+                <label htmlFor="rainfall">
+                  Seasonal Rainfall <span className="unit">mm</span>
+                </label>
+                <div className="input-wrapper">
+                  <input
+                    type="number"
+                    id="rainfall"
+                    name="rainfall"
+                    placeholder="e.g. 202"
+                    step="any"
+                    required
+                    className="input-control"
+                    value={formData.rainfall}
+                    onChange={handleChange}
+                  />
+                  <i className="fa-solid fa-cloud-showers-heavy"></i>
+                </div>
+                <span className="field-hint">Total annual or seasonal precipitation</span>
+              </div>
+            </div>
+
+            <div className="form-actions" style={{ marginTop: '1.5rem' }}>
+              <button type="submit" className="btn btn-terracotta btn-block" disabled={isLoading}>
+                {isLoading ? (
+                  <span><i className="fa-solid fa-spinner fa-spin"></i> Calculating...</span>
+                ) : (
+                  <span><i className="fa-solid fa-wand-magic-sparkles"></i> Calculate {mode === 'crop' ? 'Crop' : 'Fertilizer'} Recommendation</span>
+                )}
+              </button>
+            </div>
+          </form>
+
+          {/* Results Output Component */}
+          <div>
+            <ResultCard result={result} isLoading={isLoading} />
+          </div>
+
+        </div>
+      </section>
+    </main>
+  );
+}
