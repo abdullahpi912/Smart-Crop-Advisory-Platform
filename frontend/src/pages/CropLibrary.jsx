@@ -166,11 +166,11 @@ export default function CropLibrary() {
                 onClick={() => setSelectedCategory(cat.id)}
                 style={{
                   cursor: 'pointer',
-                  border: selectedCategory === cat.id ? '2px solid var(--primary-light)' : '1px solid var(--border-subtle)',
-                  backgroundColor: selectedCategory === cat.id ? 'var(--primary-dark)' : 'var(--surface-white)',
-                  color: selectedCategory === cat.id ? 'var(--accent-gold)' : 'var(--text-dark)',
+                  border: selectedCategory === cat.id ? '2px solid var(--accent-terracotta)' : '1px solid var(--border-subtle)',
+                  backgroundColor: selectedCategory === cat.id ? 'var(--accent-terracotta)' : 'var(--surface-white)',
+                  color: selectedCategory === cat.id ? '#ffffff' : 'var(--text-dark)',
                   fontWeight: selectedCategory === cat.id ? 700 : 500,
-                  padding: '0.5rem 1rem',
+                  padding: '0.55rem 1.15rem',
                   borderRadius: 'var(--radius-sm)',
                   transition: 'var(--transition)'
                 }}

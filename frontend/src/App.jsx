@@ -32,13 +32,21 @@ export default function App() {
       <div style={{ flex: 1 }}>
         <Routes>
           <Route path="/" element={<Home />} />
+          <Route path="/index.html" element={<Home />} />
           <Route path="/recommend" element={<Recommend showToast={showToast} />} />
+          <Route path="/recommend.html" element={<Recommend showToast={showToast} />} />
           <Route path="/crops" element={<CropLibrary />} />
+          <Route path="/crops.html" element={<CropLibrary />} />
           <Route path="/dashboard" element={<Dashboard showToast={showToast} />} />
+          <Route path="/dashboard.html" element={<Dashboard showToast={showToast} />} />
           <Route path="/about" element={<About />} />
+          <Route path="/about.html" element={<About />} />
           <Route path="/contact" element={<Contact showToast={showToast} />} />
+          <Route path="/contact.html" element={<Contact showToast={showToast} />} />
           <Route path="/login" element={<Login showToast={showToast} />} />
+          <Route path="/login.html" element={<Login showToast={showToast} />} />
           <Route path="/register" element={<Register showToast={showToast} />} />
+          <Route path="/register.html" element={<Register showToast={showToast} />} />
           <Route path="*" element={<NotFound />} />
         </Routes>
       </div>

@@ -89,7 +89,7 @@ export default function About() {
           Test your field soil parameters now and receive real-time crop recommendations.
         </p>
         <Link to="/recommend" className="btn btn-terracotta">
-          <i className="fa-solid fa-wand-magic-sparkles"></i> Launch Advisory Simulator
+          <i className="fa-solid fa-wheat-awn"></i> Launch Advisory Simulator
         </Link>
       </section>
     </main>
