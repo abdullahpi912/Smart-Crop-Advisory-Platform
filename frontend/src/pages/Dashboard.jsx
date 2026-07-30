@@ -117,7 +117,7 @@ export default function Dashboard({ showToast }) {
 
           <div className="widget-card stat-widget">
             <div className="stat-icon" style={{ background: 'rgba(59, 110, 71, 0.15)', color: 'var(--primary-light)' }}>
-              <i className="fa-solid fa-wand-magic-sparkles"></i>
+              <i className="fa-solid fa-wheat-awn"></i>
             </div>
             <div className="stat-details">
               <span className="stat-number">{totalRuns}</span>

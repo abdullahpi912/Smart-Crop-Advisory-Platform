@@ -59,7 +59,7 @@ export default function Home() {
 
           <div className="hero-buttons">
             <Link to="/recommend" className="btn btn-terracotta">
-              <i className="fa-solid fa-wand-magic-sparkles"></i> Get Recommendation
+              <i className="fa-solid fa-wheat-awn"></i> Get Recommendation
             </Link>
             <Link to="/dashboard" className="btn-outline">
               <i className="fa-solid fa-clock-rotate-left"></i> View History Log
@@ -216,9 +216,11 @@ export default function Home() {
           <h2 className="section-title">Frequently Asked Questions</h2>
         </div>
 
-        <div className="faq-accordion">
+        <div className="faq-accordion" role="region" aria-label="Frequently Asked Questions Accordion">
           {faqs.map((faq, idx) => {
             const isOpen = activeFaq === idx;
+            const btnId = `faq-btn-${idx}`;
+            const panelId = `faq-panel-${idx}`;
             return (
               <div
                 key={idx}
@@ -226,13 +228,17 @@ export default function Home() {
                 style={{
                   background: 'var(--surface-white)',
                   marginBottom: '1rem',
-                  borderRadius: 'var(--radius-sm)',
+                  borderRadius: 'var(--radius-md)',
                   border: '1px solid var(--border-subtle)',
+                  boxShadow: 'var(--shadow-sm)',
                   overflow: 'hidden'
                 }}
               >
                 <button
+                  id={btnId}
                   type="button"
+                  aria-expanded={isOpen}
+                  aria-controls={panelId}
                   onClick={() => toggleFaq(idx)}
                   style={{
                     width: '100%',
@@ -250,13 +256,31 @@ export default function Home() {
                   }}
                 >
                   <span>{faq.q}</span>
-                  <i className={`fa-solid ${isOpen ? 'fa-chevron-up' : 'fa-chevron-down'}`} style={{ color: 'var(--accent-terracotta)' }}></i>
+                  <i
+                    className="fa-solid fa-chevron-down"
+                    style={{
+                      color: 'var(--accent-terracotta)',
+                      transform: isOpen ? 'rotate(180deg)' : 'rotate(0deg)',
+                      transition: 'transform 0.3s ease'
+                    }}
+                  ></i>
                 </button>
-                {isOpen && (
-                  <div style={{ padding: '0 1.5rem 1.5rem 1.5rem', color: 'var(--text-body)', lineHeight: 1.7 }}>
-                    {faq.a}
-                  </div>
-                )}
+                <div
+                  id={panelId}
+                  role="region"
+                  aria-labelledby={btnId}
+                  hidden={!isOpen}
+                  style={{
+                    padding: isOpen ? '0 1.5rem 1.5rem 1.5rem' : '0 1.5rem',
+                    color: 'var(--text-body)',
+                    lineHeight: 1.7,
+                    maxHeight: isOpen ? '300px' : '0px',
+                    opacity: isOpen ? 1 : 0,
+                    transition: 'all 0.3s ease-out'
+                  }}
+                >
+                  {faq.a}
+                </div>
               </div>
             );
           })}

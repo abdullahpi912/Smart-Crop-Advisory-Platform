@@ -299,7 +299,7 @@ export default function Recommend({ showToast }) {
                 {isLoading ? (
                   <span><i className="fa-solid fa-spinner fa-spin"></i> Calculating...</span>
                 ) : (
-                  <span><i className="fa-solid fa-wand-magic-sparkles"></i> Calculate {mode === 'crop' ? 'Crop' : 'Fertilizer'} Recommendation</span>
+                  <span><i className="fa-solid fa-wheat-awn"></i> Calculate {mode === 'crop' ? 'Crop' : 'Fertilizer'} Recommendation</span>
                 )}
               </button>
             </div>

@@ -1,0 +1,346 @@
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Register Farm Profile — AgriSense</title>
+    <meta name="description" content="Create a new AgriSense farm profile account to save soil test history, track crop yield recommendations, and configure custom field parameters.">
+
+    <link rel="stylesheet" href="css/style.css">
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.2/css/all.min.css">
+    <script src="js/register.js" defer></script>
+</head>
+
+<body>
+
+    <header>
+        <nav class="navbar">
+            <a class="logo" href="index.html">
+                <i class="fa-solid fa-seedling"></i>
+                AgriSense
+            </a>
+
+            <input type="checkbox" id="navToggle" class="nav-toggle-checkbox">
+            <label class="nav-toggle" for="navToggle" aria-label="Toggle navigation menu">
+                <span></span>
+                <span></span>
+                <span></span>
+            </label>
+
+            <ul class="nav-links">
+                <li><a href="index.html">Home</a></li>
+                <li><a href="recommend.html">Get Recommendation</a></li>
+                <li><a href="crops.html">Crop Library</a></li>
+                <li><a href="dashboard.html">History &amp; Dashboard</a></li>
+                <li><a href="about.html">About</a></li>
+                <li><a href="contact.html">Contact</a></li>
+                <li><a class="nav-cta" href="login.html"><i class="fa-solid fa-right-to-bracket"></i> Sign In</a></li>
+            </ul>
+        </nav>
+    </header>
+
+    <main style="padding: 2.5rem 1.5rem; min-height: 88vh; background-image: linear-gradient(rgba(242, 239, 230, 0.72), rgba(242, 239, 230, 0.82)), url('./Farmer_image/71898-agriculture-powerpoint-templates-01.png'); background-size: cover; background-position: center center; background-repeat: no-repeat; background-attachment: fixed;">
+        <div class="register-split-wrapper">
+            <div class="register-form-column">
+                <div class="multi-step-form-card">
+                    <!-- Header -->
+                    <div class="multi-step-header">
+                        <h2>Farm Registration</h2>
+                    </div>
+
+                    <!-- Stepper Tabs Bar -->
+                    <div class="stepper-tabs" role="tablist">
+                        <button type="button" class="stepper-tab active" data-step="1">
+                            <span class="step-icon-circle">1</span>
+                            <span>Personal Details</span>
+                        </button>
+                        <button type="button" class="stepper-tab" data-step="2">
+                            <span class="step-icon-circle">2</span>
+                            <span>Farm &amp; Plot Details</span>
+                        </button>
+                        <button type="button" class="stepper-tab" data-step="3">
+                            <span class="step-icon-circle">3</span>
+                            <span>Soil Chemistry (NPK &amp; pH)</span>
+                        </button>
+                        <button type="button" class="stepper-tab" data-step="4">
+                            <span class="step-icon-circle">4</span>
+                            <span>Security &amp; Scope</span>
+                        </button>
+                    </div>
+
+                    <!-- Live Alert Banners -->
+                    <div id="formErrorSummary" class="form-error-summary" aria-live="assertive" role="alert" tabindex="-1" hidden></div>
+                    <div id="formSuccessSummary" class="form-success-summary" aria-live="polite" role="status" tabindex="-1" style="display: none; margin-bottom: 1.5rem;">
+                        <i class="fa-solid fa-circle-check"></i>
+                        <div>
+                            <strong>Farm Profile Created Successfully!</strong>
+                            <p>Your agricultural plot settings have been stored. Loading dashboard...</p>
+                        </div>
+                    </div>
+
+                    <form class="auth-form" action="dashboard.html" method="get" novalidate>
+                        <!-- STEP 1: Personal Details -->
+                        <div id="step-1" class="form-step-panel">
+                            <div class="step-section-title">Profile Information</div>
+                            <div class="reference-form-grid">
+                                <div class="ref-field">
+                                    <label for="fullname">Full Name <span style="color: #d9381e;">*</span></label>
+                                    <input type="text" id="fullname" name="fullname" placeholder="e.g. Abdullah P I" required autocomplete="name" />
+                                    <span id="fullname-error" role="alert" style="font-size: 0.78rem; color: #d9381e; margin-top: 0.25rem; display: none;"></span>
+                                </div>
+
+                                <div class="ref-field">
+                                    <label for="email">Email ID <span style="color: #d9381e;">*</span></label>
+                                    <input type="email" id="email" name="email" placeholder="e.g. farmer@example.com" required autocomplete="email" />
+                                    <span id="email-error" role="alert" style="font-size: 0.78rem; color: #d9381e; margin-top: 0.25rem; display: none;"></span>
+                                </div>
+
+                                <div class="ref-field">
+                                    <label for="phone">Mobile Number <span style="color: #d9381e;">*</span></label>
+                                    <div style="display: flex; gap: 0.4rem;">
+                                        <select id="country-code" name="countryCode" style="width: 80px; flex-shrink: 0; padding: 0 0.4rem; font-weight: 700;">
+                                            <option value="+91">🇮🇳 +91</option>
+                                        </select>
+                                        <input type="tel" id="phone" name="phone" placeholder="88077 95366" required style="flex: 1;" />
+                                    </div>
+                                    <span id="phone-error" role="alert" style="font-size: 0.78rem; color: #d9381e; margin-top: 0.25rem; display: none;"></span>
+                                </div>
+
+                                <div class="ref-field">
+                                    <label for="dob">Date of Birth <span style="color: #d9381e;">*</span></label>
+                                    <input type="date" id="dob" name="dob" required />
+                                    <span id="dob-error" role="alert" style="font-size: 0.78rem; color: #d9381e; margin-top: 0.25rem; display: none;"></span>
+                                </div>
+
+                                <div class="ref-field">
+                                    <label for="gender">Gender <span style="color: #d9381e;">*</span></label>
+                                    <select id="gender" name="gender" required>
+                                        <option value="" disabled selected>Select Gender</option>
+                                        <option value="male">Male</option>
+                                        <option value="female">Female</option>
+                                        <option value="other">Other</option>
+                                    </select>
+                                    <span id="gender-error" role="alert" style="font-size: 0.78rem; color: #d9381e; margin-top: 0.25rem; display: none;"></span>
+                                </div>
+                            </div>
+                        </div>
+
+                        <!-- STEP 2: Farm & Plot Details -->
+                        <div id="step-2" class="form-step-panel" style="display: none;">
+                            <div class="step-section-title">Farm &amp; Field Location</div>
+                            <div class="reference-form-grid">
+                                <div class="ref-field">
+                                    <label for="plotName">Plot Name <span style="color: #d9381e;">*</span></label>
+                                    <input type="text" id="plotName" name="plotName" value="Green Valley Plot A" required />
+                                </div>
+
+                                <div class="ref-field">
+                                    <label for="region">District / Location <span style="color: #d9381e;">*</span></label>
+                                    <input type="text" id="region" name="region" placeholder="e.g. Palakkad" required />
+                                    <span id="region-error" role="alert" style="font-size: 0.78rem; color: #d9381e; margin-top: 0.25rem; display: none;"></span>
+                                </div>
+
+                                <div class="ref-field">
+                                    <label for="stateName">State <span style="color: #d9381e;">*</span></label>
+                                    <input type="text" id="stateName" name="stateName" value="Kerala" required />
+                                </div>
+
+                                <div class="ref-field">
+                                    <label for="pincode">PIN Code</label>
+                                    <input type="text" id="pincode" name="pincode" placeholder="678001" maxlength="6" />
+                                </div>
+
+                                <div class="ref-field">
+                                    <label>Land Ownership</label>
+                                    <div class="radio-capsule-group">
+                                        <label class="radio-capsule-option">
+                                            <input type="radio" name="ownership" value="Owned" checked />
+                                            <span>Owned</span>
+                                        </label>
+                                        <label class="radio-capsule-option">
+                                            <input type="radio" name="ownership" value="Rental" />
+                                            <span>Rental / Leased</span>
+                                        </label>
+                                    </div>
+                                </div>
+
+                                <div class="ref-field">
+                                    <label for="soil-type">Primary Soil Type <span style="color: #d9381e;">*</span></label>
+                                    <select id="soil-type" name="soilType" required>
+                                        <option value="loamy" selected>Loamy Soil</option>
+                                        <option value="clayey">Clayey Soil</option>
+                                        <option value="sandy">Sandy Soil</option>
+                                        <option value="black">Black Cotton Soil</option>
+                                        <option value="alluvial">Alluvial Soil</option>
+                                    </select>
+                                </div>
+                            </div>
+                        </div>
+
+                        <!-- STEP 3: Soil Chemistry -->
+                        <div id="step-3" class="form-step-panel" style="display: none;">
+                            <div class="step-section-title">Baseline Soil Chemistry &amp; Reports</div>
+                            <div class="reference-form-grid">
+                                <div class="ref-field">
+                                    <label for="nitrogen">Nitrogen (N) % <span style="color: #d9381e;">*</span></label>
+                                    <input type="number" id="nitrogen" name="nitrogen" min="0" max="100" value="90" required />
+                                </div>
+
+                                <div class="ref-field">
+                                    <label for="phosphorus">Phosphorus (P) % <span style="color: #d9381e;">*</span></label>
+                                    <input type="number" id="phosphorus" name="phosphorus" min="0" max="100" value="42" required />
+                                </div>
+
+                                <div class="ref-field">
+                                    <label for="potassium">Potassium (K) % <span style="color: #d9381e;">*</span></label>
+                                    <input type="number" id="potassium" name="potassium" min="0" max="100" value="43" required />
+                                </div>
+
+                                <div class="ref-field">
+                                    <label for="ph">Soil pH Level <span style="color: #d9381e;">*</span></label>
+                                    <input type="number" id="ph" name="ph" step="0.1" min="0" max="14" value="6.5" required />
+                                </div>
+
+                                <div class="ref-field full-span">
+                                    <label>Soil Test Report Document (Optional)</label>
+                                    <div class="file-upload-box">
+                                        <label class="file-upload-btn">
+                                            Choose File
+                                            <input type="file" id="soilReport" name="soilReport" style="display: none;" />
+                                        </label>
+                                        <span id="file-upload-filename" class="file-upload-text">No file chosen.</span>
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+
+                        <!-- STEP 4: Security & Scope -->
+                        <div id="step-4" class="form-step-panel" style="display: none;">
+                            <div class="step-section-title">Account Credentials &amp; Agreement</div>
+                            <div class="reference-form-grid">
+                                <div class="ref-field">
+                                    <label for="password">Password <span style="color: #d9381e;">*</span></label>
+                                    <input type="password" id="password" name="password" placeholder="••••••••" required autocomplete="new-password" />
+                                    <span id="password-error" role="alert" style="font-size: 0.78rem; color: #d9381e; margin-top: 0.25rem; display: none;"></span>
+                                </div>
+
+                                <div class="ref-field">
+                                    <label for="confirm_password">Confirm Password <span style="color: #d9381e;">*</span></label>
+                                    <input type="password" id="confirm_password" name="confirmPassword" placeholder="••••••••" required autocomplete="new-password" />
+                                    <span id="confirm-password-error" role="alert" style="font-size: 0.78rem; color: #d9381e; margin-top: 0.25rem; display: none;"></span>
+                                </div>
+
+                                <div class="ref-field full-span" style="margin-top: 0.5rem;">
+                                    <label style="display: flex; align-items: center; gap: 0.5rem; cursor: pointer;">
+                                        <input type="checkbox" id="terms-checkbox" name="terms" checked style="accent-color: #3b6e47; width: 16px; height: 16px;" />
+                                        <span>I agree to AgriSense Farm Advisory Terms of Service and Privacy Policy <span style="color: #d9381e;">*</span></span>
+                                    </label>
+                                    <span id="terms-error" role="alert" style="font-size: 0.78rem; color: #d9381e; margin-top: 0.25rem; display: none;"></span>
+                                </div>
+                            </div>
+                        </div>
+
+                        <!-- Subtext Note -->
+                        <div class="registration-disclaimer-text">
+                            In order to process your registration, we ask you to provide the following information. Please note that all fields marked with an asterisk (*) are required.
+                        </div>
+
+                        <!-- Footer Action Buttons -->
+                        <div class="ref-form-footer">
+                            <button type="button" id="prev-btn" class="btn-ref-cancel" style="display: none;">
+                                PREVIOUS
+                            </button>
+                            <button type="button" id="cancel-btn" class="btn-ref-cancel" onclick="window.location.href='index.html'">
+                                CANCEL
+                            </button>
+                            <button type="button" id="next-btn" class="btn-ref-continue">
+                                CONTINUE <i class="fa-solid fa-arrow-right"></i>
+                            </button>
+                            <button type="submit" id="submit-btn" class="btn-ref-continue" style="display: none;">
+                                REGISTER FARM <i class="fa-solid fa-check"></i>
+                            </button>
+                        </div>
+                    </form>
+                </div>
+            </div>
+
+            <!-- Right Column: Registration Guide & Roadmap Panel -->
+            <aside class="register-info-panel">
+                <div>
+                    <span class="info-panel-badge">
+                        <i class="fa-solid fa-seedling"></i> AgriSense Platform Guide
+                    </span>
+                    <h3 class="info-panel-title" style="margin-top: 0.85rem;">Registration Procedure</h3>
+                    <p class="info-panel-subtitle">Follow these 4 simple steps to set up your farm advisory profile.</p>
+                </div>
+
+                <div class="procedure-roadmap">
+                    <div class="roadmap-item active" data-roadmap-step="1">
+                        <div class="roadmap-num">1</div>
+                        <div class="roadmap-text">
+                            <h4>Personal Details</h4>
+                            <p>Full name, valid email address, mobile number &amp; age verification.</p>
+                        </div>
+                    </div>
+                    <div class="roadmap-item" data-roadmap-step="2">
+                        <div class="roadmap-num">2</div>
+                        <div class="roadmap-text">
+                            <h4>Farm &amp; Field Location</h4>
+                            <p>Plot name, district/region, state, ownership &amp; primary soil category.</p>
+                        </div>
+                    </div>
+                    <div class="roadmap-item" data-roadmap-step="3">
+                        <div class="roadmap-num">3</div>
+                        <div class="roadmap-text">
+                            <h4>Soil Chemistry (NPK &amp; pH)</h4>
+                            <p>Baseline Nitrogen, Phosphorus, Potassium ratios &amp; soil pH test levels.</p>
+                        </div>
+                    </div>
+                    <div class="roadmap-item" data-roadmap-step="4">
+                        <div class="roadmap-num">4</div>
+                        <div class="roadmap-text">
+                            <h4>Security &amp; Advisory Setup</h4>
+                            <p>Set account password, accept privacy terms &amp; activate ML recommendations.</p>
+                        </div>
+                    </div>
+                </div>
+
+                <div class="info-features-grid">
+                    <div class="info-feature-box">
+                        <strong>99.2%</strong>
+                        <span>ML Accuracy</span>
+                    </div>
+                    <div class="info-feature-box">
+                        <strong>22</strong>
+                        <span>Crop Models</span>
+                    </div>
+                    <div class="info-feature-box">
+                        <strong>100%</strong>
+                        <span>Confidential</span>
+                    </div>
+                </div>
+
+                <div class="trust-footer-card">
+                    <i class="fa-solid fa-shield-halved"></i>
+                    <div>
+                        <strong style="display: block; color: #ffffff; font-size: 0.86rem;">Data Privacy Guaranteed</strong>
+                        <span>Your soil and farm location data is stored securely for your personal ML advisory reports.</span>
+                    </div>
+                </div>
+            </aside>
+        </div>
+    </main>
+
+    <footer class="footer-centered">
+        <div class="footer-content-centered">
+            <a class="logo" href="index.html">
+                <i class="fa-solid fa-seedling"></i> AgriSense
+            </a>
+            <p class="footer-tagline">Smart soil-to-crop advisory platform powered by machine learning.</p>
+            <p class="footer-copyright">&copy; 2026 AgriSense Precision Advisory. All rights reserved.</p>
+        </div>
+    </footer>
+
+</body>
+</html>
