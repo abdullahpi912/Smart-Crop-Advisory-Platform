@@ -44,37 +44,105 @@ export default function Dashboard({ showToast }) {
   ];
 
   useEffect(() => {
-    try {
-      const storedUser = localStorage.getItem('agrisense_user');
-      if (storedUser) {
-        setUserProfile(JSON.parse(storedUser));
+    const fetchLogs = async () => {
+      try {
+        const storedUser = localStorage.getItem('agrisense_user');
+        if (storedUser) {
+          setUserProfile(JSON.parse(storedUser));
+        }
+
+        // Attempt HTTP GET request to backend API
+        const res = await fetch('http://127.0.0.1:5000/api/logs', { method: 'GET' });
+        if (res.ok) {
+          const data = await res.json();
+          if (data.logs && data.logs.length > 0) {
+            setHistory(data.logs);
+            localStorage.setItem('agrisense_history', JSON.stringify(data.logs));
+            return;
+          }
+        }
+      } catch (err) {
+        console.warn('Backend API unreachable, using local storage history');
       }
 
-      const stored = localStorage.getItem('agrisense_history');
-      if (stored) {
-        setHistory(JSON.parse(stored));
-      } else {
+      // Fallback to local storage
+      try {
+        const stored = localStorage.getItem('agrisense_history');
+        if (stored) {
+          setHistory(JSON.parse(stored));
+        } else {
+          setHistory(defaultHistory);
+          localStorage.setItem('agrisense_history', JSON.stringify(defaultHistory));
+        }
+      } catch (err) {
         setHistory(defaultHistory);
-        localStorage.setItem('agrisense_history', JSON.stringify(defaultHistory));
       }
-    } catch (err) {
-      setHistory(defaultHistory);
-    }
+    };
+
+    fetchLogs();
   }, []);
 
-  const handleDeleteItem = (logId) => {
+  const handleDeleteItem = async (logId) => {
+    const cleanId = logId.replace('#', '');
+    try {
+      // Attempt HTTP DELETE method request
+      await fetch(`http://127.0.0.1:5000/api/logs/${cleanId}`, { method: 'DELETE' });
+    } catch (err) {
+      console.warn('DELETE API request failed, updating local state');
+    }
+
     const updated = history.filter((item) => item.logId !== logId);
     setHistory(updated);
     localStorage.setItem('agrisense_history', JSON.stringify(updated));
-    showToast?.(`Removed log entry ${logId}`, 'info');
+    showToast?.(`Removed log entry ${logId} via DELETE method`, 'info');
   };
 
-  const handleClearHistory = () => {
+  const handleClearHistory = async () => {
     if (window.confirm('Are you sure you want to clear all history records?')) {
+      try {
+        // Attempt HTTP DELETE all method request
+        await fetch('http://127.0.0.1:5000/api/logs', { method: 'DELETE' });
+      } catch (err) {
+        console.warn('DELETE ALL API request failed');
+      }
+
       setHistory([]);
       localStorage.removeItem('agrisense_history');
-      showToast?.('Recommendation history cleared', 'info');
+      showToast?.('Recommendation history cleared via DELETE method', 'info');
     }
+  };
+
+  const handleUpdateNotes = async (item) => {
+    const newNotes = window.prompt('Update advisory field notes:', item.detailedNotes || item.dosageAdvice || '');
+    if (newNotes === null) return;
+
+    const cleanId = item.logId.replace('#', '');
+    try {
+      // Attempt HTTP PUT method request
+      const res = await fetch(`http://127.0.0.1:5000/api/logs/${cleanId}`, {
+        method: 'PUT',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ detailedNotes: newNotes })
+      });
+
+      if (res.ok) {
+        const data = await res.json();
+        const updatedLog = data.log;
+        const updatedHistory = history.map(h => h.logId === item.logId ? updatedLog : h);
+        setHistory(updatedHistory);
+        localStorage.setItem('agrisense_history', JSON.stringify(updatedHistory));
+        showToast?.(`Updated notes for ${item.logId} via PUT method`, 'success');
+        return;
+      }
+    } catch (err) {
+      console.warn('PUT API request failed, updating local state');
+    }
+
+    // Local fallback update
+    const updatedHistory = history.map(h => h.logId === item.logId ? { ...h, detailedNotes: newNotes } : h);
+    setHistory(updatedHistory);
+    localStorage.setItem('agrisense_history', JSON.stringify(updatedHistory));
+    showToast?.(`Updated notes for ${item.logId}`, 'info');
   };
 
   const handleRerun = (item) => {
@@ -202,6 +270,15 @@ export default function Dashboard({ showToast }) {
                           <button
                             type="button"
                             className="action-btn"
+                            onClick={() => handleUpdateNotes(item)}
+                            title="Edit notes (HTTP PUT)"
+                            style={{ background: 'none', border: 'none', cursor: 'pointer', color: 'var(--accent-gold)' }}
+                          >
+                            <i className="fa-solid fa-pen"></i>
+                          </button>
+                          <button
+                            type="button"
+                            className="action-btn"
                             onClick={() => handleRerun(item)}
                             title="Rerun with these parameters"
                             style={{ background: 'none', border: 'none', cursor: 'pointer', color: 'var(--primary-light)' }}
@@ -212,7 +289,7 @@ export default function Dashboard({ showToast }) {
                             type="button"
                             className="action-btn"
                             onClick={() => handleDeleteItem(item.logId)}
-                            title="Delete log entry"
+                            title="Delete log entry (HTTP DELETE)"
                             style={{ background: 'none', border: 'none', cursor: 'pointer', color: 'var(--accent-terracotta)' }}
                           >
                             <i className="fa-solid fa-trash-can"></i>

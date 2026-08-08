@@ -35,7 +35,7 @@ export default function About() {
               <img 
                 src="/Farmer_image/Truck_image.jpg" 
                 alt="Farm tractor working across vibrant agricultural farmland" 
-                onError={(e) => { e.currentTarget.onerror = null; e.currentTarget.src = '/Farmer_image/Truck_image'; }}
+                onError={(e) => { e.currentTarget.onerror = null; e.currentTarget.src = '/Farmer_image/Truck_image.jpg'; }}
               />
             </figure>
           </div>
