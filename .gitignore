@@ -1,0 +1,65 @@
+# Node dependencies & logs
+node_modules/
+Frontend/node_modules/
+npm-debug.log*
+yarn-debug.log*
+yarn-error.log*
+pnpm-debug.log*
+lerna-debug.log*
+
+# Frontend Build output & Vite artifacts
+dist/
+Frontend/dist/
+build/
+.vite/
+Frontend/.vite/
+
+# Python Virtual Environments
+.venv/
+venv/
+env/
+ENV/
+Backend/.venv/
+
+# Python Cache & Bytecode
+__pycache__/
+Backend/__pycache__/
+*.py[cod]
+*$py.class
+.pytest_cache/
+.coverage
+htmlcov/
+.mypy_cache/
+
+# Environment Variables & Sensitive Credentials
+.env
+.env.local
+.env.development.local
+.env.test.local
+.env.production.local
+*.env
+*.pem
+*.key
+
+# Local SQLite & Temporary Databases
+*.sqlite
+*.sqlite3
+*.db
+
+# IDE & Editor files
+.vscode/
+.idea/
+*.swp
+*.swo
+*.sublime-workspace
+.agents/
+
+# System / OS generated files
+.DS_Store
+.DS_Store?
+._*
+.Spotlight-V100
+.Trashes
+ehthumbs.db
+Thumbs.db
+desktop.ini
