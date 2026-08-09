@@ -3,14 +3,47 @@ import { Link, useNavigate } from 'react-router-dom';
 
 export default function Login({ showToast }) {
   const navigate = useNavigate();
-  const [email, setEmail] = useState('farmer@agrisense.io');
-  const [password, setPassword] = useState('••••••••');
+  const [username, setUsername] = useState('');
+  const [password, setPassword] = useState('');
   const [remember, setRemember] = useState(true);
 
-  const handleSubmit = (e) => {
+  const handleSubmit = async (e) => {
     e.preventDefault();
-    showToast?.('Successfully signed in!', 'success');
-    navigate('/dashboard');
+    if (!username.trim() || !password) {
+      showToast?.('Please enter your username or email and password.', 'warning');
+      return;
+    }
+
+    try {
+      const backendUrl = import.meta.env?.VITE_API_BASE_URL || 'http://localhost:5000';
+      const response = await fetch(`${backendUrl}/login`, {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        credentials: 'include',
+        body: JSON.stringify({
+          username: username.trim(),
+          password: password
+        })
+      });
+
+      const data = await response.json();
+
+      if (response.ok) {
+        showToast?.(data.message || 'Successfully signed in!', 'success');
+        try {
+          localStorage.setItem('agrisense_session', JSON.stringify({
+            userId: data.user_id,
+            username: data.username
+          }));
+        } catch (e) {}
+        navigate('/dashboard');
+      } else {
+        showToast?.(data.error || 'Invalid username or password.', 'error');
+      }
+    } catch (err) {
+      console.error('Login connection error:', err);
+      showToast?.('Network error: Unable to connect to Flask backend server.', 'error');
+    }
   };
 
   return (
@@ -26,21 +59,22 @@ export default function Login({ showToast }) {
 
             <form className="auth-form" onSubmit={handleSubmit}>
               <div className="form-field">
-                <label htmlFor="email">Email Address or Username</label>
+                <label htmlFor="username">Username or Email Address</label>
                 <div className="input-wrapper">
                   <input
-                    type="email"
-                    id="email"
-                    name="email"
-                    placeholder="e.g. farmer@agrisense.io"
+                    type="text"
+                    id="username"
+                    name="username"
+                    placeholder="e.g. agrisense_user1 or farmer@example.com"
                     required
                     className="input-control"
-                    value={email}
-                    onChange={(e) => setEmail(e.target.value)}
+                    value={username}
+                    onChange={(e) => setUsername(e.target.value)}
                   />
-                  <i className="fa-solid fa-envelope"></i>
+                  <i className="fa-solid fa-user"></i>
                 </div>
               </div>
+
 
               <div className="form-field">
                 <div className="label-row" style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>

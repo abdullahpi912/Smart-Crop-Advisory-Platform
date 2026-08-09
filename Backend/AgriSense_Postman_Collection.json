@@ -1,0 +1,197 @@
+{
+	"info": {
+		"_postman_id": "c40c92b8-93d1-4e1b-b4a1-000000000040",
+		"name": "AgriSense - Master API Collection",
+		"description": "Complete Postman test collection for AgriSense Smart Crop Advisory Platform covering all 21 endpoints.",
+		"schema": "https://schema.getpostman.com/json/collection/v2.1.0/collection.json"
+	},
+	"item": [
+		{
+			"name": "01. Root API Health Check",
+			"request": {
+				"method": "GET",
+				"url": "http://localhost:5000/"
+			}
+		},
+		{
+			"name": "02. Backend Service Health Check",
+			"request": {
+				"method": "GET",
+				"url": "http://localhost:5000/api/health"
+			}
+		},
+		{
+			"name": "03. Register User",
+			"request": {
+				"method": "POST",
+				"header": [{ "key": "Content-Type", "value": "application/json" }],
+				"body": {
+					"mode": "raw",
+					"raw": "{\n    \"username\": \"agrisense_farmer1\",\n    \"password\": \"FarmerPass@123\",\n    \"fullname\": \"Abdullah Farmer\",\n    \"email\": \"farmer1@agrisense.io\",\n    \"phone\": \"+91 9876543210\",\n    \"region\": \"Palakkad\",\n    \"soilType\": \"loamy\"\n}"
+				},
+				"url": "http://localhost:5000/register"
+			}
+		},
+		{
+			"name": "04. Login User",
+			"request": {
+				"method": "POST",
+				"header": [{ "key": "Content-Type", "value": "application/json" }],
+				"body": {
+					"mode": "raw",
+					"raw": "{\n    \"username\": \"agrisense_farmer1\",\n    \"password\": \"FarmerPass@123\"\n}"
+				},
+				"url": "http://localhost:5000/login"
+			}
+		},
+		{
+			"name": "05. Get Authenticated User Profile",
+			"request": {
+				"method": "GET",
+				"url": "http://localhost:5000/profile"
+			}
+		},
+		{
+			"name": "06. Retrieve Crop Catalog Metadata",
+			"request": {
+				"method": "GET",
+				"url": "http://localhost:5000/api/crops"
+			}
+		},
+		{
+			"name": "07. Anonymous ML Prediction (Predict Crop)",
+			"request": {
+				"method": "POST",
+				"header": [{ "key": "Content-Type", "value": "application/json" }],
+				"body": {
+					"mode": "raw",
+					"raw": "{\n    \"nitrogen\": 90,\n    \"phosphorus\": 42,\n    \"potassium\": 43,\n    \"temperature\": 26.5,\n    \"humidity\": 80.0,\n    \"ph\": 6.5,\n    \"rainfall\": 202.0\n}"
+				},
+				"url": "http://localhost:5000/api/predict"
+			}
+		},
+		{
+			"name": "08. Get Advisory Logs History",
+			"request": {
+				"method": "GET",
+				"url": "http://localhost:5000/api/logs"
+			}
+		},
+		{
+			"name": "09. Get Single Advisory Log by ID",
+			"request": {
+				"method": "GET",
+				"url": "http://localhost:5000/api/logs/LOG-8942"
+			}
+		},
+		{
+			"name": "10. Create Custom Advisory Log",
+			"request": {
+				"method": "POST",
+				"header": [{ "key": "Content-Type", "value": "application/json" }],
+				"body": {
+					"mode": "raw",
+					"raw": "{\n    \"logId\": \"#LOG-9001\",\n    \"recommendedItem\": \"Organic Compost & Micronutrients\",\n    \"category\": \"Soil Enrichment\",\n    \"npkSummary\": \"N: 50 | P: 40 | K: 40\",\n    \"climateSummary\": \"pH 6.5 | 120 mm | 25 C\",\n    \"detailedNotes\": \"Custom organic top-dressing applied.\"\n}"
+				},
+				"url": "http://localhost:5000/api/logs"
+			}
+		},
+		{
+			"name": "11. Update Advisory Log Record",
+			"request": {
+				"method": "PUT",
+				"header": [{ "key": "Content-Type", "value": "application/json" }],
+				"body": {
+					"mode": "raw",
+					"raw": "{\n    \"dosageAdvice\": \"Updated dosage: Apply 45kg/ha top dressing\",\n    \"detailedNotes\": \"Farmer field status verified optimal.\"\n}"
+				},
+				"url": "http://localhost:5000/api/logs/LOG-8942"
+			}
+		},
+		{
+			"name": "12. Delete Single Advisory Log",
+			"request": {
+				"method": "DELETE",
+				"url": "http://localhost:5000/api/logs/LOG-9001"
+			}
+		},
+		{
+			"name": "13. Create User Crop Recommendation (ML Model)",
+			"request": {
+				"method": "POST",
+				"header": [{ "key": "Content-Type", "value": "application/json" }],
+				"body": {
+					"mode": "raw",
+					"raw": "{\n    \"nitrogen\": 100,\n    \"phosphorus\": 20,\n    \"potassium\": 30,\n    \"temperature\": 25.0,\n    \"humidity\": 75.0,\n    \"ph\": 5.8,\n    \"rainfall\": 1600.0,\n    \"notes\": \"Highland coffee plot recommendation.\"\n}"
+				},
+				"url": "http://localhost:5000/api/recommendations"
+			}
+		},
+		{
+			"name": "14. Get User Recommendation History",
+			"request": {
+				"method": "GET",
+				"url": "http://localhost:5000/api/recommendations"
+			}
+		},
+		{
+			"name": "15. Get Single User Recommendation Record",
+			"request": {
+				"method": "GET",
+				"url": "http://localhost:5000/api/recommendations/REC-1001"
+			}
+		},
+		{
+			"name": "16. Update User Recommendation Notes",
+			"request": {
+				"method": "PUT",
+				"header": [{ "key": "Content-Type", "value": "application/json" }],
+				"body": {
+					"mode": "raw",
+					"raw": "{\n    \"notes\": \"Updated field feedback: Excellent growth rate.\"\n}"
+				},
+				"url": "http://localhost:5000/api/recommendations/REC-1001"
+			}
+		},
+		{
+			"name": "17. Delete User Recommendation Record",
+			"request": {
+				"method": "DELETE",
+				"url": "http://localhost:5000/api/recommendations/REC-1001"
+			}
+		},
+		{
+			"name": "18. Create Farm Plot Profile",
+			"request": {
+				"method": "POST",
+				"header": [{ "key": "Content-Type", "value": "application/json" }],
+				"body": {
+					"mode": "raw",
+					"raw": "{\n    \"farm_name\": \"Palakkad Wetland Sector A\",\n    \"location\": \"Palakkad, Kerala\",\n    \"area_acres\": 5.5,\n    \"soil_type\": \"loamy\"\n}"
+				},
+				"url": "http://localhost:5000/api/farms"
+			}
+		},
+		{
+			"name": "19. Get User Farm Profiles",
+			"request": {
+				"method": "GET",
+				"url": "http://localhost:5000/api/farms"
+			}
+		},
+		{
+			"name": "20. Logout User",
+			"request": {
+				"method": "POST",
+				"url": "http://localhost:5000/logout"
+			}
+		},
+		{
+			"name": "21. Protected Route After Logout (401 Blocked)",
+			"request": {
+				"method": "GET",
+				"url": "http://localhost:5000/profile"
+			}
+		}
+	]
+}

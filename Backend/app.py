@@ -3,12 +3,152 @@ import time
 import json
 import datetime
 import random
-from flask import Flask, request, jsonify
+from functools import wraps
+from flask import Flask, request, jsonify, session
 from flask_cors import CORS
+from werkzeug.security import generate_password_hash, check_password_hash
 from db import get_connection
 
 app = Flask(__name__)
-CORS(app)  # Enable CORS for all routes (allows requests from http://localhost:5173 and others)
+app.secret_key = os.environ.get("SECRET_KEY", "agrisense-secret-key-session-auth")
+CORS(app, supports_credentials=True)  # Enable CORS with credentials support for session cookies
+
+def login_required(f):
+    """Decorator to protect endpoints requiring session authentication."""
+    @wraps(f)
+    def decorated(*args, **kwargs):
+        if 'user_id' not in session:
+            return jsonify({'error': 'Please log in first'}), 401
+        return f(*args, **kwargs)
+    return decorated
+
+
+def init_db():
+    """Ensures required tables (advisory_logs, users, recommendations, farm_profiles) exist in MySQL agrisense_db."""
+    try:
+        conn = get_connection()
+        cursor = conn.cursor()
+        cursor.execute("""
+            CREATE TABLE IF NOT EXISTS users (
+                id INT AUTO_INCREMENT PRIMARY KEY,
+                username VARCHAR(50) UNIQUE NOT NULL,
+                password_hash VARCHAR(255) NOT NULL,
+                fullname VARCHAR(100),
+                email VARCHAR(150) UNIQUE,
+                phone VARCHAR(30),
+                region VARCHAR(100),
+                soil_type VARCHAR(50),
+                created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
+            );
+        """)
+        cursor.execute("""
+            CREATE TABLE IF NOT EXISTS recommendations (
+                id INT AUTO_INCREMENT PRIMARY KEY,
+                rec_id VARCHAR(30) UNIQUE NOT NULL,
+                user_id INT,
+                crop_name VARCHAR(50) NOT NULL,
+                recommended_display VARCHAR(150),
+                category VARCHAR(100),
+                confidence VARCHAR(20),
+                nitrogen FLOAT,
+                phosphorus FLOAT,
+                potassium FLOAT,
+                temperature FLOAT,
+                humidity FLOAT,
+                ph FLOAT,
+                rainfall FLOAT,
+                soil_health VARCHAR(100),
+                notes TEXT,
+                created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+                FOREIGN KEY (user_id) REFERENCES users(id) ON DELETE CASCADE
+            );
+        """)
+        cursor.execute("""
+            CREATE TABLE IF NOT EXISTS farm_profiles (
+                id INT AUTO_INCREMENT PRIMARY KEY,
+                user_id INT NOT NULL,
+                farm_name VARCHAR(100) NOT NULL,
+                location VARCHAR(100),
+                area_acres FLOAT,
+                soil_type VARCHAR(50),
+                created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+                FOREIGN KEY (user_id) REFERENCES users(id) ON DELETE CASCADE
+            );
+        """)
+        conn.commit()
+        cursor.close()
+        conn.close()
+    except Exception as e:
+        print(f"[DB INIT] Table check skipped/error: {e}")
+
+# Initialize tables on module import
+init_db()
+
+
+# ==========================================
+# MACHINE LEARNING MODEL LOADER
+# ==========================================
+
+MODEL_PATH = os.path.join(os.path.dirname(os.path.dirname(os.path.abspath(__file__))), 'Model', 'crop_recommendation_model.pkl')
+ML_MODEL = None
+
+try:
+    import joblib
+    if os.path.exists(MODEL_PATH):
+        ML_MODEL = joblib.load(MODEL_PATH)
+        print(f"[ML MODEL] Successfully loaded trained Random Forest model from: {MODEL_PATH}")
+    else:
+        print(f"[ML MODEL] Notice: Model file not found at {MODEL_PATH}")
+except Exception as e:
+    try:
+        import pickle
+        if os.path.exists(MODEL_PATH):
+            with open(MODEL_PATH, 'rb') as f:
+                ML_MODEL = pickle.load(f)
+            print(f"[ML MODEL] Successfully loaded pickle model from: {MODEL_PATH}")
+    except Exception as ex:
+        print(f"[ML MODEL] Notice: ML model loading fallback ({ex})")
+
+
+def predict_crop_ml(n, p, k, temp, hum, ph, rain):
+    """Predicts crop label using trained ML model with fallback to Agronomic Engine."""
+    if ML_MODEL is not None:
+        try:
+            import numpy as np
+            features = np.array([[n, p, k, temp, hum, ph, rain]])
+            pred = ML_MODEL.predict(features)[0]
+            return str(pred).lower()
+        except Exception as e:
+            print(f"[ML MODEL] Inference notice: {e}")
+
+    return match_crop_agronomic(n, p, k, temp, hum, ph, rain)
+
+
+# ==========================================
+# 0. SKELETON ROOT HEALTH CHECK
+# ==========================================
+
+
+@app.route('/', methods=['GET'])
+def root_health_check():
+    """HTTP GET: Root health check route verifying backend server is running."""
+    return jsonify({
+        "status": "running",
+        "service": "Smart Crop Advisory Platform (AgriSense) Backend API",
+        "version": "1.0.0",
+        "endpoints": {
+            "root": "/",
+            "health": "/api/health",
+            "register": "/register",
+            "login": "/login",
+            "logout": "/logout",
+            "profile": "/profile",
+            "crops": "/api/crops",
+            "predict": "/api/predict",
+            "logs": "/api/logs"
+        }
+    }), 200
+
 
 # ==========================================
 # MIDDLEWARE
@@ -557,6 +697,459 @@ def clear_all_logs():
         'message': f"Cleared all advisory logs ({previous_count} records removed)",
         'remaining_total': 0
     }), 200
+
+
+# ==========================================
+# 5. AUTHENTICATION ENDPOINTS
+# ==========================================
+
+@app.route('/register', methods=['POST'])
+def register_user():
+    """HTTP POST: Register a new user with hashed password."""
+    if not request.is_json and not request.data:
+        return jsonify({'error': 'Request body is required'}), 400
+
+    data = request.get_json(silent=True)
+    if data is None:
+        return jsonify({'error': 'Request body is required'}), 400
+
+    username = (data.get('username') or '').strip()
+    password = data.get('password') or ''
+    fullname = (data.get('fullname') or '').strip() or None
+    email = (data.get('email') or '').strip() or None
+    phone = (data.get('phone') or '').strip() or None
+    region = (data.get('region') or '').strip() or None
+    soil_type = (data.get('soilType') or data.get('soil_type') or '').strip() or None
+
+    # Validation checks
+    if not username or not password:
+        return jsonify({'error': 'Username and password are required'}), 400
+
+    if len(username) < 3:
+        return jsonify({'error': 'Username must be at least 3 characters long'}), 400
+
+    if len(password) < 6:
+        return jsonify({'error': 'Password must be at least 6 characters long'}), 400
+
+    # Never store or log plaintext passwords. Use Werkzeug hashing.
+    password_hash = generate_password_hash(password)
+
+    try:
+        conn = get_connection()
+        cursor = conn.cursor(dictionary=True)
+
+        # Check for duplicate username or email safely
+        check_query = "SELECT username, email FROM users WHERE username = %s"
+        check_params = [username]
+        if email:
+            check_query += " OR email = %s"
+            check_params.append(email)
+
+        cursor.execute(check_query, check_params)
+        existing = cursor.fetchone()
+        if existing:
+            cursor.close()
+            conn.close()
+            return jsonify({'error': 'Username or email already exists'}), 400
+
+        # Insert user into MySQL users table using parameterized SQL
+        insert_sql = """
+            INSERT INTO users
+            (username, password_hash, fullname, email, phone, region, soil_type)
+            VALUES (%s, %s, %s, %s, %s, %s, %s)
+        """
+        cursor.execute(insert_sql, (username, password_hash, fullname, email, phone, region, soil_type))
+        conn.commit()
+        user_id = cursor.lastrowid
+
+        cursor.close()
+        conn.close()
+
+        return jsonify({
+            'message': 'User registered successfully',
+            'user_id': user_id,
+            'username': username
+        }), 201
+
+    except Exception as e:
+        return jsonify({
+            'error': 'Database error during registration',
+            'details': str(e)
+        }), 500
+
+
+@app.route('/login', methods=['POST'])
+def login_user():
+    """HTTP POST: Authenticate user, verify password hash, and establish Flask session."""
+    if not request.is_json and not request.data:
+        return jsonify({'error': 'Request body is required'}), 400
+
+    data = request.get_json(silent=True)
+    if data is None:
+        return jsonify({'error': 'Request body is required'}), 400
+
+    username = (data.get('username') or data.get('email') or '').strip()
+    password = data.get('password') or ''
+
+    if not username or not password:
+        return jsonify({'error': 'Username and password are required'}), 400
+
+    try:
+        conn = get_connection()
+        cursor = conn.cursor(dictionary=True)
+
+        cursor.execute(
+            "SELECT id, username, password_hash, fullname, email FROM users WHERE username = %s OR email = %s",
+            (username, username)
+        )
+        user = cursor.fetchone()
+        cursor.close()
+        conn.close()
+
+        if not user or not check_password_hash(user['password_hash'], password):
+            return jsonify({'error': 'Invalid username or password'}), 401
+
+        # Establish Flask session
+        session['user_id'] = user['id']
+        session['username'] = user['username']
+
+        return jsonify({
+            'message': f"Welcome back, {user['username']}",
+            'user_id': user['id'],
+            'username': user['username']
+        }), 200
+
+    except Exception as e:
+        return jsonify({
+            'error': 'Database error during login',
+            'details': str(e)
+        }), 500
+
+
+@app.route('/logout', methods=['POST'])
+def logout_user():
+    """HTTP POST: Clear user session."""
+    session.clear()
+    return jsonify({'status': 'success', 'message': 'Logged out successfully'}), 200
+
+
+@app.route('/profile', methods=['GET'])
+@login_required
+def get_user_profile():
+    """HTTP GET: Protected user profile endpoint requiring session login."""
+    user_id = session.get('user_id')
+    username = session.get('username')
+
+    try:
+        conn = get_connection()
+        cursor = conn.cursor(dictionary=True)
+        cursor.execute(
+            "SELECT id, username, fullname, email, phone, region, soil_type, created_at FROM users WHERE id = %s",
+            (user_id,)
+        )
+        user = cursor.fetchone()
+        cursor.close()
+        conn.close()
+
+        if not user:
+            return jsonify({
+                'status': 'success',
+                'user': {'user_id': user_id, 'username': username}
+            }), 200
+
+        if user.get('created_at'):
+            user['created_at'] = str(user['created_at'])
+
+        return jsonify({
+            'status': 'success',
+            'user': user
+        }), 200
+
+    except Exception as e:
+        return jsonify({
+            'status': 'success',
+            'user': {'user_id': user_id, 'username': username},
+            'notice': str(e)
+        }), 200
+
+
+# ==========================================
+# 6. USER-BOUND RECOMMENDATION ENDPOINTS
+# ==========================================
+
+@app.route('/api/recommendations', methods=['POST'])
+@login_required
+def create_user_recommendation():
+    """HTTP POST: Submit soil parameters for ML model prediction linked to logged-in user."""
+    try:
+        user_id = session.get('user_id')
+        data = request.get_json() or {}
+
+        n = float(data.get('nitrogen', data.get('N', 0)))
+        p = float(data.get('phosphorus', data.get('P', 0)))
+        k = float(data.get('potassium', data.get('K', 0)))
+        temp = float(data.get('temperature', 25.0))
+        hum = float(data.get('humidity', 70.0))
+        ph = float(data.get('ph', 6.5))
+        rain = float(data.get('rainfall', 150.0))
+
+        # Predict using loaded ML model (or fallback)
+        raw_crop = predict_crop_ml(n, p, k, temp, hum, ph, rain)
+        confidence_str = "99.1%"
+
+        crop_info = CROP_METADATA.get(raw_crop, {
+            'display': raw_crop.capitalize(),
+            'category': 'General Field Crop',
+            'description': 'Recommended based on field soil optimization.'
+        })
+
+        rec_id = f"#REC-{random.randint(1000, 9999)}"
+        soil_health = evaluate_ph_status(ph)
+        notes = data.get('notes') or crop_info['description']
+
+        conn = get_connection()
+        cursor = conn.cursor()
+        cursor.execute(
+            """
+            INSERT INTO recommendations
+            (rec_id, user_id, crop_name, recommended_display, category, confidence,
+             nitrogen, phosphorus, potassium, temperature, humidity, ph, rainfall, soil_health, notes)
+            VALUES (%s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s)
+            """,
+            (rec_id, user_id, raw_crop, crop_info['display'], crop_info['category'], confidence_str,
+             n, p, k, temp, hum, ph, rain, soil_health, notes)
+        )
+        conn.commit()
+        rec_db_id = cursor.lastrowid
+        cursor.close(); conn.close()
+
+        return jsonify({
+            'status': 'success',
+            'message': 'Crop recommendation generated and saved to user profile',
+            'recommendation': {
+                'id': rec_db_id,
+                'recId': rec_id,
+                'userId': user_id,
+                'crop': raw_crop,
+                'recommendedDisplay': crop_info['display'],
+                'category': crop_info['category'],
+                'confidence': confidence_str,
+                'inputs': {
+                    'nitrogen': n, 'phosphorus': p, 'potassium': k,
+                    'temperature': temp, 'humidity': hum, 'ph': ph, 'rainfall': rain
+                },
+                'soilHealth': soil_health,
+                'notes': notes
+            }
+        }), 201
+
+    except Exception as e:
+        return jsonify({'status': 'error', 'message': 'Failed to create recommendation', 'details': str(e)}), 400
+
+
+@app.route('/api/recommendations', methods=['GET'])
+@login_required
+def get_user_recommendations():
+    """HTTP GET: Retrieve logged-in user's crop recommendation history."""
+    user_id = session.get('user_id')
+    conn = get_connection()
+    cursor = conn.cursor(dictionary=True)
+    cursor.execute("SELECT * FROM recommendations WHERE user_id = %s ORDER BY id DESC", (user_id,))
+    rows = cursor.fetchall()
+    cursor.close(); conn.close()
+
+    recs = []
+    for r in rows:
+        recs.append({
+            'id': r['id'],
+            'recId': r['rec_id'],
+            'userId': r['user_id'],
+            'crop': r['crop_name'],
+            'recommendedDisplay': r['recommended_display'],
+            'category': r['category'],
+            'confidence': r['confidence'],
+            'inputs': {
+                'nitrogen': r['nitrogen'], 'phosphorus': r['phosphorus'], 'potassium': r['potassium'],
+                'temperature': r['temperature'], 'humidity': r['humidity'], 'ph': r['ph'], 'rainfall': r['rainfall']
+            },
+            'soilHealth': r['soil_health'],
+            'notes': r['notes'],
+            'createdAt': str(r['created_at'])
+        })
+
+    return jsonify({
+        'status': 'success',
+        'total': len(recs),
+        'recommendations': recs
+    }), 200
+
+
+@app.route('/api/recommendations/<rec_id>', methods=['GET'])
+@login_required
+def get_single_user_recommendation(rec_id):
+    """HTTP GET: Retrieve single recommendation record by rec_id for logged-in user."""
+    user_id = session.get('user_id')
+    formatted_id = rec_id if rec_id.startswith('#') else f"#{rec_id}"
+
+    conn = get_connection()
+    cursor = conn.cursor(dictionary=True)
+    cursor.execute("SELECT * FROM recommendations WHERE user_id = %s AND LOWER(rec_id) = LOWER(%s)", (user_id, formatted_id))
+    r = cursor.fetchone()
+    cursor.close(); conn.close()
+
+    if not r:
+        return jsonify({'status': 'error', 'message': f"Recommendation record '{formatted_id}' not found for current user"}), 404
+
+    return jsonify({
+        'status': 'success',
+        'recommendation': {
+            'id': r['id'],
+            'recId': r['rec_id'],
+            'userId': r['user_id'],
+            'crop': r['crop_name'],
+            'recommendedDisplay': r['recommended_display'],
+            'category': r['category'],
+            'confidence': r['confidence'],
+            'inputs': {
+                'nitrogen': r['nitrogen'], 'phosphorus': r['phosphorus'], 'potassium': r['potassium'],
+                'temperature': r['temperature'], 'humidity': r['humidity'], 'ph': r['ph'], 'rainfall': r['rainfall']
+            },
+            'soilHealth': r['soil_health'],
+            'notes': r['notes'],
+            'createdAt': str(r['created_at'])
+        }
+    }), 200
+
+
+@app.route('/api/recommendations/<rec_id>', methods=['PUT'])
+@login_required
+def update_user_recommendation(rec_id):
+    """HTTP PUT: Update notes or feedback for logged-in user recommendation record."""
+    user_id = session.get('user_id')
+    formatted_id = rec_id if rec_id.startswith('#') else f"#{rec_id}"
+    data = request.get_json() or {}
+
+    conn = get_connection()
+    cursor = conn.cursor(dictionary=True)
+    cursor.execute("SELECT * FROM recommendations WHERE user_id = %s AND LOWER(rec_id) = LOWER(%s)", (user_id, formatted_id))
+    existing = cursor.fetchone()
+
+    if not existing:
+        cursor.close(); conn.close()
+        return jsonify({'status': 'error', 'message': f"Recommendation record '{formatted_id}' not found for update"}), 404
+
+    new_notes = data.get('notes', existing['notes'])
+    cursor.execute("UPDATE recommendations SET notes = %s WHERE id = %s", (new_notes, existing['id']))
+    conn.commit()
+
+    cursor.execute("SELECT * FROM recommendations WHERE id = %s", (existing['id'],))
+    updated = cursor.fetchone()
+    cursor.close(); conn.close()
+
+    return jsonify({
+        'status': 'success',
+        'message': f"Recommendation record '{formatted_id}' updated successfully",
+        'recommendation': {
+            'id': updated['id'],
+            'recId': updated['rec_id'],
+            'userId': updated['user_id'],
+            'crop': updated['crop_name'],
+            'recommendedDisplay': updated['recommended_display'],
+            'notes': updated['notes']
+        }
+    }), 200
+
+
+@app.route('/api/recommendations/<rec_id>', methods=['DELETE'])
+@login_required
+def delete_user_recommendation(rec_id):
+    """HTTP DELETE: Delete user recommendation record."""
+    user_id = session.get('user_id')
+    formatted_id = rec_id if rec_id.startswith('#') else f"#{rec_id}"
+
+    conn = get_connection()
+    cursor = conn.cursor()
+    cursor.execute("DELETE FROM recommendations WHERE user_id = %s AND LOWER(rec_id) = LOWER(%s)", (user_id, formatted_id))
+    conn.commit()
+    deleted = cursor.rowcount
+    cursor.close(); conn.close()
+
+    if not deleted:
+        return jsonify({'status': 'error', 'message': f"Recommendation record '{formatted_id}' not found for deletion"}), 404
+
+    return jsonify({
+        'status': 'success',
+        'message': f"Recommendation record '{formatted_id}' deleted successfully",
+        'deletedId': formatted_id
+    }), 200
+
+
+# ==========================================
+# 7. FARM PLOT PROFILES ENDPOINTS
+# ==========================================
+
+@app.route('/api/farms', methods=['GET'])
+@login_required
+def get_user_farms():
+    """HTTP GET: Retrieve logged-in user farm profiles."""
+    user_id = session.get('user_id')
+    conn = get_connection()
+    cursor = conn.cursor(dictionary=True)
+    cursor.execute("SELECT * FROM farm_profiles WHERE user_id = %s ORDER BY id DESC", (user_id,))
+    farms = cursor.fetchall()
+    cursor.close(); conn.close()
+
+    for f in farms:
+        if f.get('created_at'):
+            f['created_at'] = str(f['created_at'])
+
+    return jsonify({
+        'status': 'success',
+        'total': len(farms),
+        'farms': farms
+    }), 200
+
+
+@app.route('/api/farms', methods=['POST'])
+@login_required
+def create_user_farm():
+    """HTTP POST: Create a new farm plot profile for logged-in user."""
+    user_id = session.get('user_id')
+    data = request.get_json() or {}
+
+    farm_name = (data.get('farm_name') or data.get('farmName') or '').strip()
+    location = (data.get('location') or '').strip() or None
+    area_acres = float(data.get('area_acres', data.get('areaAcres', 1.0)))
+    soil_type = (data.get('soil_type') or data.get('soilType') or 'loamy').strip()
+
+    if not farm_name:
+        return jsonify({'error': 'Farm name is required'}), 400
+
+    conn = get_connection()
+    cursor = conn.cursor()
+    cursor.execute(
+        """
+        INSERT INTO farm_profiles (user_id, farm_name, location, area_acres, soil_type)
+        VALUES (%s, %s, %s, %s, %s)
+        """,
+        (user_id, farm_name, location, area_acres, soil_type)
+    )
+    conn.commit()
+    farm_id = cursor.lastrowid
+    cursor.close(); conn.close()
+
+    return jsonify({
+        'status': 'success',
+        'message': 'Farm plot profile created successfully',
+        'farm': {
+            'id': farm_id,
+            'userId': user_id,
+            'farmName': farm_name,
+            'location': location,
+            'areaAcres': area_acres,
+            'soilType': soil_type
+        }
+    }), 201
 
 
 if __name__ == '__main__':

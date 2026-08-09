@@ -18,6 +18,7 @@ export default function Register({ showToast }) {
   const [formData, setFormData] = useState(() => {
     const defaultData = {
       fullname: '',
+      username: '',
       email: '',
       countryCode: '+91',
       phone: '',
@@ -50,6 +51,7 @@ export default function Register({ showToast }) {
   // Regex Patterns
   const patterns = {
     fullname: /^[a-zA-Z\s]{3,30}$/,
+    username: /^[a-zA-Z0-9_]{3,30}$/,
     email: /^[a-zA-Z0-9._%+-]+@[a-zA-Z0-9.-]+\.[a-zA-Z]{2,}$/,
     password: /^(?=.*[a-z])(?=.*[A-Z])(?=.*\d)(?=.*[!@#$%^&*()_+\-=\[\]{};':"\\|,.<>\/?]).{8,}$/,
     region: /^[a-zA-Z0-9\s,.-]{2,60}$/
@@ -60,6 +62,11 @@ export default function Register({ showToast }) {
       case 'fullname':
         if (!value.trim()) return 'Full Name is required.';
         if (!patterns.fullname.test(value.trim())) return '3–30 characters, alphabets only.';
+        return '';
+
+      case 'username':
+        if (!value.trim()) return 'Username is required.';
+        if (!patterns.username.test(value.trim())) return '3–30 characters, letters, numbers & underscores only.';
         return '';
 
       case 'phone':
@@ -103,7 +110,8 @@ export default function Register({ showToast }) {
              !getFieldError('region', formData.region);
     }
     if (stepNum === 2) {
-      return !getFieldError('email', formData.email) &&
+      return !getFieldError('username', formData.username) &&
+             !getFieldError('email', formData.email) &&
              !getFieldError('password', formData.password) &&
              !getFieldError('confirmPassword', formData.confirmPassword) &&
              formData.terms;
@@ -138,7 +146,7 @@ export default function Register({ showToast }) {
     }
   };
 
-  const handleSubmit = (e) => {
+  const handleSubmit = async (e) => {
     e?.preventDefault();
     setSubmitted(true);
 
@@ -147,29 +155,60 @@ export default function Register({ showToast }) {
       return;
     }
 
-    const userData = {
-      fullname: formData.fullname,
-      email: formData.email,
-      phone: `${formData.countryCode} ${formData.phone}`,
-      region: formData.region,
-      soilType: formData.soilType,
-      registeredAt: new Date().toLocaleString()
+    const payload = {
+      username: formData.username.trim(),
+      password: formData.password,
+      fullname: formData.fullname.trim(),
+      email: formData.email.trim(),
+      phone: `${formData.countryCode} ${formData.phone}`.trim(),
+      region: formData.region.trim(),
+      soilType: formData.soilType
     };
 
     try {
-      localStorage.setItem('agrisense_user', JSON.stringify(userData));
-      sessionStorage.removeItem('agrisense_reg_draft');
+      const backendUrl = import.meta.env?.VITE_API_BASE_URL || 'http://localhost:5000';
+      const response = await fetch(`${backendUrl}/register`, {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify(payload)
+      });
+
+      const data = await response.json();
+
+      if (response.ok && response.status === 201) {
+        const userData = {
+          userId: data.user_id,
+          username: data.username,
+          fullname: formData.fullname,
+          email: formData.email,
+          phone: `${formData.countryCode} ${formData.phone}`,
+          region: formData.region,
+          soilType: formData.soilType,
+          registeredAt: new Date().toLocaleString()
+        };
+
+        try {
+          localStorage.setItem('agrisense_user', JSON.stringify(userData));
+          sessionStorage.removeItem('agrisense_reg_draft');
+        } catch (err) {
+          console.error(err);
+        }
+
+        setSuccess(true);
+        showToast?.('Farm Registration Successful! Redirecting to dashboard...', 'success');
+
+        setTimeout(() => {
+          navigate('/dashboard');
+        }, 1600);
+      } else {
+        showToast?.(data.error || 'Registration failed.', 'error');
+      }
     } catch (err) {
-      console.error(err);
+      console.error('Registration network error:', err);
+      showToast?.('Network error: Unable to connect to Flask backend server.', 'error');
     }
-
-    setSuccess(true);
-    showToast?.('Farm Registration Successful! Redirecting to dashboard...', 'success');
-
-    setTimeout(() => {
-      navigate('/dashboard');
-    }, 1600);
   };
+
 
   const steps = [
     { num: 1, label: 'Farmer & Field Details' },
@@ -314,7 +353,24 @@ export default function Register({ showToast }) {
                   <div className="step-section-title">Account Credentials &amp; Agreement</div>
                   <div className="reference-form-grid">
                     <div className="ref-field">
+                      <label htmlFor="username">Username <span style={{ color: '#d9381e' }}>*</span></label>
+                      <input
+                        type="text"
+                        id="username"
+                        name="username"
+                        placeholder="e.g. agrisense_user1"
+                        value={formData.username}
+                        onChange={handleChange}
+                        required
+                      />
+                      {(touched.username || submitted) && getFieldError('username', formData.username) && (
+                        <span role="alert" style={{ fontSize: '0.78rem', color: '#d9381e', marginTop: '0.25rem' }}>{getFieldError('username', formData.username)}</span>
+                      )}
+                    </div>
+
+                    <div className="ref-field">
                       <label htmlFor="email">Email ID <span style={{ color: '#d9381e' }}>*</span></label>
+
                       <input
                         type="email"
                         id="email"

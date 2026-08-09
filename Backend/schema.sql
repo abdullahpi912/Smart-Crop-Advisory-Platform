@@ -1,4 +1,4 @@
--- Day 36: database backing the AgriSense advisory log CRUD API.
+-- AgriSense Database Schema & Seed Data
 -- Run this once in MySQL Workbench / CLI before starting app.py.
 
 CREATE DATABASE IF NOT EXISTS agrisense_db;
@@ -45,3 +45,52 @@ VALUES
      '98.8%', 'Apply 50kg/hectare split into two split top-dressings', 'Optimal Balanced Soil',
      'Nitrogen deficient soil requires targeted urea top dressing.',
      '{"nitrogen": 35, "phosphorus": 40, "potassium": 35, "temperature": 24.0, "humidity": 70, "ph": 6.2, "rainfall": 180}');
+
+-- User registration and authentication table.
+CREATE TABLE IF NOT EXISTS users (
+    id INT AUTO_INCREMENT PRIMARY KEY,
+    username VARCHAR(50) UNIQUE NOT NULL,
+    password_hash VARCHAR(255) NOT NULL,
+    fullname VARCHAR(100),
+    email VARCHAR(150) UNIQUE,
+    phone VARCHAR(30),
+    region VARCHAR(100),
+    soil_type VARCHAR(50),
+    created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
+);
+
+-- User-specific crop recommendations table.
+CREATE TABLE IF NOT EXISTS recommendations (
+    id INT AUTO_INCREMENT PRIMARY KEY,
+    rec_id VARCHAR(30) UNIQUE NOT NULL,
+    user_id INT,
+    crop_name VARCHAR(50) NOT NULL,
+    recommended_display VARCHAR(150),
+    category VARCHAR(100),
+    confidence VARCHAR(20),
+    nitrogen FLOAT,
+    phosphorus FLOAT,
+    potassium FLOAT,
+    temperature FLOAT,
+    humidity FLOAT,
+    ph FLOAT,
+    rainfall FLOAT,
+    soil_health VARCHAR(100),
+    notes TEXT,
+    created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+    FOREIGN KEY (user_id) REFERENCES users(id) ON DELETE CASCADE
+);
+
+-- Farmer plot profiles table.
+CREATE TABLE IF NOT EXISTS farm_profiles (
+    id INT AUTO_INCREMENT PRIMARY KEY,
+    user_id INT NOT NULL,
+    farm_name VARCHAR(100) NOT NULL,
+    location VARCHAR(100),
+    area_acres FLOAT,
+    soil_type VARCHAR(50),
+    created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+    FOREIGN KEY (user_id) REFERENCES users(id) ON DELETE CASCADE
+);
+
+
