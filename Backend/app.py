@@ -7,11 +7,19 @@ from functools import wraps
 from flask import Flask, request, jsonify, session
 from flask_cors import CORS
 from werkzeug.security import generate_password_hash, check_password_hash
+from dotenv import load_dotenv
 from db import get_connection
 
+load_dotenv()
+
+secret_key = os.environ.get("SECRET_KEY")
+if not secret_key:
+    raise RuntimeError("SECRET_KEY environment variable is not set. Please configure it in your environment or .env file.")
+
 app = Flask(__name__)
-app.secret_key = os.environ.get("SECRET_KEY", "agrisense-secret-key-session-auth")
+app.secret_key = secret_key
 CORS(app, supports_credentials=True)  # Enable CORS with credentials support for session cookies
+
 
 def login_required(f):
     """Decorator to protect endpoints requiring session authentication."""

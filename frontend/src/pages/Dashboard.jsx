@@ -45,14 +45,33 @@ export default function Dashboard({ showToast }) {
 
   useEffect(() => {
     const fetchLogs = async () => {
+      const backendUrl = import.meta.env?.VITE_API_BASE_URL || 'http://localhost:5000';
       try {
         const storedUser = localStorage.getItem('agrisense_user');
         if (storedUser) {
           setUserProfile(JSON.parse(storedUser));
         }
 
-        // Attempt HTTP GET request to backend API
-        const res = await fetch('http://127.0.0.1:5000/api/logs', { method: 'GET' });
+        // Try user-specific recommendations first (for logged-in session)
+        const recRes = await fetch(`${backendUrl}/api/recommendations`, {
+          method: 'GET',
+          credentials: 'include'
+        });
+
+        if (recRes.ok) {
+          const recData = await recRes.json();
+          if (recData.recommendations && recData.recommendations.length > 0) {
+            setHistory(recData.recommendations);
+            localStorage.setItem('agrisense_history', JSON.stringify(recData.recommendations));
+            return;
+          }
+        }
+
+        // Fallback to GET /api/logs for anonymous visitors (unauthenticated)
+        const res = await fetch(`${backendUrl}/api/logs`, {
+          method: 'GET',
+          credentials: 'include'
+        });
         if (res.ok) {
           const data = await res.json();
           if (data.logs && data.logs.length > 0) {
@@ -83,55 +102,78 @@ export default function Dashboard({ showToast }) {
   }, []);
 
   const handleDeleteItem = async (logId) => {
+    const backendUrl = import.meta.env?.VITE_API_BASE_URL || 'http://localhost:5000';
     const cleanId = logId.replace('#', '');
     try {
-      // Attempt HTTP DELETE method request
-      await fetch(`http://127.0.0.1:5000/api/logs/${cleanId}`, { method: 'DELETE' });
+      let res = await fetch(`${backendUrl}/api/recommendations/${cleanId}`, {
+        method: 'DELETE',
+        credentials: 'include'
+      });
+      if (!res.ok) {
+        await fetch(`${backendUrl}/api/logs/${cleanId}`, {
+          method: 'DELETE',
+          credentials: 'include'
+        });
+      }
     } catch (err) {
       console.warn('DELETE API request failed, updating local state');
     }
 
-    const updated = history.filter((item) => item.logId !== logId);
+    const updated = history.filter((item) => (item.logId || item.recId) !== logId);
     setHistory(updated);
     localStorage.setItem('agrisense_history', JSON.stringify(updated));
-    showToast?.(`Removed log entry ${logId} via DELETE method`, 'info');
+    showToast?.(`Removed log entry ${logId}`, 'info');
   };
 
   const handleClearHistory = async () => {
+    const backendUrl = import.meta.env?.VITE_API_BASE_URL || 'http://localhost:5000';
     if (window.confirm('Are you sure you want to clear all history records?')) {
       try {
-        // Attempt HTTP DELETE all method request
-        await fetch('http://127.0.0.1:5000/api/logs', { method: 'DELETE' });
+        await fetch(`${backendUrl}/api/logs`, {
+          method: 'DELETE',
+          credentials: 'include'
+        });
       } catch (err) {
         console.warn('DELETE ALL API request failed');
       }
 
       setHistory([]);
       localStorage.removeItem('agrisense_history');
-      showToast?.('Recommendation history cleared via DELETE method', 'info');
+      showToast?.('Recommendation history cleared', 'info');
     }
   };
 
   const handleUpdateNotes = async (item) => {
-    const newNotes = window.prompt('Update advisory field notes:', item.detailedNotes || item.dosageAdvice || '');
+    const backendUrl = import.meta.env?.VITE_API_BASE_URL || 'http://localhost:5000';
+    const itemLogId = item.logId || item.recId || '';
+    const newNotes = window.prompt('Update advisory field notes:', item.notes || item.detailedNotes || item.dosageAdvice || '');
     if (newNotes === null) return;
 
-    const cleanId = item.logId.replace('#', '');
+    const cleanId = itemLogId.replace('#', '');
     try {
-      // Attempt HTTP PUT method request
-      const res = await fetch(`http://127.0.0.1:5000/api/logs/${cleanId}`, {
+      let res = await fetch(`${backendUrl}/api/recommendations/${cleanId}`, {
         method: 'PUT',
         headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ detailedNotes: newNotes })
+        credentials: 'include',
+        body: JSON.stringify({ notes: newNotes })
       });
+
+      if (!res.ok) {
+        res = await fetch(`${backendUrl}/api/logs/${cleanId}`, {
+          method: 'PUT',
+          headers: { 'Content-Type': 'application/json' },
+          credentials: 'include',
+          body: JSON.stringify({ detailedNotes: newNotes })
+        });
+      }
 
       if (res.ok) {
         const data = await res.json();
-        const updatedLog = data.log;
-        const updatedHistory = history.map(h => h.logId === item.logId ? updatedLog : h);
+        const updatedLog = data.recommendation || data.log;
+        const updatedHistory = history.map(h => ((h.logId || h.recId) === itemLogId) ? { ...h, ...updatedLog, notes: newNotes, detailedNotes: newNotes } : h);
         setHistory(updatedHistory);
         localStorage.setItem('agrisense_history', JSON.stringify(updatedHistory));
-        showToast?.(`Updated notes for ${item.logId} via PUT method`, 'success');
+        showToast?.(`Updated notes for ${itemLogId}`, 'success');
         return;
       }
     } catch (err) {
@@ -139,16 +181,18 @@ export default function Dashboard({ showToast }) {
     }
 
     // Local fallback update
-    const updatedHistory = history.map(h => h.logId === item.logId ? { ...h, detailedNotes: newNotes } : h);
+    const updatedHistory = history.map(h => ((h.logId || h.recId) === itemLogId) ? { ...h, notes: newNotes, detailedNotes: newNotes } : h);
     setHistory(updatedHistory);
     localStorage.setItem('agrisense_history', JSON.stringify(updatedHistory));
-    showToast?.(`Updated notes for ${item.logId}`, 'info');
+    showToast?.(`Updated notes for ${itemLogId}`, 'info');
   };
 
   const handleRerun = (item) => {
+    const itemLogId = item.logId || item.recId || '';
     navigate('/recommend', { state: item.inputs });
-    showToast?.(`Rerunning advisory for ${item.logId}`, 'info');
+    showToast?.(`Rerunning advisory for ${itemLogId}`, 'info');
   };
+
 
   // Calculate dynamic stats
   const totalRuns = history.length;

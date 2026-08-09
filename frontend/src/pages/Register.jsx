@@ -40,9 +40,13 @@ export default function Register({ showToast }) {
 
   useEffect(() => {
     try {
-      sessionStorage.setItem('agrisense_reg_draft', JSON.stringify({ ...formData, currentStep }));
+      const draft = { ...formData, currentStep };
+      delete draft.password;
+      delete draft.confirmPassword;
+      sessionStorage.setItem('agrisense_reg_draft', JSON.stringify(draft));
     } catch (e) {}
   }, [formData, currentStep]);
+
 
   const [touched, setTouched] = useState({});
   const [submitted, setSubmitted] = useState(false);

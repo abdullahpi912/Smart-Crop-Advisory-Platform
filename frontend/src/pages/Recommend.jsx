@@ -50,22 +50,37 @@ export default function Recommend({ showToast }) {
 
     let computed = null;
     let isFromBackend = false;
+    const backendUrl = import.meta.env?.VITE_API_BASE_URL || 'http://localhost:5000';
 
     if (mode === 'crop') {
       try {
-        const response = await fetch('http://127.0.0.1:5000/api/predict', {
+        // Try user-scoped recommendation endpoint first (for logged-in session)
+        let response = await fetch(`${backendUrl}/api/recommendations`, {
           method: 'POST',
-          headers: {
-            'Content-Type': 'application/json'
-          },
+          headers: { 'Content-Type': 'application/json' },
+          credentials: 'include',
           body: JSON.stringify(formData)
         });
 
         if (response.ok) {
-          computed = await response.json();
+          const resData = await response.json();
+          computed = resData.recommendation || resData;
           isFromBackend = true;
         } else {
-          console.warn('Flask API returned non-OK response:', response.status);
+          // Fallback to POST /api/predict for visitors (unauthenticated)
+          response = await fetch(`${backendUrl}/api/predict`, {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            credentials: 'include',
+            body: JSON.stringify(formData)
+          });
+
+          if (response.ok) {
+            computed = await response.json();
+            isFromBackend = true;
+          } else {
+            console.warn('Flask API returned non-OK response:', response.status);
+          }
         }
       } catch (err) {
         console.warn('Flask API unreachable, utilizing local engine fallback:', err.message);
@@ -82,6 +97,7 @@ export default function Recommend({ showToast }) {
 
     setResult(computed);
     setIsLoading(false);
+
 
     // Save to localStorage
     try {

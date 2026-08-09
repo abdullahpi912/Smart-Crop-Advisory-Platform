@@ -1,7 +1,9 @@
+SET NAMES utf8mb4;
 -- AgriSense Database Schema & Seed Data
 -- Run this once in MySQL Workbench / CLI before starting app.py.
 
 CREATE DATABASE IF NOT EXISTS agrisense_db;
+
 USE agrisense_db;
 
 CREATE TABLE IF NOT EXISTS advisory_logs (
