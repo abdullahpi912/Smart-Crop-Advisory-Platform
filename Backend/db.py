@@ -27,20 +27,46 @@ def _init_pool():
     user = os.environ.get('DB_USER', 'root')
     database = os.environ.get('DB_NAME', 'agrisense_db')
 
-    logger.info("Initializing MySQL connection pool (size=%d, host=%s, port=%d, user=%s, db=%s)",
-                pool_size, host, port, user, database)
+    ssl_ca = os.environ.get('DB_SSL_CA')
+    ssl_disabled = os.environ.get('DB_SSL_DISABLED', 'false').lower() in ('true', '1', 't')
 
-    _pool = pooling.MySQLConnectionPool(
-        pool_name="agrisense_pool",
-        pool_size=pool_size,
-        pool_reset_session=True,
-        host=host,
-        port=port,
-        user=user,
-        password=db_password,
-        database=database,
-        charset='utf8mb4'
-    )
+    logger.info("Initializing MySQL connection pool (size=%d, host=%s, port=%d, user=%s, db=%s, ssl_ca=%s, ssl_disabled=%s)",
+                pool_size, host, port, user, database, ssl_ca, ssl_disabled)
+
+    pool_kwargs = {
+        'pool_name': "agrisense_pool",
+        'pool_size': pool_size,
+        'pool_reset_session': True,
+        'host': host,
+        'port': port,
+        'user': user,
+        'password': db_password,
+        'database': database,
+        'charset': 'utf8mb4'
+    }
+
+    if ssl_ca and not ssl_disabled:
+        ca_path = Path(ssl_ca)
+        if not ca_path.is_absolute():
+            backend_dir = Path(__file__).resolve().parent
+            if (backend_dir / ca_path).exists():
+                ca_path = (backend_dir / ca_path).resolve()
+            elif ca_path.exists():
+                ca_path = ca_path.resolve()
+            else:
+                ca_path = (backend_dir / ca_path).resolve()
+
+        if not ca_path.exists():
+            logger.warning("DB_SSL_CA file does not exist at resolved path: %s", ca_path)
+
+        pool_kwargs['ssl_ca'] = str(ca_path)
+        pool_kwargs['ssl_verify_cert'] = True
+        logger.info("Enabling MySQL SSL with CA cert: %s", ca_path)
+    elif ssl_disabled:
+        pool_kwargs['ssl_disabled'] = True
+        logger.info("MySQL SSL explicitly disabled")
+
+    _pool = pooling.MySQLConnectionPool(**pool_kwargs)
     return _pool
 
 

@@ -1,15 +1,11 @@
 SET NAMES utf8mb4;
+-- =========================================================================
 -- AgriSense Database Schema & Seed Data
--- Run this once in MySQL Workbench / CLI before starting app.py.
-
--- Optional: Create least-privilege database user (see db_setup.sql)
--- CREATE USER IF NOT EXISTS 'agrisense_app'@'%' IDENTIFIED BY 'your_secure_password';
--- GRANT SELECT, INSERT, UPDATE, DELETE ON agrisense_db.* TO 'agrisense_app'@'%';
--- FLUSH PRIVILEGES;
-
-CREATE DATABASE IF NOT EXISTS agrisense_db;
-
-USE agrisense_db;
+-- Run this against your target database (connect first, e.g.:
+--   mysql -h <host> -P <port> -u <user> -p --ssl-ca=<ca.pem path> <database_name>
+-- ). This file no longer creates its own database — it assumes you're
+-- already connected to the correct one (local: agrisense_db, Aiven: defaultdb).
+-- =========================================================================
 
 CREATE TABLE IF NOT EXISTS advisory_logs (
     id INT AUTO_INCREMENT PRIMARY KEY,

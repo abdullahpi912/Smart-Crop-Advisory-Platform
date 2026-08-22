@@ -89,6 +89,26 @@ def init_db():
         conn = get_connection()
         cursor = conn.cursor()
         cursor.execute("""
+            CREATE TABLE IF NOT EXISTS advisory_logs (
+                id INT AUTO_INCREMENT PRIMARY KEY,
+                log_id VARCHAR(20) UNIQUE NOT NULL,
+                timestamp VARCHAR(30),
+                npk_summary VARCHAR(100),
+                climate_summary VARCHAR(100),
+                type VARCHAR(100),
+                crop VARCHAR(50),
+                badge_class VARCHAR(50),
+                recommended_item VARCHAR(150),
+                category VARCHAR(100),
+                confidence VARCHAR(20),
+                dosage_advice VARCHAR(255),
+                soil_health VARCHAR(100),
+                detailed_notes TEXT,
+                inputs_json TEXT,
+                last_updated VARCHAR(30)
+            );
+        """)
+        cursor.execute("""
             CREATE TABLE IF NOT EXISTS users (
                 id INT AUTO_INCREMENT PRIMARY KEY,
                 username VARCHAR(50) UNIQUE NOT NULL,

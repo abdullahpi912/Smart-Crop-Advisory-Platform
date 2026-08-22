@@ -1,6 +1,8 @@
 -- =========================================================================
--- AgriSense Least-Privilege MySQL User Setup
+-- AgriSense Least-Privilege MySQL User Setup (Local / Self-Hosted MySQL)
 -- Run as root/admin user once in MySQL to create a scoped application user.
+-- Note: Managed cloud providers (e.g. Aiven) manage users and DB names
+-- (e.g. avnadmin / defaultdb) via their cloud dashboard.
 -- =========================================================================
 
 -- 1. Create the dedicated application database if not already present

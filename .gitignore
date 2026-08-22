@@ -39,6 +39,7 @@ htmlcov/
 .env.production.local
 *.env
 *.pem
+!Backend/certs/*.pem
 *.key
 
 # Local SQLite & Temporary Databases
