@@ -63,3 +63,8 @@ htmlcov/
 ehthumbs.db
 Thumbs.db
 desktop.ini
+
+# Cookie jar and session artifacts
+cookies.txt
+*.cookie
+
