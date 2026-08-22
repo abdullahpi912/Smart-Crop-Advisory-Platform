@@ -3,95 +3,115 @@ import { Link } from 'react-router-dom';
 
 export default function About() {
   return (
-    <main>
-      {/* About Intro Section */}
-      <section id="about">
-        <div className="section-header">
-          <span className="section-tag"><i className="fa-solid fa-seedling"></i> Precision Advisory Architecture</span>
-          <h2 className="section-title">About AgriSense</h2>
-          <p className="section-subtitle">
-            Empowering smallholder farmers and agronomy teams with machine learning insights for data-driven precision agriculture.
+    <main style={{ padding: 'calc(var(--nav-height) + 2rem) 0 5rem 0' }}>
+      <div className="page-container">
+        {/* Editorial Header */}
+        <div className="section-header-editorial">
+          <div className="section-meta-row">
+            <span className="mono-accent">ABOUT • ARCHITECTURE</span>
+            <div className="section-meta-rule"></div>
+            <span className="mono-meta">PRECISION SOIL INTELLIGENCE</span>
+          </div>
+          <h1 className="section-title-large">Data-Backed Agronomic Intelligence</h1>
+          <p className="section-desc-editorial">
+            Empowering agricultural growers and agronomy advisors with multivariate machine learning models to maximize crop yields and protect long-term soil health.
           </p>
         </div>
 
-        <div className="about-intro-grid" style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(320px, 1fr))', gap: '3rem', alignItems: 'center' }}>
-          <div className="about-text-content">
-            <p style={{ fontSize: '1.1rem', lineHeight: 1.8, marginBottom: '1.2rem' }}>
-              <strong>AgriSense</strong> is an end-to-end precision crop and fertilizer advisory platform engineered to optimize agricultural yields and promote sustainable soil management.
+        {/* Overview Split Grid */}
+        <div style={{ display: 'grid', gridTemplateColumns: '1.2fr 1fr', gap: '3.5rem', alignItems: 'center', marginBottom: '4rem' }}>
+          <div>
+            <span className="mono-accent">01 • THE CHALLENGE</span>
+            <h2 style={{ fontSize: '2rem', fontWeight: 800, margin: '0.75rem 0 1rem 0', letterSpacing: '-0.03em' }}>
+              Eliminating Seasonal Guesswork
+            </h2>
+            <p style={{ color: 'var(--agri-secondary)', fontSize: '1.05rem', lineHeight: 1.7, marginBottom: '1.25rem' }}>
+              Traditional farming heavily depends on inherited seasonal intuition or past crop choices. However, unpredictable climate fluctuations and localized soil chemical degradation frequently result in lower yields and wasted fertilizer expenditure.
             </p>
-            <p style={{ fontSize: '1rem', lineHeight: 1.7, marginBottom: '1.2rem', color: 'var(--text-body)' }}>
-              Traditional farming heavily relies on inherited seasonal intuition or past crop choices, which can fail when local weather anomalies or soil nutrient depletion occur. AgriSense bridges this gap by pairing intelligent classification algorithms with an intuitive advisory interface.
-            </p>
-            <p style={{ fontSize: '1rem', lineHeight: 1.7, color: 'var(--text-body)' }}>
-              By analyzing key field indicators — Nitrogen (N), Phosphorus (P), Potassium (K), Temperature, Humidity, Soil pH, and Rainfall — the platform accurately maps complex soil profiles to optimum high-yield crop and fertilizer choices.
+            <p style={{ color: 'var(--agri-secondary)', fontSize: '1rem', lineHeight: 1.7 }}>
+              AgriSense addresses this by evaluating seven fundamental agronomic variables — Nitrogen (N), Phosphorus (P), Potassium (K), Soil pH, Temperature, Relative Humidity, and Precipitation — against comprehensive crop suitability matrices to calculate optimal crop and fertilizer schedules.
             </p>
           </div>
 
-          <div className="hero-image-wrapper">
-            <div className="hero-floating-pill">
-              <i className="fa-solid fa-leaf" style={{ color: 'var(--accent-gold)' }}></i> Precision Soil AI
-            </div>
-            <figure className="hero-image" style={{ height: '360px' }}>
-              <img 
-                src="/Farmer_image/Truck_image.jpg" 
-                alt="Farm tractor working across vibrant agricultural farmland" 
-                onError={(e) => { e.currentTarget.onerror = null; e.currentTarget.src = '/Farmer_image/Truck_image.jpg'; }}
-              />
-            </figure>
+          <div style={{ border: '1px solid var(--agri-line)', overflow: 'hidden', backgroundColor: 'var(--agri-stage)' }}>
+            <img
+              src="/Farmer_image/Truck_image.jpg"
+              alt="Precision agricultural machinery in field"
+              style={{ width: '100%', height: '360px', objectFit: 'cover' }}
+              onError={(e) => { e.currentTarget.onerror = null; e.currentTarget.src = '/Farmer_image/Truck_image.jpg'; }}
+            />
           </div>
         </div>
-      </section>
 
-      {/* Core Agronomic Values Section */}
-      <section id="values" style={{ padding: 'var(--section-padding) 1.5rem', background: 'var(--surface-white)', marginTop: '3rem', borderRadius: 'var(--radius-md)' }}>
-        <div className="section-header">
-          <span className="section-tag"><i className="fa-solid fa-compass"></i> Core Mission &amp; Principles</span>
-          <h2 className="section-title">Driven by Sustainable Agriculture</h2>
-          <p className="section-subtitle">
-            Delivering data-backed confidence for planting decisions across diverse ecological zones.
+        {/* Agronomic Values Grid */}
+        <div style={{ borderTop: '1px solid var(--agri-line)', paddingTop: '4rem', marginBottom: '4rem' }}>
+          <div className="section-meta-row" style={{ marginBottom: '2rem' }}>
+            <span className="mono-accent">02 • PILLARS</span>
+            <div className="section-meta-rule"></div>
+            <span className="mono-meta">CORE AGRONOMIC PRINCIPLES</span>
+          </div>
+
+          <div className="why-editorial-grid">
+            <div className="why-editorial-cell">
+              <span className="mono-meta" style={{ color: 'var(--agri-accent)' }}>01 • SOIL HEALTH</span>
+              <div>
+                <h3 style={{ fontSize: '1.35rem', fontWeight: 800, margin: '0.75rem 0 0.5rem 0' }}>Nutrient Preservation</h3>
+                <p style={{ color: 'var(--agri-secondary)', fontSize: '0.95rem', lineHeight: 1.6 }}>
+                  Prevents over-fertilization and chemical leaching by delivering exact NPK deficit calculations tailored directly to soil acidity and crop uptake rates.
+                </p>
+              </div>
+              <span className="mono-meta" style={{ color: 'var(--agri-muted)' }}>CHEMISTRY BALANCE</span>
+            </div>
+
+            <div className="why-editorial-cell">
+              <span className="mono-meta" style={{ color: 'var(--agri-accent)' }}>02 • YIELD GAIN</span>
+              <div>
+                <h3 style={{ fontSize: '1.35rem', fontWeight: 800, margin: '0.75rem 0 0.5rem 0' }}>Data-Backed Prosperity</h3>
+                <p style={{ color: 'var(--agri-secondary)', fontSize: '0.95rem', lineHeight: 1.6 }}>
+                  Minimizes planting risk by identifying crop species with the highest statistical suitability for specific regional thermal and precipitation limits.
+                </p>
+              </div>
+              <span className="mono-meta" style={{ color: 'var(--agri-muted)' }}>OPTIMAL OUTPUT</span>
+            </div>
+
+            <div className="why-editorial-cell">
+              <span className="mono-meta" style={{ color: 'var(--agri-accent)' }}>03 • CLIMATE SYNC</span>
+              <div>
+                <h3 style={{ fontSize: '1.35rem', fontWeight: 800, margin: '0.75rem 0 0.5rem 0' }}>Environmental Adaptation</h3>
+                <p style={{ color: 'var(--agri-secondary)', fontSize: '0.95rem', lineHeight: 1.6 }}>
+                  Enables farming plots to adapt dynamically to shifting seasonal moisture and temperature curves with localized weather synchronization.
+                </p>
+              </div>
+              <span className="mono-meta" style={{ color: 'var(--agri-muted)' }}>RESILIENT HARVEST</span>
+            </div>
+
+            <div className="why-editorial-cell">
+              <span className="mono-meta" style={{ color: 'var(--agri-accent)' }}>04 • PLOT TELEMETRY</span>
+              <div>
+                <h3 style={{ fontSize: '1.35rem', fontWeight: 800, margin: '0.75rem 0 0.5rem 0' }}>Multi-Season History</h3>
+                <p style={{ color: 'var(--agri-secondary)', fontSize: '0.95rem', lineHeight: 1.6 }}>
+                  Maintains longitudinal records of past soil test results and recommendation outcomes to monitor soil regeneration over successive years.
+                </p>
+              </div>
+              <span className="mono-meta" style={{ color: 'var(--agri-muted)' }}>LONGITUDINAL LOGS</span>
+            </div>
+          </div>
+        </div>
+
+        {/* Technical Call to Action Console */}
+        <div style={{ border: '1px solid var(--agri-line)', backgroundColor: 'var(--agri-surface)', padding: '3.5rem 2.5rem', textAlign: 'center' }}>
+          <span className="mono-accent" style={{ display: 'block', marginBottom: '0.75rem' }}>SIMULATOR READY</span>
+          <h2 style={{ fontSize: '2.2rem', fontWeight: 900, letterSpacing: '-0.03em', marginBottom: '1rem', color: 'var(--agri-ink)' }}>
+            Ready to Evaluate Your Field Parameters?
+          </h2>
+          <p style={{ color: 'var(--agri-secondary)', maxWidth: '560px', margin: '0 auto 2rem auto', fontSize: '1.05rem', lineHeight: 1.6 }}>
+            Run the AgriSense field advisory simulator with your soil test results to compute high-yield crop recommendations and tailored fertilizer advice.
           </p>
+          <Link to="/recommend" className="btn-primary-technical">
+            <i className="fa-solid fa-calculator"></i> LAUNCH ADVISORY SIMULATOR
+          </Link>
         </div>
-
-        <div className="why-grid" style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(280px, 1fr))', gap: '2rem' }}>
-          <div className="why-card">
-            <div className="why-card-top">
-              <div className="why-icon-box"><i className="fa-solid fa-earth-americas"></i></div>
-              <span className="why-category-tag">Environmental Balance</span>
-            </div>
-            <h3>Soil Health Preservation</h3>
-            <p>Prevents over-fertilization and chemical leaching by delivering exact NPK deficit calculations tailored to soil chemistry.</p>
-          </div>
-
-          <div className="why-card">
-            <div className="why-card-top">
-              <div className="why-icon-box"><i className="fa-solid fa-chart-pie"></i></div>
-              <span className="why-category-tag">Yield Maximization</span>
-            </div>
-            <h3>Data-Backed Prosperity</h3>
-            <p>Eliminates planting risk by recommending crops with the highest statistical suitability for specific regional rainfall and thermal bounds.</p>
-          </div>
-
-          <div className="why-card">
-            <div className="why-card-top">
-              <div className="why-icon-box"><i className="fa-solid fa-shield-halved"></i></div>
-              <span className="why-category-tag">Farmer Resilience</span>
-            </div>
-            <h3>Climate Adaptation</h3>
-            <p>Helps farming communities adapt to changing seasonal weather patterns with real-time moisture and temperature matching.</p>
-          </div>
-        </div>
-      </section>
-
-      {/* Call to Action Banner */}
-      <section style={{ padding: '3rem 1.5rem', textAlign: 'center', background: 'var(--primary-dark)', color: '#fff', borderRadius: 'var(--radius-md)', margin: '3rem 0' }}>
-        <h2 style={{ fontFamily: 'var(--font-heading)', color: 'var(--accent-gold)', marginBottom: '1rem' }}>Ready to optimize your field yield?</h2>
-        <p style={{ color: 'var(--bg-canvas)', maxWidth: '600px', margin: '0 auto 1.5rem auto' }}>
-          Test your field soil parameters now and receive real-time crop recommendations.
-        </p>
-        <Link to="/recommend" className="btn btn-terracotta">
-          <i className="fa-solid fa-wheat-awn"></i> Launch Advisory Simulator
-        </Link>
-      </section>
+      </div>
     </main>
   );
 }

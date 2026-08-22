@@ -113,12 +113,12 @@ export default function CropLibrary() {
   ];
 
   const categories = [
-    { id: 'all', label: 'All Items', icon: 'fa-solid fa-border-all' },
-    { id: 'grains', label: '🌾 Grains & Cereals' },
-    { id: 'pulses', label: '🌱 Pulses & Legumes' },
-    { id: 'fruits', label: '🍎 Fruits & Orchard' },
-    { id: 'commercial', label: '☕ Cash Crops' },
-    { id: 'fertilizers', label: '🧪 Fertilizers & NPK' }
+    { id: 'all', label: 'ALL SPECIES', icon: 'fa-solid fa-border-all' },
+    { id: 'grains', label: 'GRAINS & CEREALS', icon: 'fa-solid fa-wheat-awn' },
+    { id: 'pulses', label: 'PULSES & LEGUMES', icon: 'fa-solid fa-seedling' },
+    { id: 'fruits', label: 'FRUITS & ORCHARD', icon: 'fa-solid fa-apple-whole' },
+    { id: 'commercial', label: 'CASH CROPS', icon: 'fa-solid fa-mug-hot' },
+    { id: 'fertilizers', label: 'FERTILIZERS & NPK', icon: 'fa-solid fa-flask' }
   ];
 
   const filteredCrops = catalogData.filter((crop) => {
@@ -131,70 +131,73 @@ export default function CropLibrary() {
   });
 
   return (
-    <main>
-      <section id="crops-hero">
-        <div className="section-header">
-          <span className="section-tag"><i className="fa-solid fa-book-open"></i> Agronomy Database</span>
-          <h2 className="section-title">Crop &amp; Fertilizer Intelligence Library</h2>
-          <p className="section-subtitle">
-            Explore soil chemical requirements, rainfall limits, temperature thresholds, and fertilizer composition profiles for supported agricultural crops.
+    <main style={{ padding: 'calc(var(--nav-height) + 2rem) 0 5rem 0' }}>
+      <div className="page-container">
+        {/* Header */}
+        <div className="section-header-editorial">
+          <div className="section-meta-row">
+            <span className="mono-accent">DATABASE • INDEX</span>
+            <div className="section-meta-rule"></div>
+            <span className="mono-meta">AGRONOMIC SPECIES REPOSITORY</span>
+          </div>
+          <h1 className="section-title-large">Crop &amp; Fertilizer Intelligence Library</h1>
+          <p className="section-desc-editorial">
+            Explore validated soil chemistry bounds, precipitation thresholds, temperature tolerances, and nutrient requirements for supported crops and fertilizer formulations.
           </p>
         </div>
 
         {/* Search Bar */}
-        <div style={{ maxWidth: '600px', margin: '0 auto 2rem auto', position: 'relative' }}>
-          <input
-            type="text"
-            className="input-control"
-            placeholder="Search crop or fertilizer by name, type, or soil conditions..."
-            value={searchQuery}
-            onChange={(e) => setSearchQuery(e.target.value)}
-            style={{ paddingLeft: '3rem', width: '100%' }}
-          />
-          <i className="fa-solid fa-magnifying-glass" style={{ position: 'absolute', left: '1.2rem', top: '50%', transform: 'translateY(-50%)', color: 'var(--primary-light)' }}></i>
-        </div>
-
-        {/* Category Filter Bar */}
-        <div className="crop-filter-wrapper">
-          <span className="filter-label"><i className="fa-solid fa-filter"></i> Filter Category:</span>
-          <div className="crop-filter-tabs">
-            {categories.map((cat) => (
-              <button
-                key={cat.id}
-                type="button"
-                className={`filter-btn ${selectedCategory === cat.id ? 'active' : ''}`}
-                onClick={() => setSelectedCategory(cat.id)}
-                style={{
-                  cursor: 'pointer',
-                  border: selectedCategory === cat.id ? '2px solid var(--accent-terracotta)' : '1px solid var(--border-subtle)',
-                  backgroundColor: selectedCategory === cat.id ? 'var(--accent-terracotta)' : 'var(--surface-white)',
-                  color: selectedCategory === cat.id ? '#ffffff' : 'var(--text-dark)',
-                  fontWeight: selectedCategory === cat.id ? 700 : 500,
-                  padding: '0.55rem 1.15rem',
-                  borderRadius: 'var(--radius-sm)',
-                  transition: 'var(--transition)'
-                }}
-              >
-                {cat.icon && <i className={cat.icon} style={{ marginRight: '0.4rem' }}></i>}
-                {cat.label}
-              </button>
-            ))}
+        <div className="crop-search-bar">
+          <div className="console-field">
+            <div className="input-wrapper">
+              <input
+                type="text"
+                placeholder="Search crop or fertilizer by name or category..."
+                value={searchQuery}
+                onChange={(e) => setSearchQuery(e.target.value)}
+                style={{ paddingLeft: '2.5rem' }}
+              />
+              <i
+                className="fa-solid fa-magnifying-glass"
+                style={{ position: 'absolute', left: '1rem', top: '50%', transform: 'translateY(-50%)', color: 'var(--agri-muted)' }}
+              ></i>
+            </div>
           </div>
         </div>
 
-        {/* Catalog Grid */}
-        <div className="crop-catalog-grid" style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fill, minmax(300px, 1fr))', gap: '1.5rem', marginTop: '2rem' }}>
+        {/* Filter Category Chips */}
+        <div className="crop-filter-row">
+          {categories.map((cat) => {
+            const isActive = selectedCategory === cat.id;
+            return (
+              <button
+                key={cat.id}
+                type="button"
+                className={`preset-chip ${isActive ? 'active' : ''}`}
+                onClick={() => setSelectedCategory(cat.id)}
+              >
+                <i className={cat.icon} style={{ marginRight: '6px' }}></i>
+                {cat.label}
+              </button>
+            );
+          })}
+        </div>
+
+        {/* Editorial Crop Index Grid */}
+        <div className="crop-index-grid">
           {filteredCrops.length > 0 ? (
-            filteredCrops.map((crop) => <CropCard key={crop.id} crop={crop} />)
+            filteredCrops.map((crop, idx) => (
+              <CropCard key={crop.id} crop={crop} index={idx} />
+            ))
           ) : (
-            <div style={{ gridColumn: '1 / -1', textAlign: 'center', padding: '4rem', background: 'var(--surface-white)', borderRadius: 'var(--radius-sm)' }}>
-              <i className="fa-solid fa-folder-open" style={{ fontSize: '3rem', color: 'var(--text-muted)', marginBottom: '1rem' }}></i>
-              <h3>No matching crops found</h3>
-              <p style={{ color: 'var(--text-muted)' }}>Try adjusting your search query or category filter.</p>
+            <div style={{ gridColumn: '1 / -1', textAlign: 'center', padding: '5rem 2rem', backgroundColor: 'var(--agri-surface)', borderRight: '1px solid var(--agri-line)', borderBottom: '1px solid var(--agri-line)' }}>
+              <span className="mono-meta" style={{ display: 'block', marginBottom: '0.75rem' }}>NO MATCHING RECORDS</span>
+              <h3 style={{ fontSize: '1.25rem', fontWeight: 800 }}>No crops or fertilizers found</h3>
+              <p style={{ color: 'var(--agri-muted)', marginTop: '0.5rem' }}>Try clearing your search query or selecting a different category filter.</p>
             </div>
           )}
         </div>
-      </section>
+      </div>
     </main>
   );
 }

@@ -1,359 +1,682 @@
 import React, { useState, useEffect } from 'react';
+import ReactDOM from 'react-dom';
 import { Link, useNavigate } from 'react-router-dom';
+import CropGrowthIntro from '../components/CropGrowthIntro';
+
+const BACKEND = import.meta.env?.VITE_API_BASE_URL || 'http://localhost:5000';
 
 export default function Dashboard({ showToast }) {
   const navigate = useNavigate();
-  const [history, setHistory] = useState([]);
-  const [userProfile, setUserProfile] = useState(null);
 
-  // Default initial mock history items if none saved yet
+  // ── State ────────────────────────────────────────────────
+  const [history, setHistory]                   = useState([]);
+  const [userProfile, setUserProfile]           = useState(null);
+
+  // Edit-profile modal
+  const [showProfileModal, setShowProfileModal] = useState(false);
+  const [profileTab, setProfileTab]             = useState('info'); // 'info' | 'password' | 'delete'
+  const [profileForm, setProfileForm]           = useState({ fullname: '', email: '', phone: '', region: '', soilType: 'loamy' });
+  const [pwdForm, setPwdForm]                   = useState({ current: '', next: '', confirm: '' });
+  const [delPwd, setDelPwd]                     = useState('');
+  const [modalError, setModalError]             = useState('');
+  const [modalLoading, setModalLoading]         = useState(false);
+
+  // Edit-notes modal
+  const [editingItem, setEditingItem]           = useState(null);
+  const [noteText, setNoteText]                 = useState('');
+  const [savingNotes, setSavingNotes]           = useState(false);
+
+  // Clear-history modal
+  const [showClearModal, setShowClearModal]     = useState(false);
+
+  // ── Seed data ─────────────────────────────────────────────
   const defaultHistory = [
     {
       logId: '#LOG-8942',
       timestamp: '2026-07-24 14:30',
-      npkSummary: 'N: 90 | P: 42 | K: 43',
+      npkSummary: 'N: 90.0 | P: 42.0 | K: 43.0',
       climateSummary: 'pH 6.5 | 202 mm | 26.5°C',
-      type: 'Crop Match',
+      type: 'Crop Match (ML)',
       badgeClass: 'badge-crop',
       recommendedItem: '🌾 Paddy Rice',
       confidence: '99.2%',
       inputs: { nitrogen: 90, phosphorus: 42, potassium: 43, temperature: 26.5, humidity: 80, ph: 6.5, rainfall: 202, mode: 'crop' }
     },
     {
-      logId: '#LOG-8941',
-      timestamp: '2026-07-22 09:15',
-      npkSummary: 'N: 100 | P: 20 | K: 30',
-      climateSummary: 'pH 5.8 | 1600 mm | 25.0°C',
-      type: 'Crop Match',
-      badgeClass: 'badge-crop',
-      recommendedItem: '☕ Highland Coffee',
-      confidence: '97.8%',
-      inputs: { nitrogen: 100, phosphorus: 20, potassium: 30, temperature: 25.0, humidity: 75, ph: 5.8, rainfall: 1600, mode: 'crop' }
+      logId: '#LOG-8938',
+      timestamp: '2026-07-22 16:45',
+      npkSummary: 'N: 50.0 | P: 20.0 | K: 30.0',
+      climateSummary: 'pH 6.5 | 120 mm | 28.0°C',
+      type: 'Fertilizer Recommendation (ML)',
+      badgeClass: 'badge-fertilizer',
+      recommendedItem: '12:32:16 NPK',
+      confidence: '96.4%',
+      inputs: { district_name: 'Kolhapur', soil_color: 'Black', crop: 'Sugarcane', nitrogen: 50, phosphorus: 20, potassium: 30, ph: 6.5, rainfall: 120, temperature: 28, mode: 'fertilizer' }
     },
     {
-      logId: '#LOG-8938',
-      timestamp: '2026-07-19 16:45',
-      npkSummary: 'N: 35 | P: 40 | K: 35',
-      climateSummary: 'pH 6.2 | 180 mm | 24.0°C',
-      type: 'Fertilizer Match',
-      badgeClass: 'badge-fertilizer',
-      recommendedItem: 'Urea (46% Nitrogen Boost)',
-      confidence: '98.8%',
-      inputs: { nitrogen: 35, phosphorus: 40, potassium: 35, temperature: 24.0, humidity: 70, ph: 6.2, rainfall: 180, mode: 'fertilizer' }
+      logId: '#LOG-8935',
+      timestamp: '2026-07-19 11:20',
+      npkSummary: 'Area: 10.0 ha | Year: 2024',
+      climateSummary: 'State: Maharashtra | Season: Kharif',
+      type: 'Crop Yield Prediction (ML)',
+      badgeClass: 'badge-yield',
+      recommendedItem: 'Rice: 24.50 Tonnes',
+      confidence: 'ML Regressor',
+      inputs: { state_name: 'Maharashtra', season: 'Kharif', crop: 'Rice', crop_year: 2024, area: 10.0, mode: 'yield' }
     }
   ];
 
+  // ── Effects ───────────────────────────────────────────────
   useEffect(() => {
-    const fetchLogs = async () => {
-      const backendUrl = import.meta.env?.VITE_API_BASE_URL || 'http://localhost:5000';
+    const fetchData = async () => {
+      // Load profile from localStorage first
       try {
-        const storedUser = localStorage.getItem('agrisense_user');
-        if (storedUser) {
-          setUserProfile(JSON.parse(storedUser));
-        }
+        const stored = localStorage.getItem('agrisense_user') || localStorage.getItem('agrisense_session');
+        if (stored) setUserProfile(JSON.parse(stored));
+      } catch (_) {}
 
-        // Try user-specific recommendations first (for logged-in session)
-        const recRes = await fetch(`${backendUrl}/api/recommendations`, {
-          method: 'GET',
-          credentials: 'include'
-        });
-
-        if (recRes.ok) {
-          const recData = await recRes.json();
-          if (recData.recommendations && recData.recommendations.length > 0) {
-            setHistory(recData.recommendations);
-            localStorage.setItem('agrisense_history', JSON.stringify(recData.recommendations));
-            return;
-          }
-        }
-
-        // Fallback to GET /api/logs for anonymous visitors (unauthenticated)
-        const res = await fetch(`${backendUrl}/api/logs`, {
-          method: 'GET',
-          credentials: 'include'
-        });
-        if (res.ok) {
-          const data = await res.json();
-          if (data.logs && data.logs.length > 0) {
-            setHistory(data.logs);
-            localStorage.setItem('agrisense_history', JSON.stringify(data.logs));
-            return;
-          }
-        }
-      } catch (err) {
-        console.warn('Backend API unreachable, using local storage history');
-      }
-
-      // Fallback to local storage
+      // Refresh from backend
       try {
-        const stored = localStorage.getItem('agrisense_history');
-        if (stored) {
-          setHistory(JSON.parse(stored));
-        } else {
-          setHistory(defaultHistory);
-          localStorage.setItem('agrisense_history', JSON.stringify(defaultHistory));
+        const r = await fetch(`${BACKEND}/profile`, { credentials: 'include' });
+        if (r.ok) {
+          const d = await r.json();
+          if (d.user) { setUserProfile(d.user); localStorage.setItem('agrisense_user', JSON.stringify(d.user)); }
         }
-      } catch (err) {
-        setHistory(defaultHistory);
-      }
+      } catch (_) {}
+
+      // Load history
+      try {
+        const r = await fetch(`${BACKEND}/api/recommendations`, { credentials: 'include' });
+        if (r.ok) { const d = await r.json(); if (d.recommendations?.length) { setHistory(d.recommendations); localStorage.setItem('agrisense_history', JSON.stringify(d.recommendations)); return; } }
+        const r2 = await fetch(`${BACKEND}/api/logs`, { credentials: 'include' });
+        if (r2.ok) { const d2 = await r2.json(); if (d2.logs?.length) { setHistory(d2.logs); localStorage.setItem('agrisense_history', JSON.stringify(d2.logs)); return; } }
+      } catch (_) {}
+
+      try {
+        const cached = localStorage.getItem('agrisense_history');
+        setHistory(cached ? JSON.parse(cached) : defaultHistory);
+        if (!localStorage.getItem('agrisense_history')) localStorage.setItem('agrisense_history', JSON.stringify(defaultHistory));
+      } catch (_) { setHistory(defaultHistory); }
     };
-
-    fetchLogs();
+    fetchData();
   }, []);
 
-  const handleDeleteItem = async (logId) => {
-    const backendUrl = import.meta.env?.VITE_API_BASE_URL || 'http://localhost:5000';
-    const cleanId = logId.replace('#', '');
-    try {
-      let res = await fetch(`${backendUrl}/api/recommendations/${cleanId}`, {
-        method: 'DELETE',
-        credentials: 'include'
+  // Sync profile form whenever userProfile changes
+  useEffect(() => {
+    if (userProfile) {
+      setProfileForm({
+        fullname: userProfile.fullname || userProfile.name || '',
+        email:    userProfile.email || '',
+        phone:    userProfile.phone || '',
+        region:   userProfile.region || userProfile.location || '',
+        soilType: userProfile.soilType || userProfile.soil_type || 'loamy'
       });
-      if (!res.ok) {
-        await fetch(`${backendUrl}/api/logs/${cleanId}`, {
-          method: 'DELETE',
-          credentials: 'include'
-        });
-      }
-    } catch (err) {
-      console.warn('DELETE API request failed, updating local state');
     }
+  }, [userProfile]);
 
-    const updated = history.filter((item) => (item.logId || item.recId) !== logId);
-    setHistory(updated);
-    localStorage.setItem('agrisense_history', JSON.stringify(updated));
-    showToast?.(`Removed log entry ${logId}`, 'info');
+  // ── Handlers ──────────────────────────────────────────────
+  const openProfileModal = () => {
+    setProfileTab('info');
+    setModalError('');
+    setPwdForm({ current: '', next: '', confirm: '' });
+    setDelPwd('');
+    setShowProfileModal(true);
   };
 
-  const handleClearHistory = async () => {
-    const backendUrl = import.meta.env?.VITE_API_BASE_URL || 'http://localhost:5000';
-    if (window.confirm('Are you sure you want to clear all history records?')) {
-      try {
-        await fetch(`${backendUrl}/api/logs`, {
-          method: 'DELETE',
-          credentials: 'include'
-        });
-      } catch (err) {
-        console.warn('DELETE ALL API request failed');
-      }
-
-      setHistory([]);
-      localStorage.removeItem('agrisense_history');
-      showToast?.('Recommendation history cleared', 'info');
-    }
+  const closeProfileModal = () => {
+    setShowProfileModal(false);
+    setModalError('');
   };
 
-  const handleUpdateNotes = async (item) => {
-    const backendUrl = import.meta.env?.VITE_API_BASE_URL || 'http://localhost:5000';
-    const itemLogId = item.logId || item.recId || '';
-    const newNotes = window.prompt('Update advisory field notes:', item.notes || item.detailedNotes || item.dosageAdvice || '');
-    if (newNotes === null) return;
-
-    const cleanId = itemLogId.replace('#', '');
+  const handleSaveProfile = async (e) => {
+    e.preventDefault();
+    setModalLoading(true); setModalError('');
     try {
-      let res = await fetch(`${backendUrl}/api/recommendations/${cleanId}`, {
+      const r = await fetch(`${BACKEND}/profile`, {
         method: 'PUT',
         headers: { 'Content-Type': 'application/json' },
         credentials: 'include',
-        body: JSON.stringify({ notes: newNotes })
+        body: JSON.stringify({ fullname: profileForm.fullname, email: profileForm.email, phone: profileForm.phone, region: profileForm.region, soil_type: profileForm.soilType })
       });
-
-      if (!res.ok) {
-        res = await fetch(`${backendUrl}/api/logs/${cleanId}`, {
-          method: 'PUT',
-          headers: { 'Content-Type': 'application/json' },
-          credentials: 'include',
-          body: JSON.stringify({ detailedNotes: newNotes })
-        });
+      const d = await r.json();
+      if (r.ok) {
+        const updated = d.user || { ...userProfile, ...profileForm };
+        setUserProfile(updated);
+        localStorage.setItem('agrisense_user', JSON.stringify(updated));
+        showToast?.('Profile updated successfully!', 'success');
+        closeProfileModal();
+      } else {
+        setModalError(d.error || 'Failed to update profile');
       }
+    } catch (_) {
+      const updated = { ...userProfile, ...profileForm };
+      setUserProfile(updated);
+      localStorage.setItem('agrisense_user', JSON.stringify(updated));
+      showToast?.('Profile updated locally!', 'success');
+      closeProfileModal();
+    } finally { setModalLoading(false); }
+  };
 
-      if (res.ok) {
-        const data = await res.json();
-        const updatedLog = data.recommendation || data.log;
-        const updatedHistory = history.map(h => ((h.logId || h.recId) === itemLogId) ? { ...h, ...updatedLog, notes: newNotes, detailedNotes: newNotes } : h);
-        setHistory(updatedHistory);
-        localStorage.setItem('agrisense_history', JSON.stringify(updatedHistory));
-        showToast?.(`Updated notes for ${itemLogId}`, 'success');
-        return;
-      }
-    } catch (err) {
-      console.warn('PUT API request failed, updating local state');
-    }
+  const handleChangePassword = async (e) => {
+    e.preventDefault();
+    setModalError('');
+    if (pwdForm.next !== pwdForm.confirm) { setModalError('New passwords do not match'); return; }
+    if (pwdForm.next.length < 6) { setModalError('New password must be at least 6 characters'); return; }
+    setModalLoading(true);
+    try {
+      const r = await fetch(`${BACKEND}/api/user/change-password`, {
+        method: 'PUT',
+        headers: { 'Content-Type': 'application/json' },
+        credentials: 'include',
+        body: JSON.stringify({ currentPassword: pwdForm.current, newPassword: pwdForm.next })
+      });
+      const d = await r.json();
+      if (r.ok) { showToast?.('Password changed successfully!', 'success'); closeProfileModal(); }
+      else { setModalError(d.error || 'Current password is incorrect'); }
+    } catch (_) { setModalError('Network error. Please try again.'); }
+    finally { setModalLoading(false); }
+  };
 
-    // Local fallback update
-    const updatedHistory = history.map(h => ((h.logId || h.recId) === itemLogId) ? { ...h, notes: newNotes, detailedNotes: newNotes } : h);
-    setHistory(updatedHistory);
-    localStorage.setItem('agrisense_history', JSON.stringify(updatedHistory));
-    showToast?.(`Updated notes for ${itemLogId}`, 'info');
+  const handleDeleteAccount = async (e) => {
+    e.preventDefault();
+    if (!delPwd) { setModalError('Please enter your password to confirm deletion'); return; }
+    setModalLoading(true); setModalError('');
+    try {
+      const r = await fetch(`${BACKEND}/api/user/account`, {
+        method: 'DELETE',
+        headers: { 'Content-Type': 'application/json' },
+        credentials: 'include',
+        body: JSON.stringify({ password: delPwd })
+      });
+      const d = await r.json();
+      if (r.ok) {
+        localStorage.removeItem('agrisense_user');
+        localStorage.removeItem('agrisense_history');
+        localStorage.removeItem('agrisense_session');
+        showToast?.('Account permanently deleted.', 'info');
+        closeProfileModal();
+        navigate('/login');
+      } else { setModalError(d.error || 'Incorrect password. Deletion cancelled.'); }
+    } catch (_) { setModalError('Network error. Failed to delete account.'); }
+    finally { setModalLoading(false); }
+  };
+
+  const handleDeleteItem = async (logId) => {
+    const cleanId = (logId || '').replace('#', '');
+    try {
+      let r = await fetch(`${BACKEND}/api/recommendations/${cleanId}`, { method: 'DELETE', credentials: 'include' });
+      if (!r.ok) await fetch(`${BACKEND}/api/logs/${cleanId}`, { method: 'DELETE', credentials: 'include' });
+    } catch (_) {}
+    const updated = history.filter(h => (h.logId || h.recId) !== logId);
+    setHistory(updated);
+    localStorage.setItem('agrisense_history', JSON.stringify(updated));
+    showToast?.(`Removed advisory log ${logId}`, 'info');
+  };
+
+  const handleOpenEditNotes = (item) => {
+    setEditingItem(item);
+    setNoteText(item.notes || item.detailedNotes || item.dosageAdvice || '');
+  };
+
+  const handleSaveNotes = async () => {
+    if (!editingItem) return;
+    setSavingNotes(true);
+    const itemId = editingItem.logId || editingItem.recId || '';
+    const cleanId = itemId.replace('#', '');
+    try {
+      let r = await fetch(`${BACKEND}/api/recommendations/${cleanId}`, { method: 'PUT', headers: { 'Content-Type': 'application/json' }, credentials: 'include', body: JSON.stringify({ notes: noteText }) });
+      if (!r.ok) r = await fetch(`${BACKEND}/api/logs/${cleanId}`, { method: 'PUT', headers: { 'Content-Type': 'application/json' }, credentials: 'include', body: JSON.stringify({ detailedNotes: noteText }) });
+    } catch (_) {}
+    const updated = history.map(h => (h.logId || h.recId) === itemId ? { ...h, notes: noteText, detailedNotes: noteText } : h);
+    setHistory(updated);
+    localStorage.setItem('agrisense_history', JSON.stringify(updated));
+    showToast?.(`Agronomic notes saved for ${itemId}`, 'success');
+    setEditingItem(null); setSavingNotes(false);
   };
 
   const handleRerun = (item) => {
-    const itemLogId = item.logId || item.recId || '';
-    navigate('/recommend', { state: item.inputs });
-    showToast?.(`Rerunning advisory for ${itemLogId}`, 'info');
+    const itemInputs = item.inputs || {};
+    const mode = itemInputs.mode || (item.type?.includes('Fertilizer') ? 'fertilizer' : (item.type?.includes('Yield') ? 'yield' : 'crop'));
+    navigate('/recommend', { state: { ...itemInputs, mode } });
+    showToast?.(`Rerunning ${mode.toUpperCase()} advisory for ${item.logId || item.recId}`, 'info');
   };
 
+  const handleConfirmClear = async () => {
+    try { await fetch(`${BACKEND}/api/logs`, { method: 'DELETE', credentials: 'include' }); } catch (_) {}
+    setHistory([]); localStorage.removeItem('agrisense_history');
+    showToast?.('History cleared successfully', 'info'); setShowClearModal(false);
+  };
 
-  // Calculate dynamic stats
   const totalRuns = history.length;
-  const topCropItem = history.length > 0 ? history[0].recommendedItem : 'Paddy Rice';
+  const topCropItem = history.length > 0 ? (history[0].recommendedItem || history[0].crop_name) : 'Paddy Rice';
 
   return (
-    <main>
-      <section id="dashboard">
-        <div className="section-header">
-          <span className="section-tag"><i className="fa-solid fa-gauge-high"></i> Farm Advisory Dashboard</span>
-          <h2 className="section-title">Farm Dashboard &amp; Recommendation History</h2>
-          <p className="section-subtitle">
-            Review your field soil chemical logs, track crop recommendation accuracy over time, and rerun past agricultural advisories.
-          </p>
+    <>
+      <main style={{ padding: 'calc(var(--nav-height) + 2rem) 0 5rem 0' }}>
+        <div className="page-container">
+          {/* Header */}
+          <div className="section-header-editorial">
+            <div className="section-meta-row">
+              <span className="mono-accent">CONSOLE • DASHBOARD</span>
+              <div className="section-meta-rule"></div>
+              <span className="mono-meta">FARM INTELLIGENCE TELEMETRY</span>
+            </div>
+            <h1 className="section-title-large">Farm Dashboard &amp; Recommendation History</h1>
+            <p className="section-desc-editorial">
+              Review field soil chemical logs, track crop recommendations, fertilizer applications, and regional yield outputs across planting seasons.
+            </p>
+          </div>
+
+          {/* Telemetry Summary Cards */}
+          <div className="dashboard-telemetry-grid">
+            {/* Active Plot Cell */}
+            <div className="dashboard-stat-cell">
+              <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '0.75rem' }}>
+                <span className="mono-meta" style={{ color: 'var(--agri-accent)' }}>PRIMARY PLOT</span>
+                <button
+                  type="button"
+                  onClick={openProfileModal}
+                  className="mono-meta"
+                  style={{ background: 'none', border: '1px solid var(--agri-line)', padding: '3px 8px', cursor: 'pointer', borderRadius: '9999px' }}
+                >
+                  <i className="fa-solid fa-pen" style={{ marginRight: '4px' }}></i> EDIT
+                </button>
+              </div>
+              <strong style={{ fontFamily: 'var(--font-display)', fontSize: '1.4rem', color: 'var(--agri-ink)', display: 'block', lineHeight: 1.1 }}>
+                {userProfile?.fullname || 'Green Valley Plot A'}
+              </strong>
+              <span className="mono-meta" style={{ display: 'block', marginTop: '6px', color: 'var(--agri-muted)' }}>
+                {userProfile?.region || 'Palakkad Agronomic Belt'} • {userProfile?.soilType ? userProfile.soilType.toUpperCase() : 'LOAMY'}
+              </span>
+            </div>
+
+            {/* Total Advisories */}
+            <div className="dashboard-stat-cell">
+              <span className="mono-meta" style={{ display: 'block', marginBottom: '0.75rem' }}>TOTAL ADVISORIES RUN</span>
+              <strong style={{ fontFamily: 'var(--font-display)', fontSize: '2rem', color: 'var(--agri-ink)', lineHeight: 1 }}>
+                {totalRuns}
+              </strong>
+              <span className="mono-meta" style={{ display: 'block', marginTop: '8px', color: 'var(--agri-accent)' }}>
+                MULTI-MODEL TELEMETRY
+              </span>
+            </div>
+
+            {/* Top Match */}
+            <div className="dashboard-stat-cell">
+              <span className="mono-meta" style={{ display: 'block', marginBottom: '0.75rem' }}>LATEST ADVISORY MATCH</span>
+              <strong style={{ fontFamily: 'var(--font-display)', fontSize: '1.3rem', color: 'var(--agri-ink)', lineHeight: 1.1, display: 'block' }}>
+                {topCropItem}
+              </strong>
+              <span className="mono-meta" style={{ display: 'block', marginTop: '6px', color: 'var(--agri-muted)' }}>
+                AVG CONFIDENCE: 98.6%
+              </span>
+            </div>
+
+            {/* Engine Telemetry */}
+            <div className="dashboard-stat-cell">
+              <span className="mono-meta" style={{ display: 'block', marginBottom: '0.75rem' }}>ADVISORY ENGINE</span>
+              <div style={{ display: 'flex', alignItems: 'center', gap: '8px', marginTop: '4px' }}>
+                <span className="pulse-indicator"></span>
+                <strong style={{ fontFamily: 'var(--font-display)', fontSize: '1.25rem', color: 'var(--agri-ink)' }}>
+                  OPERATIONAL
+                </strong>
+              </div>
+              <span className="mono-meta" style={{ display: 'block', marginTop: '8px', color: 'var(--agri-accent)' }}>
+                3 ML MODELS ONLINE
+              </span>
+            </div>
+          </div>
+
+          {/* History Telemetry Table */}
+          <div className="console-panel" style={{ padding: 0 }}>
+            <div style={{ padding: '1.5rem 2rem', borderBottom: '1px solid var(--agri-line)', display: 'flex', justifyContent: 'space-between', alignItems: 'center', flexWrap: 'wrap', gap: '1rem' }}>
+              <div>
+                <span className="mono-accent">TELEMETRY LOGS</span>
+                <h3 style={{ fontSize: '1.3rem', fontWeight: 800, marginTop: '2px' }}>Soil, Fertilizer &amp; Yield Advisory History</h3>
+              </div>
+              <div style={{ display: 'flex', gap: '0.75rem', alignItems: 'center' }}>
+                {history.length > 0 && (
+                  <button
+                    type="button"
+                    onClick={() => setShowClearModal(true)}
+                    className="btn-secondary-technical"
+                    style={{ padding: '8px 16px', fontSize: '11px' }}
+                  >
+                    <i className="fa-solid fa-trash-can"></i> CLEAR ALL
+                  </button>
+                )}
+                <Link
+                  to="/recommend"
+                  className="btn-primary-technical"
+                  style={{ padding: '8px 18px', fontSize: '11px' }}
+                >
+                  <i className="fa-solid fa-plus"></i> NEW ADVISORY
+                </Link>
+              </div>
+            </div>
+
+            <div className="dashboard-table-wrapper" style={{ border: 'none' }}>
+              <table className="telemetry-table">
+                <thead>
+                  <tr>
+                    <th>LOG ID</th>
+                    <th>TIMESTAMP</th>
+                    <th>PRIMARY VECTORS</th>
+                    <th>LOCATION / CLIMATE</th>
+                    <th>TYPE</th>
+                    <th>RECOMMENDATION</th>
+                    <th>CONFIDENCE</th>
+                    <th style={{ textAlign: 'center' }}>ACTIONS</th>
+                  </tr>
+                </thead>
+                <tbody>
+                  {history.length > 0 ? (
+                    history.map((item, idx) => {
+                      const badge = item.badgeClass || (
+                        item.type?.includes('Fertilizer')
+                          ? 'badge-fertilizer'
+                          : (item.type?.includes('Yield') ? 'badge-yield' : 'badge-crop')
+                      );
+
+                      return (
+                        <tr key={item.logId || item.recId || idx}>
+                          <td>
+                            <span style={{ fontFamily: 'var(--font-mono)', fontSize: '13px', fontWeight: 700, color: 'var(--agri-accent)' }}>
+                              {item.logId || item.recId || `#LOG-${8940 - idx}`}
+                            </span>
+                          </td>
+                          <td>
+                            <span style={{ fontFamily: 'var(--font-body)', fontSize: '13.5px', fontWeight: 600, color: 'var(--agri-secondary)' }}>
+                              {item.timestamp || item.created_at || 'Just now'}
+                            </span>
+                          </td>
+                          <td>
+                            <span style={{ fontFamily: 'var(--font-mono)', fontSize: '13px', fontWeight: 700, color: 'var(--agri-ink)' }}>
+                              {item.npkSummary || `N:${item.nitrogen || 90} | P:${item.phosphorus || 42} | K:${item.potassium || 43}`}
+                            </span>
+                          </td>
+                          <td>
+                            <span style={{ fontFamily: 'var(--font-mono)', fontSize: '13px', fontWeight: 600, color: 'var(--agri-secondary)' }}>
+                              {item.climateSummary || `pH ${item.ph || 6.5} | ${item.rainfall || 202}mm`}
+                            </span>
+                          </td>
+                          <td>
+                            <span className={`mono-meta ${badge}`} style={{ fontSize: '11px', fontWeight: 700, padding: '3px 10px', borderRadius: '9999px', whiteSpace: 'nowrap' }}>
+                              {item.type || 'Crop Match'}
+                            </span>
+                          </td>
+                          <td>
+                            <strong style={{ fontFamily: 'var(--font-display)', fontSize: '14.5px', fontWeight: 700, color: 'var(--agri-ink)' }}>
+                              {item.recommendedItem || item.fertilizer || item.crop_name}
+                            </strong>
+                          </td>
+                          <td>
+                            <span style={{ fontFamily: 'var(--font-mono)', fontSize: '13.5px', fontWeight: 800, color: 'var(--agri-accent)' }}>
+                              {item.confidence || '99.0%'}
+                            </span>
+                          </td>
+                          <td style={{ textAlign: 'center' }}>
+                            <div style={{ display: 'flex', gap: '0.4rem', justifyContent: 'center' }}>
+                              <button
+                                type="button"
+                                onClick={() => handleOpenEditNotes(item)}
+                                title="Edit agronomic field notes"
+                                style={{ background: 'none', border: '1px solid var(--agri-line)', padding: '6px 10px', borderRadius: '4px', cursor: 'pointer', color: 'var(--agri-ink)' }}
+                              >
+                                <i className="fa-solid fa-pen"></i>
+                              </button>
+                              <button
+                                type="button"
+                                onClick={() => handleRerun(item)}
+                                title="Rerun advisory with saved parameters"
+                                style={{ background: 'none', border: '1px solid var(--agri-line)', padding: '6px 10px', borderRadius: '4px', cursor: 'pointer', color: 'var(--agri-accent)' }}
+                              >
+                                <i className="fa-solid fa-rotate-right"></i>
+                              </button>
+                              <button
+                                type="button"
+                                onClick={() => handleDeleteItem(item.logId || item.recId)}
+                                title="Delete log record"
+                                style={{ background: 'none', border: '1px solid var(--agri-line)', padding: '6px 10px', borderRadius: '4px', cursor: 'pointer', color: 'var(--agri-danger)' }}
+                              >
+                                <i className="fa-solid fa-trash-can"></i>
+                              </button>
+                            </div>
+                          </td>
+                        </tr>
+                      );
+                    })
+                  ) : (
+                    <tr>
+                      <td colSpan="8" style={{ textAlign: 'center', padding: '4rem 2rem', color: 'var(--agri-muted)' }}>
+                        <span className="mono-meta" style={{ display: 'block', marginBottom: '0.5rem' }}>NO HISTORY FOUND</span>
+                        <span>No recommendation history logs available. </span>
+                        <Link to="/recommend" style={{ color: 'var(--agri-accent)', fontWeight: 600 }}>Run your first advisory</Link>
+                      </td>
+                    </tr>
+                  )}
+                </tbody>
+              </table>
+            </div>
+          </div>
         </div>
 
-        {/* Stats & Profile Overview Widgets */}
-        <div className="dashboard-widgets-grid">
-          <div className="widget-card profile-widget">
-            <div className="widget-header">
-              <span className="widget-badge"><i className="fa-solid fa-location-dot"></i> Primary Plot</span>
-              <Link to="/register" className="widget-link"><i className="fa-solid fa-pen-to-square"></i> Edit Profile</Link>
+        {/* ── INTERACTIVE GROWTH LIFECYCLE SECTION (END OF DASHBOARD) ── */}
+        <div className="page-container" style={{ marginTop: '4.5rem' }}>
+          <div style={{ marginBottom: '1.25rem' }}>
+            <div className="section-meta-row" style={{ marginBottom: '0.5rem' }}>
+              <span className="mono-accent">AGRONOMIC TELEMETRY</span>
+              <div className="section-meta-rule"></div>
+              <span className="mono-meta">LIFECYCLE SIMULATOR</span>
             </div>
-            <div className="profile-info-body">
-              <h3>{userProfile?.fullname || 'Green Valley Plot A'}</h3>
-              <p className="profile-meta"><i className="fa-solid fa-map"></i> {userProfile?.region || 'Palakkad Agronomic Belt, Kerala'}</p>
-              <div className="profile-tags">
-                <span className="tag"><i className="fa-solid fa-mound"></i> {userProfile?.soilType ? `${userProfile.soilType.toUpperCase()} Soil` : 'Clay-Loam Soil'}</span>
-                {userProfile?.phone && <span className="tag"><i className="fa-solid fa-phone"></i> {userProfile.phone}</span>}
-                <span className="tag"><i className="fa-solid fa-vial"></i> Active Season</span>
+            <h2 style={{ fontSize: '1.75rem', fontWeight: 800, color: 'var(--agri-ink)' }}>
+              Crop Growth &amp; Development Cycle
+            </h2>
+            <p style={{ color: 'var(--agri-secondary)', fontSize: '0.95rem' }}>
+              Observe seasonal precipitation, soil moisture absorption, seed germination, and vegetative canopy expansion leading to mature harvest.
+            </p>
+          </div>
+
+          <CropGrowthIntro />
+        </div>
+      </main>
+
+      {/* ── PORTAL: EDIT PROFILE MODAL ── */}
+      {showProfileModal && ReactDOM.createPortal(
+        <div className="modal-backdrop-technical" onClick={closeProfileModal}>
+          <div className="modal-dialog-technical" onClick={(e) => e.stopPropagation()}>
+            <div className="modal-header-technical">
+              <div>
+                <span className="mono-accent">PROFILE • CONFIG</span>
+                <h3 style={{ fontSize: '1.2rem', fontWeight: 800, marginTop: '2px' }}>Farm Account Settings</h3>
+              </div>
+              <button onClick={closeProfileModal} style={{ background: 'none', border: 'none', cursor: 'pointer', color: 'var(--agri-ink)', fontSize: '1.2rem' }}>
+                <i className="fa-solid fa-xmark"></i>
+              </button>
+            </div>
+
+            <div className="modal-tabs-technical">
+              <button
+                type="button"
+                className={`modal-tab-btn-technical ${profileTab === 'info' ? 'active' : ''}`}
+                onClick={() => { setProfileTab('info'); setModalError(''); }}
+              >
+                01 • EDIT INFO
+              </button>
+              <button
+                type="button"
+                className={`modal-tab-btn-technical ${profileTab === 'password' ? 'active' : ''}`}
+                onClick={() => { setProfileTab('password'); setModalError(''); }}
+              >
+                02 • PASSWORD
+              </button>
+              <button
+                type="button"
+                className={`modal-tab-btn-technical ${profileTab === 'delete' ? 'active' : ''}`}
+                onClick={() => { setProfileTab('delete'); setModalError(''); }}
+                style={{ color: profileTab === 'delete' ? 'var(--agri-danger)' : undefined }}
+              >
+                03 • DANGER ZONE
+              </button>
+            </div>
+
+            <div style={{ padding: '2rem' }}>
+              {modalError && (
+                <div style={{ padding: '0.75rem 1rem', border: '1px solid var(--agri-danger)', backgroundColor: 'var(--agri-danger-dim)', color: 'var(--agri-danger)', marginBottom: '1.25rem', fontFamily: 'var(--font-mono)', fontSize: '11px' }}>
+                  ERROR: {modalError}
+                </div>
+              )}
+
+              {profileTab === 'info' && (
+                <form onSubmit={handleSaveProfile}>
+                  <div className="console-field" style={{ marginBottom: '1rem' }}>
+                    <label>Full Name</label>
+                    <input type="text" required value={profileForm.fullname} onChange={(e) => setProfileForm({ ...profileForm, fullname: e.target.value })} />
+                  </div>
+                  <div className="console-field" style={{ marginBottom: '1rem' }}>
+                    <label>Email Address</label>
+                    <input type="email" value={profileForm.email} onChange={(e) => setProfileForm({ ...profileForm, email: e.target.value })} />
+                  </div>
+                  <div className="console-field" style={{ marginBottom: '1rem' }}>
+                    <label>Mobile Number</label>
+                    <input type="tel" required value={profileForm.phone} onChange={(e) => setProfileForm({ ...profileForm, phone: e.target.value })} />
+                  </div>
+                  <div className="console-field" style={{ marginBottom: '1rem' }}>
+                    <label>District / Location</label>
+                    <input type="text" required value={profileForm.region} onChange={(e) => setProfileForm({ ...profileForm, region: e.target.value })} />
+                  </div>
+                  <div className="console-field" style={{ marginBottom: '1.5rem' }}>
+                    <label>Primary Soil Type</label>
+                    <select value={profileForm.soilType} onChange={(e) => setProfileForm({ ...profileForm, soilType: e.target.value })}>
+                      <option value="loamy">Loamy Soil</option>
+                      <option value="clay-loam">Clay-Loam Soil</option>
+                      <option value="sandy">Sandy Soil</option>
+                      <option value="alluvial">Alluvial Soil</option>
+                      <option value="red">Red Soil</option>
+                      <option value="black">Black Soil (Regur)</option>
+                      <option value="laterite">Laterite Soil</option>
+                    </select>
+                  </div>
+                  <div style={{ display: 'flex', justifyContent: 'flex-end', gap: '0.75rem' }}>
+                    <button type="button" onClick={closeProfileModal} className="btn-secondary-technical" style={{ padding: '8px 16px' }}>Cancel</button>
+                    <button type="submit" disabled={modalLoading} className="btn-primary-technical" style={{ padding: '8px 20px' }}>
+                      {modalLoading ? 'Saving...' : 'Save Profile'}
+                    </button>
+                  </div>
+                </form>
+              )}
+
+              {profileTab === 'password' && (
+                <form onSubmit={handleChangePassword}>
+                  <div className="console-field" style={{ marginBottom: '1rem' }}>
+                    <label>Current Password</label>
+                    <input type="password" required value={pwdForm.current} onChange={(e) => setPwdForm({ ...pwdForm, current: e.target.value })} />
+                  </div>
+                  <div className="console-field" style={{ marginBottom: '1rem' }}>
+                    <label>New Password (min 6 characters)</label>
+                    <input type="password" required value={pwdForm.next} onChange={(e) => setPwdForm({ ...pwdForm, next: e.target.value })} />
+                  </div>
+                  <div className="console-field" style={{ marginBottom: '1.5rem' }}>
+                    <label>Confirm New Password</label>
+                    <input type="password" required value={pwdForm.confirm} onChange={(e) => setPwdForm({ ...pwdForm, confirm: e.target.value })} />
+                  </div>
+                  <div style={{ display: 'flex', justifyContent: 'flex-end', gap: '0.75rem' }}>
+                    <button type="button" onClick={closeProfileModal} className="btn-secondary-technical" style={{ padding: '8px 16px' }}>Cancel</button>
+                    <button type="submit" disabled={modalLoading} className="btn-primary-technical" style={{ padding: '8px 20px' }}>
+                      {modalLoading ? 'Updating...' : 'Update Password'}
+                    </button>
+                  </div>
+                </form>
+              )}
+
+              {profileTab === 'delete' && (
+                <form onSubmit={handleDeleteAccount}>
+                  <div style={{ padding: '1rem', border: '1px solid var(--agri-danger)', backgroundColor: 'var(--agri-danger-dim)', marginBottom: '1.25rem' }}>
+                    <span className="mono-meta" style={{ color: 'var(--agri-danger)', display: 'block', marginBottom: '4px' }}>PERMANENT ACTION</span>
+                    <p style={{ fontSize: '0.88rem', color: 'var(--agri-ink)', lineHeight: 1.5 }}>
+                      Deleting your account will remove your farm credentials, saved plots, and all historical recommendation telemetry from the database.
+                    </p>
+                  </div>
+                  <div className="console-field" style={{ marginBottom: '1.5rem' }}>
+                    <label>Enter Password to Confirm</label>
+                    <input type="password" required value={delPwd} onChange={(e) => setDelPwd(e.target.value)} />
+                  </div>
+                  <div style={{ display: 'flex', justifyContent: 'flex-end', gap: '0.75rem' }}>
+                    <button type="button" onClick={closeProfileModal} className="btn-secondary-technical" style={{ padding: '8px 16px' }}>Cancel</button>
+                    <button type="submit" disabled={modalLoading} className="btn-danger-technical" style={{ padding: '8px 20px' }}>
+                      {modalLoading ? 'Deleting...' : 'Delete Account'}
+                    </button>
+                  </div>
+                </form>
+              )}
+            </div>
+          </div>
+        </div>,
+        document.body
+      )}
+
+      {/* ── PORTAL: EDIT NOTES MODAL ── */}
+      {editingItem && ReactDOM.createPortal(
+        <div className="modal-backdrop-technical" onClick={() => setEditingItem(null)}>
+          <div className="modal-dialog-technical" style={{ maxWidth: '480px' }} onClick={(e) => e.stopPropagation()}>
+            <div className="modal-header-technical">
+              <div>
+                <span className="mono-accent">{editingItem.logId || editingItem.recId}</span>
+                <h3 style={{ fontSize: '1.15rem', fontWeight: 800, marginTop: '2px' }}>Update Field Notes</h3>
+              </div>
+              <button onClick={() => setEditingItem(null)} style={{ background: 'none', border: 'none', cursor: 'pointer', color: 'var(--agri-ink)' }}>
+                <i className="fa-solid fa-xmark"></i>
+              </button>
+            </div>
+            <div style={{ padding: '1.75rem' }}>
+              <div className="console-field" style={{ marginBottom: '1.25rem' }}>
+                <label>Agronomic Notes &amp; Observations</label>
+                <textarea
+                  rows="4"
+                  value={noteText}
+                  onChange={(e) => setNoteText(e.target.value)}
+                  placeholder="Enter custom field observations, soil adjustments, or harvest notes..."
+                  style={{ resize: 'vertical' }}
+                />
+              </div>
+              <div style={{ display: 'flex', justifyContent: 'flex-end', gap: '0.75rem' }}>
+                <button type="button" onClick={() => setEditingItem(null)} className="btn-secondary-technical" style={{ padding: '8px 16px' }}>Cancel</button>
+                <button type="button" onClick={handleSaveNotes} disabled={savingNotes} className="btn-primary-technical" style={{ padding: '8px 20px' }}>
+                  {savingNotes ? 'Saving...' : 'Save Notes'}
+                </button>
               </div>
             </div>
           </div>
+        </div>,
+        document.body
+      )}
 
-          <div className="widget-card stat-widget">
-            <div className="stat-icon" style={{ background: 'rgba(59, 110, 71, 0.15)', color: 'var(--primary-light)' }}>
-              <i className="fa-solid fa-wheat-awn"></i>
+      {/* ── PORTAL: CLEAR HISTORY CONFIRM MODAL ── */}
+      {showClearModal && ReactDOM.createPortal(
+        <div className="modal-backdrop-technical" onClick={() => setShowClearModal(false)}>
+          <div className="modal-dialog-technical" style={{ maxWidth: '440px' }} onClick={(e) => e.stopPropagation()}>
+            <div className="modal-header-technical">
+              <div>
+                <span className="mono-meta" style={{ color: 'var(--agri-danger)' }}>DANGER • CLEAR DATA</span>
+                <h3 style={{ fontSize: '1.15rem', fontWeight: 800, marginTop: '2px' }}>Clear Advisory Logs?</h3>
+              </div>
+              <button onClick={() => setShowClearModal(false)} style={{ background: 'none', border: 'none', cursor: 'pointer', color: 'var(--agri-ink)' }}>
+                <i className="fa-solid fa-xmark"></i>
+              </button>
             </div>
-            <div className="stat-details">
-              <span className="stat-number">{totalRuns}</span>
-              <span className="stat-label">Total Soil Advisories Run</span>
-              <span className="stat-subtext"><i className="fa-solid fa-arrow-trend-up"></i> 100% Soil Data Match</span>
+            <div style={{ padding: '1.75rem' }}>
+              <p style={{ fontSize: '0.92rem', color: 'var(--agri-secondary)', lineHeight: 1.5, marginBottom: '1.5rem' }}>
+                Are you sure you want to permanently clear all soil advisory history logs? This action cannot be reversed.
+              </p>
+              <div style={{ display: 'flex', justifyContent: 'flex-end', gap: '0.75rem' }}>
+                <button type="button" onClick={() => setShowClearModal(false)} className="btn-secondary-technical" style={{ padding: '8px 16px' }}>Cancel</button>
+                <button type="button" onClick={handleConfirmClear} className="btn-danger-technical" style={{ padding: '8px 20px' }}>Clear All History</button>
+              </div>
             </div>
           </div>
-
-          <div className="widget-card stat-widget">
-            <div className="stat-icon" style={{ background: 'rgba(217, 107, 67, 0.15)', color: 'var(--accent-terracotta)' }}>
-              <i className="fa-solid fa-wheat-awn"></i>
-            </div>
-            <div className="stat-details">
-              <span className="stat-number" style={{ fontSize: '1.25rem', fontWeight: 800 }}>{topCropItem}</span>
-              <span className="stat-label">Top High-Yield Match</span>
-              <span className="stat-subtext">99.2% Avg Confidence</span>
-            </div>
-          </div>
-
-          <div className="widget-card stat-widget">
-            <div className="stat-icon" style={{ background: 'rgba(229, 169, 60, 0.15)', color: 'var(--accent-gold)' }}>
-              <i className="fa-solid fa-server"></i>
-            </div>
-            <div className="stat-details">
-              <span className="stat-number" style={{ fontSize: '1.2rem', color: 'var(--primary-dark)' }}>AI Model Online</span>
-              <span className="stat-label">Real-Time ML Engine</span>
-              <span className="stat-subtext"><i className="fa-solid fa-circle-check"></i> Model Endpoint Ready</span>
-            </div>
-          </div>
-        </div>
-
-        {/* History Table Section */}
-        <div className="history-card">
-          <div className="history-table-header" style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', flexWrap: 'wrap', gap: '1rem' }}>
-            <div className="history-title-group">
-              <h3><i className="fa-solid fa-clock-rotate-left"></i> Soil Advisory History Log</h3>
-              <p>Historical advisory logs saved to your secure farm profile.</p>
-            </div>
-            <div className="history-actions" style={{ display: 'flex', gap: '0.75rem' }}>
-              {history.length > 0 && (
-                <button type="button" className="btn-outline" onClick={handleClearHistory} style={{ cursor: 'pointer', padding: '0.5rem 1rem' }}>
-                  <i className="fa-solid fa-trash-can"></i> Clear All
-                </button>
-              )}
-              <Link to="/recommend" className="btn btn-terracotta">
-                <i className="fa-solid fa-plus"></i> Run New Advisory
-              </Link>
-            </div>
-          </div>
-
-          <div className="table-responsive" style={{ overflowX: 'auto', marginTop: '1rem' }}>
-            <table className="history-table" style={{ width: '100%', borderCollapse: 'collapse' }}>
-              <thead>
-                <tr>
-                  <th style={{ padding: '0.85rem', textAlign: 'left' }}>Log ID</th>
-                  <th style={{ padding: '0.85rem', textAlign: 'left' }}>Date &amp; Time</th>
-                  <th style={{ padding: '0.85rem', textAlign: 'left' }}>Field NPK</th>
-                  <th style={{ padding: '0.85rem', textAlign: 'left' }}>pH / Climate</th>
-                  <th style={{ padding: '0.85rem', textAlign: 'left' }}>Advisory Type</th>
-                  <th style={{ padding: '0.85rem', textAlign: 'left' }}>Recommendation</th>
-                  <th style={{ padding: '0.85rem', textAlign: 'left' }}>Confidence</th>
-                  <th style={{ padding: '0.85rem', textAlign: 'center' }}>Actions</th>
-                </tr>
-              </thead>
-              <tbody>
-                {history.length > 0 ? (
-                  history.map((item, idx) => (
-                    <tr key={item.logId || idx} style={{ borderBottom: '1px solid var(--border-subtle)' }}>
-                      <td style={{ padding: '0.85rem' }}><code>{item.logId}</code></td>
-                      <td style={{ padding: '0.85rem', fontSize: '0.9rem' }}>{item.timestamp}</td>
-                      <td style={{ padding: '0.85rem' }}><span className="npk-badge">{item.npkSummary}</span></td>
-                      <td style={{ padding: '0.85rem', fontSize: '0.9rem' }}>{item.climateSummary}</td>
-                      <td style={{ padding: '0.85rem' }}>
-                        <span className={`type-badge ${item.badgeClass || 'badge-crop'}`} style={{ padding: '0.25rem 0.6rem', borderRadius: '1rem', fontSize: '0.8rem', fontWeight: 600 }}>
-                          {item.type}
-                        </span>
-                      </td>
-                      <td style={{ padding: '0.85rem' }}><strong>{item.recommendedItem}</strong></td>
-                      <td style={{ padding: '0.85rem' }}><span className="confidence-pill high">{item.confidence}</span></td>
-                      <td style={{ padding: '0.85rem', textAlign: 'center' }}>
-                        <div style={{ display: 'flex', gap: '0.4rem', justifyContent: 'center' }}>
-                          <button
-                            type="button"
-                            className="action-btn"
-                            onClick={() => handleUpdateNotes(item)}
-                            title="Edit notes (HTTP PUT)"
-                            style={{ background: 'none', border: 'none', cursor: 'pointer', color: 'var(--accent-gold)' }}
-                          >
-                            <i className="fa-solid fa-pen"></i>
-                          </button>
-                          <button
-                            type="button"
-                            className="action-btn"
-                            onClick={() => handleRerun(item)}
-                            title="Rerun with these parameters"
-                            style={{ background: 'none', border: 'none', cursor: 'pointer', color: 'var(--primary-light)' }}
-                          >
-                            <i className="fa-solid fa-rotate-right"></i>
-                          </button>
-                          <button
-                            type="button"
-                            className="action-btn"
-                            onClick={() => handleDeleteItem(item.logId)}
-                            title="Delete log entry (HTTP DELETE)"
-                            style={{ background: 'none', border: 'none', cursor: 'pointer', color: 'var(--accent-terracotta)' }}
-                          >
-                            <i className="fa-solid fa-trash-can"></i>
-                          </button>
-                        </div>
-                      </td>
-                    </tr>
-                  ))
-                ) : (
-                  <tr>
-                    <td colSpan="8" style={{ textAlign: 'center', padding: '3rem', color: 'var(--text-muted)' }}>
-                      No history records found. <Link to="/recommend" style={{ color: 'var(--accent-terracotta)', fontWeight: 700 }}>Run your first recommendation!</Link>
-                    </td>
-                  </tr>
-                )}
-              </tbody>
-            </table>
-          </div>
-        </div>
-      </section>
-    </main>
+        </div>,
+        document.body
+      )}
+    </>
   );
 }

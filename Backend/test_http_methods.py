@@ -15,8 +15,15 @@ from app import app
 class TestHTTPMethods(unittest.TestCase):
     def setUp(self):
         """Set up test client before each test case."""
+        app.config['TESTING'] = True
+        app.config['RATELIMIT_ENABLED'] = False
         self.app = app.test_client()
         self.app.testing = True
+        try:
+            from app import limiter
+            limiter.reset()
+        except Exception:
+            pass
 
     # ----------------------------------------------------
     # 0. SKELETON ROOT TEST
@@ -92,6 +99,10 @@ class TestHTTPMethods(unittest.TestCase):
 
     def test_06_post_create_log(self):
         """Test POST /api/logs endpoint (Post custom advisory log data)."""
+        with self.app.session_transaction() as sess:
+            sess['user_id'] = 1
+            sess['username'] = 'test_farmer'
+
         import random
         rand_num = random.randint(1000, 9999)
         payload = {
@@ -114,6 +125,10 @@ class TestHTTPMethods(unittest.TestCase):
     # ----------------------------------------------------
     def test_07_put_update_log(self):
         """Test PUT /api/logs/<log_id> endpoint (Update existing log details)."""
+        with self.app.session_transaction() as sess:
+            sess['user_id'] = 1
+            sess['username'] = 'test_farmer'
+
         update_payload = {
             "dosageAdvice": "Updated dosage: Apply 60kg/ha during early tillering stage",
             "detailedNotes": "Farmer verified field output: Excellent growth observed."
@@ -130,6 +145,10 @@ class TestHTTPMethods(unittest.TestCase):
     # ----------------------------------------------------
     def test_08_delete_single_log(self):
         """Test DELETE /api/logs/<log_id> endpoint."""
+        with self.app.session_transaction() as sess:
+            sess['user_id'] = 1
+            sess['username'] = 'test_farmer'
+
         import random
         rand_num = random.randint(1000, 9999)
         payload = {
@@ -148,6 +167,10 @@ class TestHTTPMethods(unittest.TestCase):
 
     def test_09_delete_non_existent_log(self):
         """Test DELETE /api/logs/<log_id> with invalid log ID."""
+        with self.app.session_transaction() as sess:
+            sess['user_id'] = 1
+            sess['username'] = 'test_farmer'
+
         response = self.app.delete('/api/logs/LOG-0000')
         self.assertEqual(response.status_code, 404)
         data = json.loads(response.data)
@@ -363,8 +386,55 @@ class TestHTTPMethods(unittest.TestCase):
         self.assertGreaterEqual(data_get['total'], 1)
         print(f" [GET] /api/farms passed: retrieved {data_get['total']} farm profiles")
 
+    def test_17_profile_update_and_account_management(self):
+        """Test PUT /profile, PUT /api/user/change-password, and DELETE /api/user/account."""
+        import random
+        rand_id = random.randint(1000, 9999)
+        username = f"account_user_{rand_id}"
+        password = "OldPass@12345"
+        new_password = "NewPass@67890"
+
+        # 1. Register & Login
+        self.app.post('/register', data=json.dumps({"username": username, "password": password, "fullname": "Original Name"}), content_type='application/json')
+        self.app.post('/login', data=json.dumps({"username": username, "password": password}), content_type='application/json')
+
+        # 2. Update Profile (PUT /profile)
+        update_profile_payload = {
+            "fullname": "Updated Farmer Name",
+            "phone": "9876543210",
+            "region": "Coimbatore, Tamil Nadu",
+            "soil_type": "sandy"
+        }
+        res_prof = self.app.put('/profile', data=json.dumps(update_profile_payload), content_type='application/json')
+        self.assertEqual(res_prof.status_code, 200)
+        data_prof = json.loads(res_prof.data)
+        self.assertEqual(data_prof['user']['fullname'], update_profile_payload['fullname'])
+        print(" [PUT] /profile passed: updated user profile details")
+
+        # 3. Change Password (Wrong Old Password -> 401)
+        res_pass_wrong = self.app.put('/api/user/change-password', data=json.dumps({"old_password": "WrongPassword", "new_password": new_password}), content_type='application/json')
+        self.assertEqual(res_pass_wrong.status_code, 401)
+        print(" [PUT] /api/user/change-password (wrong old pass) passed: rejected with 401 Unauthorized")
+
+        # 4. Change Password (Valid -> 200)
+        res_pass = self.app.put('/api/user/change-password', data=json.dumps({"old_password": password, "new_password": new_password}), content_type='application/json')
+        self.assertEqual(res_pass.status_code, 200)
+        print(" [PUT] /api/user/change-password passed: password updated successfully")
+
+        # 5. Delete Account (Wrong Password -> 401)
+        res_del_wrong = self.app.delete('/api/user/account', data=json.dumps({"password": "WrongPassword"}), content_type='application/json')
+        self.assertEqual(res_del_wrong.status_code, 401)
+        print(" [DELETE] /api/user/account (wrong pass) passed: rejected with 401 Unauthorized")
+
+        # 6. Delete Account (Valid Password -> 200)
+        res_del = self.app.delete('/api/user/account', data=json.dumps({"password": new_password}), content_type='application/json')
+        self.assertEqual(res_del.status_code, 200)
+        print(" [DELETE] /api/user/account passed: user account deleted from database")
+
+
 if __name__ == '__main__':
     unittest.main()
+
 
 
 

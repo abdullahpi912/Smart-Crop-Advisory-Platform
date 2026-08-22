@@ -1,289 +1,417 @@
-import React, { useState } from 'react';
+import React, { useState, useEffect, useRef } from 'react';
 import { Link } from 'react-router-dom';
+import FieldScanIntro from '../components/FieldScanIntro';
 
 export default function Home() {
   const [activeFaq, setActiveFaq] = useState(null);
+  const [stickyProgress, setStickyProgress] = useState(0);
+  const [heroParallax, setHeroParallax] = useState(0);
+
+  const stickySectionRef = useRef(null);
 
   const toggleFaq = (index) => {
     setActiveFaq(activeFaq === index ? null : index);
   };
 
+  // Passive Single Scroll Listener for Hero Parallax & Sticky Stage Progress
+  useEffect(() => {
+    const prefersReducedMotion = window.matchMedia('(prefers-reduced-motion: reduce)').matches;
+    if (prefersReducedMotion) return;
+
+    let ticking = false;
+
+    const handleScroll = () => {
+      if (!ticking) {
+        window.requestAnimationFrame(() => {
+          const scrollY = window.scrollY;
+
+          // Hero subtle parallax
+          if (scrollY < window.innerHeight) {
+            setHeroParallax(scrollY);
+          }
+
+          // Sticky section scroll progress
+          if (stickySectionRef.current) {
+            const rect = stickySectionRef.current.getBoundingClientRect();
+            const sectionHeight = stickySectionRef.current.offsetHeight - window.innerHeight;
+            const progress = Math.min(Math.max(-rect.top / sectionHeight, 0), 1);
+            setStickyProgress(progress);
+          }
+
+          ticking = false;
+        });
+        ticking = true;
+      }
+    };
+
+    window.addEventListener('scroll', handleScroll, { passive: true });
+    return () => window.removeEventListener('scroll', handleScroll);
+  }, []);
+
   const faqs = [
     {
       q: 'How does AgriSense predict the best crop for my specific field?',
-      a: 'AgriSense uses a trained machine learning model that analyzes your primary soil nutrient values (Nitrogen, Phosphorus, Potassium), soil acidity (pH), and local climate parameters (temperature, relative humidity, annual precipitation) to match your soil profile with optimum high-yield crop species.'
+      a: 'AgriSense analyzes primary soil nutrient vectors (Nitrogen, Phosphorus, Potassium), soil acidity (pH), and local climate parameters (temperature, relative humidity, annual precipitation) against agronomic profile datasets to identify optimum high-yield crop matches.'
     },
     {
       q: 'What is the difference between Crop Advisory and Fertilizer Advisory?',
-      a: 'Crop Advisory identifies which crop species will yield the highest return based on your existing soil chemistry. Fertilizer Advisory calculates the exact NPK nutrient deficiencies for a chosen target crop and provides precise dosage recommendations (such as Urea, DAP, or MOP).'
+      a: 'Crop Advisory evaluates soil and weather data to recommend the highest-yielding crop species for planting. Fertilizer Advisory identifies specific NPK nutrient deficits for target crops and calculates precise dosage recommendations (such as Urea, DAP, or MOP) to prevent chemical waste.'
     },
     {
       q: 'Are the recommendations accurate for smallholder farms?',
-      a: 'Yes! The classification models are calibrated using extensive agronomic research datasets across tropical, semi-arid, and temperate agricultural zones.'
+      a: 'Yes. The classification models are calibrated using agronomic research datasets spanning tropical, semi-arid, and temperate agricultural zones.'
     },
     {
       q: 'Can I save my recommendation history for future reference?',
-      a: 'Absolutely. Every recommendation computed on AgriSense can be stored locally in your Farm Dashboard history log.'
+      a: 'Yes. Every computed advisory report can be permanently stored in your farm dashboard history log, allowing multi-plot tracking across agricultural seasons.'
     }
   ];
 
+  const fieldInputs = [
+    { code: 'N', name: 'NITROGEN', desc: 'Promotes vegetative leaf and stem development', metric: '0 – 140 kg/ha' },
+    { code: 'P', name: 'PHOSPHORUS', desc: 'Accelerates root crown strength and flowering', metric: '5 – 145 kg/ha' },
+    { code: 'K', name: 'POTASSIUM', desc: 'Improves drought and disease stress resistance', metric: '5 – 205 kg/ha' },
+    { code: 'pH', name: 'SOIL pH', desc: 'Defines soil acidity/alkalinity for nutrient uptake', metric: '3.5 – 9.9 pH' },
+    { code: 'T', name: 'TEMPERATURE', desc: 'Regional thermal range for crop metabolism', metric: '8.8 – 43.7 °C' },
+    { code: 'H', name: 'HUMIDITY', desc: 'Atmospheric moisture and transpiration rate', metric: '14.2 – 99.8 %' },
+    { code: 'R', name: 'RAINFALL', desc: 'Seasonal precipitation budget for irrigation', metric: '20 – 298 mm' }
+  ];
+
+  const workflowSteps = [
+    { num: '01', title: 'Soil Chemical Sampling', desc: 'Input field test readings including Nitrogen (N), Phosphorus (P), Potassium (K), and soil pH level.', tag: 'SAMPLING' },
+    { num: '02', title: 'Climate Parameter Sync', desc: 'Correlate field readings with regional seasonal temperature, relative humidity, and precipitation.', tag: 'ENVIRONMENT' },
+    { num: '03', title: 'ML Prediction Model', desc: 'Agronomic classification algorithms evaluate multidimensional nutrient vectors to output ideal crop species.', tag: 'AI ENGINE' },
+    { num: '04', title: 'Fertilizer Analysis', desc: 'Calculate targeted NPK deficit requirements tailored specifically to target crop categories.', tag: 'DOSAGE' },
+    { num: '05', title: 'Farm History Telemetry', desc: 'Store advisory reports into your secure farm plot log to track soil enrichment across harvest cycles.', tag: 'DATABASE' },
+    { num: '06', title: 'Yield Optimization', desc: 'Execute data-backed planting and nutrient schedules to maximize commercial yield and profitability.', tag: 'EXECUTION' }
+  ];
+
+  // Pipeline stage index based on sticky scroll progress
+  const activePipelineStep = Math.min(Math.floor(stickyProgress * 4), 3);
+
   return (
     <main>
-      {/* Hero Section */}
-      <section className="hero" id="home">
-        <div className="hero-content">
-          <span className="section-tag">
-            <i className="fa-solid fa-leaf"></i> Smart Agriculture AI Platform
-          </span>
-          <h1>
-            Grow smarter, <span>harvest better</span>.
-          </h1>
-          <p className="hero-description">
-            AgriSense recommends the ideal crop and optimal fertilizer dosage for your field using soil NPK nutrients, temperature, humidity, rainfall, and pH — eliminating guesswork in farming.
-          </p>
+      {/* ====================================================================
+          01 HERO: Cinematic AI Field Intelligence Opening & Precision Layout
+          ==================================================================== */}
+      <FieldScanIntro />
 
-          <div className="hero-stats">
-            <div className="hero-stat-card">
-              <strong>7 Field Inputs</strong>
-              <span>NPK, Temp, Humidity, pH, Rain</span>
+      {/* ====================================================================
+          02 FIELD INTELLIGENCE: 7 Technical Input Vectors
+          ==================================================================== */}
+      <section className="section-pad reveal" id="field-intelligence">
+        <div className="page-container">
+          <div className="section-header-editorial">
+            <div className="section-meta-row">
+              <span className="mono-accent">FIELD INPUTS</span>
+              <div className="section-meta-rule"></div>
+              <span className="mono-meta">PRIMARY AGRONOMIC VECTORS</span>
             </div>
-            <div className="hero-stat-card">
-              <strong>Dual AI Engine</strong>
-              <span>Crop &amp; Fertilizer Classification</span>
-            </div>
-            <div className="hero-stat-card">
-              <strong>Farm Profiles</strong>
-              <span>Secure History &amp; Yield Tracking</span>
-            </div>
+            <h2 className="section-title-large">Field Chemical &amp; Climate Parameters</h2>
+            <p className="section-desc-editorial">
+              Seven essential agricultural indicators evaluated simultaneously to classify crop species suitability and fertilizer deficiency thresholds.
+            </p>
           </div>
 
-          <div className="hero-buttons">
-            <Link to="/recommend" className="btn btn-terracotta">
-              <i className="fa-solid fa-wheat-awn"></i> Get Recommendation
-            </Link>
-            <Link to="/dashboard" className="btn-outline">
-              <i className="fa-solid fa-clock-rotate-left"></i> View History Log
-            </Link>
-          </div>
-        </div>
-
-        <div className="hero-image-wrapper">
-          <div className="hero-floating-pill">
-            <span className="status-dot"></span> ML Soil Model Active
-          </div>
-          <figure className="hero-image">
-            <img src="/Farmer_image/istockphoto-506164764-170667a.jpg" alt="Tractor working across vibrant agricultural farmland" />
-            <div className="hero-badge">
-              <i className="fa-solid fa-wheat-awn"></i>
-              <p>
-                <strong>Maximizing Crop Yields:</strong> Data-driven soil analysis for sustainable, profitable farming.
-              </p>
-            </div>
-          </figure>
-        </div>
-      </section>
-
-      {/* Production Workflow Section */}
-      <section id="project-flow" className="flow-roadmap-section">
-        <div className="section-header">
-          <span className="section-tag">
-            <i className="fa-solid fa-diagram-project"></i> Intelligent Workflow
-          </span>
-          <h2 className="section-title">End-to-End Precision Advisory Workflow</h2>
-          <p className="section-subtitle">
-            How AgriSense transforms raw soil chemical readings into actionable crop selection and fertilizer recommendations.
-          </p>
-        </div>
-
-        <div className="flow-grid">
-          <div className="flow-card completed">
-            <div className="flow-step-number">Step 01</div>
-            <div className="flow-icon"><i className="fa-solid fa-vial-circle-check"></i></div>
-            <h3>Soil Chemical Sampling</h3>
-            <p>Input field soil test readings including Nitrogen (N), Phosphorus (P), Potassium (K), and pH levels.</p>
-            <span className="flow-badge"><i className="fa-solid fa-circle-check"></i> Field Data Entry</span>
-          </div>
-
-          <div className="flow-card completed">
-            <div className="flow-step-number">Step 02</div>
-            <div className="flow-icon"><i className="fa-solid fa-cloud-sun-rain"></i></div>
-            <h3>Climate Parameter Sync</h3>
-            <p>Correlate field readings with seasonal temperature, atmospheric humidity, and regional rainfall patterns.</p>
-            <span className="flow-badge"><i className="fa-solid fa-circle-check"></i> Environmental Sync</span>
-          </div>
-
-          <div className="flow-card active">
-            <div className="flow-step-number">Step 03</div>
-            <div className="flow-icon"><i className="fa-solid fa-brain"></i></div>
-            <h3>ML Prediction Model</h3>
-            <p>Machine learning classification algorithms evaluate nutrient vectors to identify highest-yielding crop species.</p>
-            <span className="flow-badge active-tag"><i className="fa-solid fa-microchip"></i> AI Engine Analysis</span>
-          </div>
-
-          <div className="flow-card completed">
-            <div className="flow-step-number">Step 04</div>
-            <div className="flow-icon"><i className="fa-solid fa-flask-vial"></i></div>
-            <h3>Fertilizer Dosage Advisory</h3>
-            <p>Calculate exact NPK deficiency requirements tailored specifically to target crop types and soil categories.</p>
-            <span className="flow-badge"><i className="fa-solid fa-circle-check"></i> Nutrient Balance</span>
-          </div>
-
-          <div className="flow-card completed">
-            <div className="flow-step-number">Step 05</div>
-            <div className="flow-icon"><i className="fa-solid fa-chart-line"></i></div>
-            <h3>Farm Dashboard History</h3>
-            <p>Save advisory reports into your secure farm profile log to track soil nutrient enrichment across seasons.</p>
-            <span className="flow-badge"><i className="fa-solid fa-database"></i> Log Tracking</span>
-          </div>
-
-          <div className="flow-card completed">
-            <div className="flow-step-number">Step 06</div>
-            <div className="flow-icon"><i className="fa-solid fa-wheat-awn"></i></div>
-            <h3>Yield Optimization</h3>
-            <p>Execute data-backed planting and fertilizer schedules to maximize commercial crop yield and profit margin.</p>
-            <span className="flow-badge"><i className="fa-solid fa-shield-halved"></i> Sustainable Farming</span>
-          </div>
-        </div>
-      </section>
-
-      {/* Why AgriSense Section */}
-      <section id="why" className="why-section">
-        <div className="section-header">
-          <span className="section-tag">
-            <i className="fa-solid fa-seedling"></i> Precision Farming Advantage
-          </span>
-          <h2 className="section-title">Smarter Soil Insights for Better Farming</h2>
-          <p className="section-subtitle">
-            Discover how AgriSense turns raw field soil chemistry into clear, actionable recommendations to boost crop yields, reduce fertilizer waste, and protect long-term land productivity.
-          </p>
-        </div>
-
-        <div className="why-grid">
-          <div className="why-card">
-            <div className="why-card-top">
-              <div className="why-icon-box"><i className="fa-solid fa-vial-circle-check"></i></div>
-              <span className="why-category-tag">Nutrient Balance</span>
-            </div>
-            <h3>Smart NPK Nutrient Profiling</h3>
-            <p>Evaluates primary Nitrogen, Phosphorus, and Potassium levels against Soil pH to optimize root nutrition and prevent soil depletion.</p>
-            <div className="why-card-footer">
-              <span className="metric-pill"><i className="fa-solid fa-check-double"></i> Balanced Chemistry</span>
-            </div>
-          </div>
-
-          <div className="why-card">
-            <div className="why-card-top">
-              <div className="why-icon-box"><i className="fa-solid fa-cloud-sun-rain"></i></div>
-              <span className="why-category-tag">Climate Sync</span>
-            </div>
-            <h3>Weather &amp; Rainfall Matching</h3>
-            <p>Matches local seasonal temperatures, humidity, and rainfall thresholds to recommend resilient crops suited to your exact regional conditions.</p>
-            <div className="why-card-footer">
-              <span className="metric-pill"><i className="fa-solid fa-arrows-rotate"></i> Real-Time Weather</span>
-            </div>
-          </div>
-
-          <div className="why-card">
-            <div className="why-card-top">
-              <div className="why-icon-box"><i className="fa-solid fa-flask-vial"></i></div>
-              <span className="why-category-tag">Cost Efficiency</span>
-            </div>
-            <h3>Targeted Fertilizer Calculations</h3>
-            <p>Calculates precise NPK deficiency dosage per hectare, helping you purchase only the fertilizer your soil actually needs and saving input costs.</p>
-            <div className="why-card-footer">
-              <span className="metric-pill"><i className="fa-solid fa-leaf"></i> Zero Resource Waste</span>
-            </div>
-          </div>
-
-          <div className="why-card">
-            <div className="why-card-top">
-              <div className="why-icon-box"><i className="fa-solid fa-chart-line"></i></div>
-              <span className="why-category-tag">Seasonal Tracking</span>
-            </div>
-            <h3>Multi-Plot Farm Logging</h3>
-            <p>Stores historical soil test reports and past recommendations across multiple farm plots to track soil enrichment over harvest seasons.</p>
-            <div className="why-card-footer">
-              <span className="metric-pill"><i className="fa-solid fa-database"></i> Saved Field History</span>
-            </div>
-          </div>
-        </div>
-      </section>
-
-      {/* FAQ Section */}
-      <section id="faq" className="faq-section" style={{ padding: 'var(--section-padding) 1.5rem', maxWidth: '900px', margin: '0 auto' }}>
-        <div className="section-header">
-          <span className="section-tag"><i className="fa-solid fa-circle-question"></i> FAQ</span>
-          <h2 className="section-title">Frequently Asked Questions</h2>
-        </div>
-
-        <div className="faq-accordion" role="region" aria-label="Frequently Asked Questions Accordion">
-          {faqs.map((faq, idx) => {
-            const isOpen = activeFaq === idx;
-            const btnId = `faq-btn-${idx}`;
-            const panelId = `faq-panel-${idx}`;
-            return (
-              <div
-                key={idx}
-                className="faq-item"
-                style={{
-                  background: 'var(--surface-white)',
-                  marginBottom: '1rem',
-                  borderRadius: 'var(--radius-md)',
-                  border: '1px solid var(--border-subtle)',
-                  boxShadow: 'var(--shadow-sm)',
-                  overflow: 'hidden'
-                }}
-              >
-                <button
-                  id={btnId}
-                  type="button"
-                  aria-expanded={isOpen}
-                  aria-controls={panelId}
-                  onClick={() => toggleFaq(idx)}
-                  style={{
-                    width: '100%',
-                    padding: '1.2rem 1.5rem',
-                    textAlign: 'left',
-                    background: 'none',
-                    border: 'none',
-                    fontSize: '1.05rem',
-                    fontWeight: 700,
-                    color: 'var(--primary-dark)',
-                    display: 'flex',
-                    justifyContent: 'space-between',
-                    alignItems: 'center',
-                    cursor: 'pointer'
-                  }}
-                >
-                  <span>{faq.q}</span>
-                  <i
-                    className="fa-solid fa-chevron-down"
-                    style={{
-                      color: 'var(--accent-terracotta)',
-                      transform: isOpen ? 'rotate(180deg)' : 'rotate(0deg)',
-                      transition: 'transform 0.3s ease'
-                    }}
-                  ></i>
-                </button>
-                <div
-                  id={panelId}
-                  role="region"
-                  aria-labelledby={btnId}
-                  hidden={!isOpen}
-                  style={{
-                    padding: isOpen ? '0 1.5rem 1.5rem 1.5rem' : '0 1.5rem',
-                    color: 'var(--text-body)',
-                    lineHeight: 1.7,
-                    maxHeight: isOpen ? '300px' : '0px',
-                    opacity: isOpen ? 1 : 0,
-                    transition: 'all 0.3s ease-out'
-                  }}
-                >
-                  {faq.a}
+          <div className="field-intel-grid">
+            {fieldInputs.map((item) => (
+              <div key={item.code} className="field-intel-item">
+                <div>
+                  <span className="intel-num">{item.code}</span>
+                  <h3 className="intel-title">{item.name}</h3>
+                  <p className="intel-role">{item.desc}</p>
+                </div>
+                <div style={{ marginTop: '1rem', paddingTop: '0.75rem', borderTop: '1px solid var(--agri-line)' }}>
+                  <span className="mono-meta" style={{ color: 'var(--agri-accent)' }}>{item.metric}</span>
                 </div>
               </div>
-            );
-          })}
+            ))}
+          </div>
+        </div>
+      </section>
+
+      {/* ====================================================================
+          03 STICKY AI FIELD ANALYSIS STAGE (Scroll-Driven Workflow)
+          ==================================================================== */}
+      <section className="sticky-analysis-section" ref={stickySectionRef} id="pipeline-stage">
+        <div className="sticky-analysis-stage">
+          {/* Background Marquee Motion */}
+          <div
+            className="marquee-bg-word"
+            style={{ transform: `translate(calc(-10% + ${stickyProgress * -150}px), -50%)` }}
+            aria-hidden="true"
+          >
+            FIELD INTELLIGENCE • ADVISORY PIPELINE
+          </div>
+
+          {/* Sticky Header Meta */}
+          <div style={{ position: 'relative', zIndex: 2, display: 'flex', justifyContent: 'space-between', alignItems: 'center', borderBottom: '1px solid var(--agri-line)', paddingBottom: '1rem' }}>
+            <div>
+              <span className="mono-accent">SYSTEM FLOW</span>
+              <h3 style={{ fontSize: '1.6rem', fontWeight: 800, marginTop: '4px' }}>AI Field Analysis Execution</h3>
+            </div>
+          </div>
+
+          {/* Interactive Pipeline Display Node Grid */}
+          <div className="analysis-pipeline-display">
+            {[
+              { num: '01', stage: 'RAW FIELD DATA', detail: 'Ingesting soil N-P-K chemical readings and soil pH bounds.', metric: 'NPK + pH' },
+              { num: '02', stage: 'FEATURE NORMALIZATION', detail: 'Correlating with atmospheric humidity, thermal curve, and rainfall.', metric: 'TEMP + RAIN' },
+              { num: '03', stage: 'MODEL PREDICTION', detail: 'Multivariate distance matching against agronomic crop requirements.', metric: 'CLASSIFIER' },
+              { num: '04', stage: 'CROP ADVISORY', detail: 'Synthesizing output recommendations with fertilizer dosage schedules.', metric: 'OUTPUT LOG' }
+            ].map((node, idx) => (
+              <div
+                key={node.num}
+                className={`pipeline-node ${activePipelineStep === idx ? 'active-node' : ''}`}
+              >
+                <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '0.75rem' }}>
+                  <span className="mono-meta" style={{ color: 'var(--agri-accent)' }}>{node.metric}</span>
+                </div>
+                <h4 style={{ fontSize: '1.15rem', fontWeight: 800, letterSpacing: '-0.02em', marginBottom: '0.5rem', color: 'var(--agri-ink)' }}>
+                  {node.stage}
+                </h4>
+                <p style={{ fontSize: '0.88rem', color: 'var(--agri-secondary)', lineHeight: 1.5 }}>
+                  {node.detail}
+                </p>
+              </div>
+            ))}
+          </div>
+
+          {/* Sticky Footer Trace */}
+          <div style={{ position: 'relative', zIndex: 2, display: 'flex', justifyContent: 'space-between', alignItems: 'center', borderTop: '1px solid var(--agri-line)', paddingTop: '1rem' }}>
+            <span className="mono-meta" style={{ color: 'var(--agri-muted)' }}>
+              SCROLL DRIVEN ADVISORY SIMULATION
+            </span>
+            <span className="mono-meta" style={{ color: 'var(--agri-accent)' }}>
+              AGRISENSE ML PIPELINE READY
+            </span>
+          </div>
+        </div>
+      </section>
+
+      {/* ====================================================================
+          04 AI PROOF: Dark Inverted Architecture with SVG Data Trace
+          ==================================================================== */}
+      <section className="ai-proof-dark reveal" id="ai-engine">
+        <div className="page-container">
+          <div className="proof-grid">
+            <div>
+              <div className="section-meta-row">
+                <span className="mono-accent">ARCHITECTURAL PROOF</span>
+                <div className="section-meta-rule" style={{ backgroundColor: 'var(--agri-accent)' }}></div>
+                <span className="mono-meta" style={{ color: '#85858B' }}>CLASSIFICATION ENGINE</span>
+              </div>
+              <h2 className="section-title-large" style={{ color: '#EFEFEE' }}>
+                Precision Advisory Architecture
+              </h2>
+              <p style={{ color: '#B7B7BC', fontSize: '1.05rem', lineHeight: 1.65, marginBottom: '2rem' }}>
+                Traditional crop selection relies on historical seasonal intuition, which can fail under soil degradation or climate shifts. AgriSense calculates exact Euclidean vector distances across 7 environmental parameters to identify statistically optimal crop choices.
+              </p>
+
+              <div style={{ display: 'grid', gridTemplateColumns: 'repeat(2, 1fr)', gap: '1.5rem', borderTop: '1px solid rgba(239,239,238,0.12)', paddingTop: '1.5rem' }}>
+                <div>
+                  <span className="mono-meta" style={{ color: '#7C97FF' }}>INPUT VECTOR</span>
+                  <div style={{ fontSize: '1.2rem', fontWeight: 800, marginTop: '4px', color: '#EFEFEE' }}>7 Parameters</div>
+                  <span className="mono-meta" style={{ color: '#85858B' }}>N, P, K, pH, Temp, Hum, Rain</span>
+                </div>
+                <div>
+                  <span className="mono-meta" style={{ color: '#7C97FF' }}>ADVISORY ENGINE</span>
+                  <div style={{ fontSize: '1.2rem', fontWeight: 800, marginTop: '4px', color: '#EFEFEE' }}>Dual Mode</div>
+                  <span className="mono-meta" style={{ color: '#85858B' }}>Crop Match &amp; Fertilizer Deficit</span>
+                </div>
+              </div>
+            </div>
+
+            {/* SVG Data Pipeline Animation */}
+            <div className="svg-trace-container">
+              <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '1.5rem' }}>
+                <span className="mono-meta" style={{ color: '#7C97FF' }}>DATA VECTOR PIPELINE</span>
+                <span className="pulse-indicator"></span>
+              </div>
+
+              <svg viewBox="0 0 400 240" fill="none" xmlns="http://www.w3.org/2000/svg" style={{ width: '100%', height: 'auto' }}>
+                {/* Background Connection Lines */}
+                <path d="M 50 40 L 160 120 L 260 120 L 350 40" stroke="rgba(239, 239, 238, 0.15)" strokeWidth="2" strokeDasharray="4 4" />
+                <path d="M 50 120 L 160 120 L 260 120 L 350 120" stroke="rgba(239, 239, 238, 0.15)" strokeWidth="2" strokeDasharray="4 4" />
+                <path d="M 50 200 L 160 120 L 260 120 L 350 200" stroke="rgba(239, 239, 238, 0.15)" strokeWidth="2" strokeDasharray="4 4" />
+
+                {/* Animated Primary Signal Trace */}
+                <path d="M 50 40 L 160 120 L 260 120 L 350 120" stroke="#22C55E" strokeWidth="3" className="trace-line" />
+                <path d="M 50 200 L 160 120 L 260 120 L 350 40" stroke="#22C55E" strokeWidth="2" className="trace-line" />
+
+                {/* Node Markers */}
+                <circle cx="50" cy="40" r="8" fill="#141418" stroke="#22C55E" strokeWidth="2" />
+                <circle cx="50" cy="120" r="8" fill="#141418" stroke="#22C55E" strokeWidth="2" />
+                <circle cx="50" cy="200" r="8" fill="#141418" stroke="#22C55E" strokeWidth="2" />
+
+                <circle cx="160" cy="120" r="10" fill="#16A34A" stroke="#EFEFEE" strokeWidth="2" />
+                <circle cx="260" cy="120" r="10" fill="#16A34A" stroke="#EFEFEE" strokeWidth="2" />
+
+                <circle cx="350" cy="40" r="8" fill="#141418" stroke="#4ADE80" strokeWidth="2" />
+                <circle cx="350" cy="120" r="8" fill="#141418" stroke="#4ADE80" strokeWidth="2" />
+                <circle cx="350" cy="200" r="8" fill="#141418" stroke="#4ADE80" strokeWidth="2" />
+
+                {/* Labels in SVG */}
+                <text x="50" y="24" fill="#85858B" fontSize="9" fontFamily="monospace" textAnchor="middle">SOIL NPK</text>
+                <text x="50" y="104" fill="#85858B" fontSize="9" fontFamily="monospace" textAnchor="middle">SOIL pH</text>
+                <text x="50" y="184" fill="#85858B" fontSize="9" fontFamily="monospace" textAnchor="middle">CLIMATE</text>
+
+                <text x="210" y="96" fill="#22C55E" fontSize="10" fontFamily="monospace" fontWeight="bold" textAnchor="middle">AI ENGINE</text>
+
+                <text x="350" y="24" fill="#4ADE80" fontSize="9" fontFamily="monospace" textAnchor="middle">CROP MATCH</text>
+                <text x="350" y="104" fill="#4ADE80" fontSize="9" fontFamily="monospace" textAnchor="middle">FERTILIZER</text>
+                <text x="350" y="184" fill="#4ADE80" fontSize="9" fontFamily="monospace" textAnchor="middle">DOSAGE</text>
+              </svg>
+            </div>
+          </div>
+        </div>
+      </section>
+
+      {/* ====================================================================
+          05 PRECISION WORKFLOW: Ruled Process Timeline
+          ==================================================================== */}
+      <section className="section-pad reveal" id="workflow">
+        <div className="page-container">
+          <div className="section-header-editorial">
+            <div className="section-meta-row">
+              <span className="mono-accent">WORKFLOW</span>
+              <div className="section-meta-rule"></div>
+              <span className="mono-meta">END-TO-END PROCESS</span>
+            </div>
+            <h2 className="section-title-large">End-to-End Precision Advisory Workflow</h2>
+            <p className="section-desc-editorial">
+              How AgriSense transforms raw soil chemical readings into actionable crop selection and targeted fertilizer recommendations.
+            </p>
+          </div>
+
+          <div className="workflow-timeline">
+            {workflowSteps.map((step) => (
+              <div key={step.num} className="workflow-row">
+                <span className="workflow-step-num">{step.num}</span>
+                <h3 className="workflow-title">{step.title}</h3>
+                <p className="workflow-desc">{step.desc}</p>
+                <span className="mono-meta workflow-meta-tag" style={{ textAlign: 'right', color: 'var(--agri-accent)' }}>
+                  {step.tag}
+                </span>
+              </div>
+            ))}
+          </div>
+        </div>
+      </section>
+
+      {/* ====================================================================
+          06 WHY AGRISENSE: Ruled Editorial Modules
+          ==================================================================== */}
+      <section className="section-pad reveal" id="why">
+        <div className="page-container">
+          <div className="section-header-editorial">
+            <div className="section-meta-row">
+              <span className="mono-accent">ADVANTAGE</span>
+              <div className="section-meta-rule"></div>
+              <span className="mono-meta">DATA-BACKED PRECISION</span>
+            </div>
+            <h2 className="section-title-large">Smarter Soil Insights for Better Farming</h2>
+            <p className="section-desc-editorial">
+              Eliminate planting guesswork, reduce fertilizer expenses, and preserve long-term soil health with automated agronomic guidance.
+            </p>
+          </div>
+
+          <div className="why-editorial-grid">
+            <div className="why-editorial-cell">
+              <span className="mono-meta" style={{ color: 'var(--agri-accent)' }}>NUTRIENT PROFILING</span>
+              <div>
+                <h3 style={{ fontSize: '1.4rem', fontWeight: 800, margin: '0.75rem 0 0.5rem 0' }}>Smart NPK Nutrient Profiling</h3>
+                <p style={{ color: 'var(--agri-secondary)', lineHeight: 1.6, fontSize: '0.95rem' }}>
+                  Evaluates primary Nitrogen, Phosphorus, and Potassium levels against Soil pH to optimize root nutrition and prevent soil depletion.
+                </p>
+              </div>
+              <span className="mono-meta" style={{ color: 'var(--agri-muted)' }}>BALANCED CHEMISTRY</span>
+            </div>
+
+            <div className="why-editorial-cell">
+              <span className="mono-meta" style={{ color: 'var(--agri-accent)' }}>CLIMATE SYNC</span>
+              <div>
+                <h3 style={{ fontSize: '1.4rem', fontWeight: 800, margin: '0.75rem 0 0.5rem 0' }}>Weather &amp; Rainfall Matching</h3>
+                <p style={{ color: 'var(--agri-secondary)', lineHeight: 1.6, fontSize: '0.95rem' }}>
+                  Matches local seasonal temperatures, humidity, and rainfall thresholds to recommend resilient crops suited to your exact regional bounds.
+                </p>
+              </div>
+              <span className="mono-meta" style={{ color: 'var(--agri-muted)' }}>SEASONAL SYNC</span>
+            </div>
+
+            <div className="why-editorial-cell">
+              <span className="mono-meta" style={{ color: 'var(--agri-accent)' }}>RESOURCE EFFICIENCY</span>
+              <div>
+                <h3 style={{ fontSize: '1.4rem', fontWeight: 800, margin: '0.75rem 0 0.5rem 0' }}>Targeted Fertilizer Calculations</h3>
+                <p style={{ color: 'var(--agri-secondary)', lineHeight: 1.6, fontSize: '0.95rem' }}>
+                  Calculates precise NPK deficiency dosage per hectare, helping you purchase only the fertilizer your soil actually needs.
+                </p>
+              </div>
+              <span className="mono-meta" style={{ color: 'var(--agri-muted)' }}>ZERO RESOURCE WASTE</span>
+            </div>
+
+            <div className="why-editorial-cell">
+              <span className="mono-meta" style={{ color: 'var(--agri-accent)' }}>MULTI-PLOT LOGGING</span>
+              <div>
+                <h3 style={{ fontSize: '1.4rem', fontWeight: 800, margin: '0.75rem 0 0.5rem 0' }}>Multi-Plot Farm Logging</h3>
+                <p style={{ color: 'var(--agri-secondary)', lineHeight: 1.6, fontSize: '0.95rem' }}>
+                  Stores historical soil test reports and past recommendations across multiple farm plots to track soil enrichment over harvest seasons.
+                </p>
+              </div>
+              <span className="mono-meta" style={{ color: 'var(--agri-muted)' }}>SAVED FIELD HISTORY</span>
+            </div>
+          </div>
+        </div>
+      </section>
+
+      {/* ====================================================================
+          07 FAQ ACCORDION SECTION
+          ==================================================================== */}
+      <section className="section-pad reveal" id="faq">
+        <div className="page-container">
+          <div className="section-header-editorial" style={{ textAlign: 'center', maxWidth: '720px', margin: '0 auto 3rem auto' }}>
+            <div className="section-meta-row" style={{ justifyContent: 'center' }}>
+              <span className="mono-accent">FAQ</span>
+              <div className="section-meta-rule"></div>
+              <span className="mono-meta">QUESTIONS &amp; ANSWERS</span>
+            </div>
+            <h2 className="section-title-large">Frequently Asked Questions</h2>
+          </div>
+
+          <div className="faq-accordion-container" role="region" aria-label="Frequently Asked Questions">
+            {faqs.map((faq, idx) => {
+              const isOpen = activeFaq === idx;
+              const btnId = `faq-btn-${idx}`;
+              const panelId = `faq-panel-${idx}`;
+              return (
+                <div key={idx} className="faq-editorial-item">
+                  <button
+                    id={btnId}
+                    type="button"
+                    className="faq-trigger-btn"
+                    aria-expanded={isOpen}
+                    aria-controls={panelId}
+                    onClick={() => toggleFaq(idx)}
+                  >
+                    <span className="faq-question-text">{faq.q}</span>
+                    <span className="faq-icon-indicator" style={{ transform: isOpen ? 'rotate(45deg)' : 'rotate(0deg)' }}>
+                      +
+                    </span>
+                  </button>
+                  <div
+                    id={panelId}
+                    role="region"
+                    aria-labelledby={btnId}
+                    className={`faq-content-collapse ${isOpen ? 'open' : ''}`}
+                  >
+                    <div className="faq-inner-text">
+                      {faq.a}
+                    </div>
+                  </div>
+                </div>
+              );
+            })}
+          </div>
         </div>
       </section>
     </main>

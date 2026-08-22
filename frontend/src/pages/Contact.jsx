@@ -5,7 +5,8 @@ export default function Contact({ showToast }) {
   const [formData, setFormData] = useState({
     name: '',
     email: '',
-    message: ''
+    message: '',
+    website_trap: ''
   });
 
   const handleChange = (e) => {
@@ -15,144 +16,163 @@ export default function Contact({ showToast }) {
 
   const handleSubmit = (e) => {
     e.preventDefault();
-    if (!formData.name || !formData.email || !formData.message) {
-      showToast?.('Please fill out all required fields', 'error');
+    if (formData.website_trap) {
+      // Bot detected: silent ignore
       return;
     }
-    showToast?.('Thank you for reaching out! Our agronomy advisory team will respond shortly.', 'success');
-    setFormData({ name: '', email: '', message: '' });
+    if (!formData.name || !formData.email || !formData.message) {
+      showToast?.('Please fill out all required fields.', 'warning');
+      return;
+    }
+    showToast?.('Message transmitted. Agronomy support team will respond shortly.', 'success');
+    setFormData({ name: '', email: '', message: '', website_trap: '' });
   };
 
   return (
-    <main>
-      <section id="contact">
-        <div className="section-header">
-          <span className="section-tag"><i className="fa-solid fa-envelope"></i> Reach Out</span>
-          <h2 className="section-title">Get In Touch</h2>
-          <p className="section-subtitle">
-            Have questions about AgriSense, suggestions for crop machine learning models, or feedback on the user interface? Send us a message.
+    <main style={{ padding: 'calc(var(--nav-height) + 2rem) 0 5rem 0' }}>
+      <div className="page-container">
+        {/* Header */}
+        <div className="section-header-editorial">
+          <div className="section-meta-row">
+            <span className="mono-accent">COMMUNICATIONS • SUPPORT</span>
+            <div className="section-meta-rule"></div>
+            <span className="mono-meta">FIELD INQUIRY TERMINAL</span>
+          </div>
+          <h1 className="section-title-large">Field Support &amp; System Inquiries</h1>
+          <p className="section-desc-editorial">
+            Have questions regarding ML model calibrations, suggestions for new crop species datasets, or need assistance configuring farm profiles? Transmit your query below.
           </p>
         </div>
 
-        <div className="contact-layout" style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(320px, 1fr))', gap: '2rem' }}>
-          
-          {/* Contact Form */}
-          <form className="form-card" onSubmit={handleSubmit}>
-            <div style={{ marginBottom: '1.5rem' }}>
-              <label style={{ display: 'block', fontSize: '0.9rem', fontWeight: 700, color: 'var(--primary)', marginBottom: '0.6rem' }}>
-                Select Inquiry Subject:
-              </label>
-              <div className="topic-pills" style={{ display: 'flex', gap: '0.5rem', flexWrap: 'wrap' }}>
+        <div className="console-layout">
+          {/* Support Form */}
+          <form className="console-panel" onSubmit={handleSubmit}>
+            {/* Honeypot Bot Trap Field */}
+            <input
+              type="text"
+              name="website_trap"
+              value={formData.website_trap}
+              onChange={handleChange}
+              style={{ display: 'none', position: 'absolute', left: '-9999px' }}
+              tabIndex={-1}
+              autoComplete="off"
+              aria-hidden="true"
+            />
+            <div style={{ marginBottom: '1.5rem', borderBottom: '1px solid var(--agri-line)', paddingBottom: '1rem' }}>
+              <span className="mono-accent" style={{ display: 'block', marginBottom: '0.6rem' }}>
+                SELECT INQUIRY CATEGORY:
+              </span>
+              <div style={{ display: 'flex', gap: '0.5rem', flexWrap: 'wrap' }}>
                 {[
-                  { id: 'general', label: 'General Query', icon: 'fa-solid fa-circle-info' },
-                  { id: 'recommend', label: 'Advisory Help', icon: 'fa-solid fa-seedling' },
-                  { id: 'model', label: 'ML Model Feedback', icon: 'fa-solid fa-brain' }
+                  { id: 'general', label: 'GENERAL QUERY', icon: 'fa-solid fa-circle-info' },
+                  { id: 'recommend', label: 'ADVISORY SUPPORT', icon: 'fa-solid fa-seedling' },
+                  { id: 'model', label: 'ML MODEL FEEDBACK', icon: 'fa-solid fa-microchip' }
                 ].map((item) => (
                   <button
                     key={item.id}
                     type="button"
-                    className={`topic-pill-label ${topic === item.id ? 'active' : ''}`}
+                    className={`preset-chip ${topic === item.id ? 'active' : ''}`}
                     onClick={() => setTopic(item.id)}
-                    style={{
-                      cursor: 'pointer',
-                      border: topic === item.id ? '2px solid var(--accent-terracotta)' : '1px solid var(--border-subtle)',
-                      backgroundColor: topic === item.id ? 'rgba(217, 107, 67, 0.12)' : 'var(--surface-white)',
-                      color: topic === item.id ? 'var(--accent-terracotta)' : 'var(--text-dark)',
-                      fontWeight: topic === item.id ? 700 : 500,
-                      padding: '0.5rem 1rem',
-                      borderRadius: 'var(--radius-sm)',
-                      display: 'flex',
-                      alignItems: 'center',
-                      gap: '0.4rem',
-                      transition: 'var(--transition)'
-                    }}
                   >
-                    <i className={item.icon}></i> {item.label}
+                    <i className={item.icon} style={{ marginRight: '6px' }}></i>
+                    {item.label}
                   </button>
                 ))}
               </div>
             </div>
 
-            <div className="form-grid">
-              <div className="form-field form-field-full">
-                <label htmlFor="name">Your Name</label>
-                <div className="input-wrapper">
-                  <input
-                    type="text"
-                    id="name"
-                    name="name"
-                    placeholder="e.g. Abdullah P I"
-                    required
-                    className="input-control"
-                    value={formData.name}
-                    onChange={handleChange}
-                  />
-                  <i className="fa-solid fa-user"></i>
-                </div>
-              </div>
-
-              <div className="form-field form-field-full">
-                <label htmlFor="email">Email Address</label>
-                <div className="input-wrapper">
-                  <input
-                    type="email"
-                    id="email"
-                    name="email"
-                    placeholder="e.g. farmer@example.com"
-                    required
-                    className="input-control"
-                    value={formData.email}
-                    onChange={handleChange}
-                  />
-                  <i className="fa-solid fa-envelope"></i>
-                </div>
-              </div>
-
-              <div className="form-field form-field-full">
-                <label htmlFor="message">Message / Feedback</label>
-                <div className="input-wrapper">
-                  <textarea
-                    id="message"
-                    name="message"
-                    rows="5"
-                    placeholder="Write your query or agronomy feedback here..."
-                    required
-                    className="input-control textarea-control"
-                    value={formData.message}
-                    onChange={handleChange}
-                  ></textarea>
-                  <i className="fa-solid fa-comment" style={{ top: '1.25rem' }}></i>
-                </div>
+            <div className="console-field" style={{ marginBottom: '1.25rem' }}>
+              <label htmlFor="name">Full Name</label>
+              <div className="input-wrapper">
+                <input
+                  type="text"
+                  id="name"
+                  name="name"
+                  placeholder="Enter your full name"
+                  required
+                  value={formData.name}
+                  onChange={handleChange}
+                />
               </div>
             </div>
 
-            <div className="form-actions" style={{ marginTop: '1.5rem' }}>
-              <button type="submit" className="btn btn-terracotta btn-block">
-                <i className="fa-solid fa-paper-plane"></i> Send Message
-              </button>
+            <div className="console-field" style={{ marginBottom: '1.25rem' }}>
+              <label htmlFor="email">Email Address</label>
+              <div className="input-wrapper">
+                <input
+                  type="email"
+                  id="email"
+                  name="email"
+                  placeholder="Enter email address"
+                  required
+                  value={formData.email}
+                  onChange={handleChange}
+                />
+              </div>
             </div>
+
+            <div className="console-field" style={{ marginBottom: '1.75rem' }}>
+              <label htmlFor="message">Inquiry / Field Message</label>
+              <div className="input-wrapper">
+                <textarea
+                  id="message"
+                  name="message"
+                  rows="5"
+                  placeholder="Describe your inquiry, field context, or technical issue..."
+                  required
+                  value={formData.message}
+                  onChange={handleChange}
+                  style={{ resize: 'vertical' }}
+                />
+              </div>
+            </div>
+
+            <button type="submit" className="btn-primary-technical" style={{ width: '100%' }}>
+              <i className="fa-solid fa-paper-plane" style={{ marginRight: '6px' }}></i> TRANSMIT INQUIRY
+            </button>
           </form>
 
-          {/* Sidebar */}
-          <div className="contact-sidebar" style={{ display: 'flex', flexDirection: 'column', gap: '1.5rem' }}>
-            <div className="contact-info-card" style={{ background: 'var(--surface-white)', padding: '1.5rem', borderRadius: 'var(--radius-sm)', border: '1px solid var(--border-subtle)' }}>
-              <h3><i className="fa-solid fa-location-dot" style={{ color: 'var(--accent-terracotta)', marginRight: '0.5rem' }}></i> Agronomy Headquarters</h3>
-              <p style={{ marginTop: '0.5rem', color: 'var(--text-body)' }}>AgriSense Precision Advisory Base<br />Smart Soil AI Research Division</p>
+          {/* Telemetry Sidebar */}
+          <div style={{ display: 'flex', flexDirection: 'column', gap: '1.5rem' }}>
+            <div className="console-panel">
+              <span className="mono-accent">LOCATION • DIVISION</span>
+              <h3 style={{ fontSize: '1.2rem', fontWeight: 800, marginTop: '4px', marginBottom: '0.75rem' }}>
+                Agronomy Headquarters
+              </h3>
+              <p style={{ color: 'var(--agri-secondary)', fontSize: '0.95rem', lineHeight: 1.6 }}>
+                AgriSense Precision Platform<br />
+                Smart Soil AI Research Division<br />
+                Agricultural Informatics Center
+              </p>
             </div>
 
-            <div className="contact-info-card" style={{ background: 'var(--surface-white)', padding: '1.5rem', borderRadius: 'var(--radius-sm)', border: '1px solid var(--border-subtle)' }}>
-              <h3><i className="fa-solid fa-headset" style={{ color: 'var(--accent-terracotta)', marginRight: '0.5rem' }}></i> Advisory Support</h3>
-              <p style={{ marginTop: '0.5rem', color: 'var(--text-body)' }}>Email: <strong>support@agrisense.io</strong><br />Mon – Fri, 8am – 6pm EST</p>
+            <div className="console-panel">
+              <span className="mono-accent">COMMUNICATIONS • DIRECT</span>
+              <h3 style={{ fontSize: '1.2rem', fontWeight: 800, marginTop: '4px', marginBottom: '0.75rem' }}>
+                Advisory Support Desk
+              </h3>
+              <p style={{ color: 'var(--agri-secondary)', fontSize: '0.95rem', lineHeight: 1.6 }}>
+                Email: <strong style={{ color: 'var(--agri-ink)' }}>support@agrisense.io</strong><br />
+                Active Hours: Mon &ndash; Fri, 08:00 &ndash; 18:00 EST
+              </p>
             </div>
 
-            <div className="contact-info-card" style={{ background: 'var(--surface-white)', padding: '1.5rem', borderRadius: 'var(--radius-sm)', border: '1px solid var(--border-subtle)' }}>
-              <h3><i className="fa-solid fa-heart-pulse" style={{ color: 'var(--primary-light)', marginRight: '0.5rem' }}></i> Platform Health</h3>
-              <p style={{ marginTop: '0.5rem', color: 'var(--text-body)' }}>Advisory Engine Status: <strong style={{ color: 'var(--primary-light)' }}>Operational (100%)</strong><br />Data Models: <strong>Active</strong></p>
+            <div className="console-panel">
+              <span className="mono-accent">PLATFORM TELEMETRY</span>
+              <h3 style={{ fontSize: '1.2rem', fontWeight: 800, marginTop: '4px', marginBottom: '0.75rem' }}>
+                System Health
+              </h3>
+              <div style={{ display: 'flex', alignItems: 'center', gap: '8px', marginBottom: '4px' }}>
+                <span className="pulse-indicator"></span>
+                <span style={{ fontWeight: 600, color: 'var(--agri-ink)' }}>Advisory Engine: OPERATIONAL (100%)</span>
+              </div>
+              <span className="mono-meta" style={{ color: 'var(--agri-muted)' }}>
+                LATENCY OPTIMIZED • FLASK MODEL READY
+              </span>
             </div>
           </div>
-
         </div>
-      </section>
+      </div>
     </main>
   );
 }

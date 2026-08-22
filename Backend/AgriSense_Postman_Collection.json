@@ -59,7 +59,14 @@
 			}
 		},
 		{
-			"name": "07. Anonymous ML Prediction (Predict Crop)",
+			"name": "07. Retrieve Model Options Catalog",
+			"request": {
+				"method": "GET",
+				"url": "http://localhost:5000/api/options"
+			}
+		},
+		{
+			"name": "08. ML Crop Recommendation",
 			"request": {
 				"method": "POST",
 				"header": [{ "key": "Content-Type", "value": "application/json" }],
@@ -71,21 +78,69 @@
 			}
 		},
 		{
-			"name": "08. Get Advisory Logs History",
+			"name": "09. ML Fertilizer Recommendation (Valid)",
+			"request": {
+				"method": "POST",
+				"header": [{ "key": "Content-Type", "value": "application/json" }],
+				"body": {
+					"mode": "raw",
+					"raw": "{\n    \"district_name\": \"Kolhapur\",\n    \"soil_color\": \"Black\",\n    \"crop\": \"Sugarcane\",\n    \"nitrogen\": 50.0,\n    \"phosphorus\": 20.0,\n    \"potassium\": 30.0,\n    \"ph\": 6.5,\n    \"rainfall\": 120.0,\n    \"temperature\": 28.0\n}"
+				},
+				"url": "http://localhost:5000/api/predict/fertilizer"
+			}
+		},
+		{
+			"name": "10. ML Fertilizer Recommendation (Invalid 400 Validation)",
+			"request": {
+				"method": "POST",
+				"header": [{ "key": "Content-Type", "value": "application/json" }],
+				"body": {
+					"mode": "raw",
+					"raw": "{\n    \"district_name\": \"Atlantis\",\n    \"soil_color\": \"Black\",\n    \"crop\": \"Sugarcane\",\n    \"nitrogen\": 50.0,\n    \"phosphorus\": 20.0,\n    \"potassium\": 30.0,\n    \"ph\": 6.5,\n    \"rainfall\": 120.0,\n    \"temperature\": 28.0\n}"
+				},
+				"url": "http://localhost:5000/api/predict/fertilizer"
+			}
+		},
+		{
+			"name": "11. ML Crop Yield Prediction (Valid)",
+			"request": {
+				"method": "POST",
+				"header": [{ "key": "Content-Type", "value": "application/json" }],
+				"body": {
+					"mode": "raw",
+					"raw": "{\n    \"state_name\": \"Maharashtra\",\n    \"season\": \"Kharif\",\n    \"crop\": \"Rice\",\n    \"crop_year\": 2024,\n    \"area\": 10.0\n}"
+				},
+				"url": "http://localhost:5000/api/predict/yield"
+			}
+		},
+		{
+			"name": "12. ML Crop Yield Prediction (Invalid 400 Validation)",
+			"request": {
+				"method": "POST",
+				"header": [{ "key": "Content-Type", "value": "application/json" }],
+				"body": {
+					"mode": "raw",
+					"raw": "{\n    \"state_name\": \"Maharashtra\",\n    \"season\": \"Kharif\",\n    \"crop\": \"KryptoniteCrop\",\n    \"crop_year\": 2024,\n    \"area\": 10.0\n}"
+				},
+				"url": "http://localhost:5000/api/predict/yield"
+			}
+		},
+		{
+			"name": "13. Get Advisory Logs History",
 			"request": {
 				"method": "GET",
 				"url": "http://localhost:5000/api/logs"
 			}
 		},
 		{
-			"name": "09. Get Single Advisory Log by ID",
+			"name": "14. Get Single Advisory Log by ID",
 			"request": {
 				"method": "GET",
 				"url": "http://localhost:5000/api/logs/LOG-8942"
 			}
 		},
 		{
-			"name": "10. Create Custom Advisory Log",
+			"name": "15. Create Custom Advisory Log",
 			"request": {
 				"method": "POST",
 				"header": [{ "key": "Content-Type", "value": "application/json" }],
@@ -97,7 +152,7 @@
 			}
 		},
 		{
-			"name": "11. Update Advisory Log Record",
+			"name": "16. Update Advisory Log Record",
 			"request": {
 				"method": "PUT",
 				"header": [{ "key": "Content-Type", "value": "application/json" }],
@@ -109,14 +164,14 @@
 			}
 		},
 		{
-			"name": "12. Delete Single Advisory Log",
+			"name": "17. Delete Single Advisory Log",
 			"request": {
 				"method": "DELETE",
 				"url": "http://localhost:5000/api/logs/LOG-9001"
 			}
 		},
 		{
-			"name": "13. Create User Crop Recommendation (ML Model)",
+			"name": "18. Create User Crop Recommendation (ML Model)",
 			"request": {
 				"method": "POST",
 				"header": [{ "key": "Content-Type", "value": "application/json" }],
@@ -128,21 +183,21 @@
 			}
 		},
 		{
-			"name": "14. Get User Recommendation History",
+			"name": "19. Get User Recommendation History",
 			"request": {
 				"method": "GET",
 				"url": "http://localhost:5000/api/recommendations"
 			}
 		},
 		{
-			"name": "15. Get Single User Recommendation Record",
+			"name": "20. Get Single User Recommendation Record",
 			"request": {
 				"method": "GET",
 				"url": "http://localhost:5000/api/recommendations/REC-1001"
 			}
 		},
 		{
-			"name": "16. Update User Recommendation Notes",
+			"name": "21. Update User Recommendation Notes",
 			"request": {
 				"method": "PUT",
 				"header": [{ "key": "Content-Type", "value": "application/json" }],
@@ -154,14 +209,14 @@
 			}
 		},
 		{
-			"name": "17. Delete User Recommendation Record",
+			"name": "22. Delete User Recommendation Record",
 			"request": {
 				"method": "DELETE",
 				"url": "http://localhost:5000/api/recommendations/REC-1001"
 			}
 		},
 		{
-			"name": "18. Create Farm Plot Profile",
+			"name": "23. Create Farm Plot Profile",
 			"request": {
 				"method": "POST",
 				"header": [{ "key": "Content-Type", "value": "application/json" }],
@@ -173,21 +228,21 @@
 			}
 		},
 		{
-			"name": "19. Get User Farm Profiles",
+			"name": "24. Get User Farm Profiles",
 			"request": {
 				"method": "GET",
 				"url": "http://localhost:5000/api/farms"
 			}
 		},
 		{
-			"name": "20. Logout User",
+			"name": "25. Logout User",
 			"request": {
 				"method": "POST",
 				"url": "http://localhost:5000/logout"
 			}
 		},
 		{
-			"name": "21. Protected Route After Logout (401 Blocked)",
+			"name": "26. Protected Route After Logout (401 Blocked)",
 			"request": {
 				"method": "GET",
 				"url": "http://localhost:5000/profile"

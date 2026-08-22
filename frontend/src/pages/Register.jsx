@@ -11,7 +11,7 @@ export default function Register({ showToast }) {
         const parsed = JSON.parse(saved);
         return parsed.currentStep || 1;
       }
-    } catch (e) {}
+    } catch (e) { }
     return 1;
   });
 
@@ -26,6 +26,7 @@ export default function Register({ showToast }) {
       soilType: 'loamy',
       password: '',
       confirmPassword: '',
+      website_trap: '',
       terms: true
     };
     try {
@@ -34,7 +35,7 @@ export default function Register({ showToast }) {
         const parsed = JSON.parse(saved);
         return { ...defaultData, ...parsed };
       }
-    } catch (e) {}
+    } catch (e) { }
     return defaultData;
   });
 
@@ -44,13 +45,12 @@ export default function Register({ showToast }) {
       delete draft.password;
       delete draft.confirmPassword;
       sessionStorage.setItem('agrisense_reg_draft', JSON.stringify(draft));
-    } catch (e) {}
+    } catch (e) { }
   }, [formData, currentStep]);
-
 
   const [touched, setTouched] = useState({});
   const [submitted, setSubmitted] = useState(false);
-  const [success, setSuccess] = useState(false);
+  const [loading, setLoading] = useState(false);
 
   // Regex Patterns
   const patterns = {
@@ -76,7 +76,7 @@ export default function Register({ showToast }) {
       case 'phone':
         const cleanPhone = value.replace(/[\s\-\(\)]/g, '');
         if (!value.trim()) return 'Mobile number is required.';
-        if (!/^[6-9]\d{9}$/.test(cleanPhone)) return 'Valid 10-digit Indian mobile number required.';
+        if (!/^[6-9]\d{9}$/.test(cleanPhone)) return 'Valid 10-digit mobile number required.';
         return '';
 
       case 'region':
@@ -110,15 +110,15 @@ export default function Register({ showToast }) {
   const isStepValid = (stepNum) => {
     if (stepNum === 1) {
       return !getFieldError('fullname', formData.fullname) &&
-             !getFieldError('phone', formData.phone) &&
-             !getFieldError('region', formData.region);
+        !getFieldError('phone', formData.phone) &&
+        !getFieldError('region', formData.region);
     }
     if (stepNum === 2) {
       return !getFieldError('username', formData.username) &&
-             !getFieldError('email', formData.email) &&
-             !getFieldError('password', formData.password) &&
-             !getFieldError('confirmPassword', formData.confirmPassword) &&
-             formData.terms;
+        !getFieldError('email', formData.email) &&
+        !getFieldError('password', formData.password) &&
+        !getFieldError('confirmPassword', formData.confirmPassword) &&
+        formData.terms;
     }
     return true;
   };
@@ -134,10 +134,10 @@ export default function Register({ showToast }) {
     e.preventDefault();
     if (currentStep < 2) {
       if (isStepValid(currentStep)) {
-        setCurrentStep((prev) => prev + 1);
+        setCurrentStep(2);
       } else {
         setSubmitted(true);
-        showToast?.('Please fill required fields in this step.', 'warning');
+        showToast?.('Please complete required fields in step 01.', 'warning');
       }
     } else {
       handleSubmit(e);
@@ -146,7 +146,7 @@ export default function Register({ showToast }) {
 
   const handlePrevStep = () => {
     if (currentStep > 1) {
-      setCurrentStep((prev) => prev - 1);
+      setCurrentStep(1);
     }
   };
 
@@ -155,9 +155,11 @@ export default function Register({ showToast }) {
     setSubmitted(true);
 
     if (!isStepValid(1) || !isStepValid(2)) {
-      showToast?.('Please resolve form errors before submitting.', 'error');
+      showToast?.('Please resolve form validation errors.', 'error');
       return;
     }
+
+    setLoading(true);
 
     const payload = {
       username: formData.username.trim(),
@@ -166,7 +168,8 @@ export default function Register({ showToast }) {
       email: formData.email.trim(),
       phone: `${formData.countryCode} ${formData.phone}`.trim(),
       region: formData.region.trim(),
-      soilType: formData.soilType
+      soilType: formData.soilType,
+      website_trap: formData.website_trap || ''
     };
 
     try {
@@ -194,346 +197,378 @@ export default function Register({ showToast }) {
         try {
           localStorage.setItem('agrisense_user', JSON.stringify(userData));
           sessionStorage.removeItem('agrisense_reg_draft');
-        } catch (err) {
-          console.error(err);
-        }
+        } catch (err) { }
 
-        setSuccess(true);
-        showToast?.('Farm Registration Successful! Redirecting to dashboard...', 'success');
+        showToast?.('Farm profile registered successfully! Loading console...', 'success');
 
         setTimeout(() => {
           navigate('/dashboard');
-        }, 1600);
+        }, 1400);
       } else {
         showToast?.(data.error || 'Registration failed.', 'error');
       }
     } catch (err) {
       console.error('Registration network error:', err);
-      showToast?.('Network error: Unable to connect to Flask backend server.', 'error');
+      showToast?.('Network error: Unable to reach backend server.', 'error');
+    } finally {
+      setLoading(false);
     }
   };
 
-
-  const steps = [
-    { num: 1, label: 'Farmer & Field Details' },
-    { num: 2, label: 'Account Security' }
-  ];
-
   return (
-    <main style={{
-      padding: '2.5rem 1.5rem',
-      minHeight: '88vh',
-      backgroundColor: 'var(--bg-canvas)'
-    }}>
-      <div className="register-split-wrapper">
-        {/* Left Column: Portrait Registration Form Card */}
-        <div className="register-form-column">
-          <div className="multi-step-form-card">
-            {/* Header */}
-            <div className="multi-step-header">
-              <h2>Farm Registration</h2>
+    <main style={{ padding: 'calc(var(--nav-height) + 2.5rem) 1.5rem 5rem 1.5rem' }}>
+      <div className="auth-split-grid">
+        {/* Left: Multi-Step Registration Form */}
+        <div className="auth-form-column">
+          <div style={{ marginBottom: '2rem' }}>
+            <div className="section-meta-row" style={{ marginBottom: '0.75rem' }}>
+              <span className="mono-accent">REGISTRATION • ENROLLMENT</span>
+              <div className="section-meta-rule" style={{ maxWidth: '30px' }}></div>
+              <span className="mono-meta">STEP 0{currentStep} OF 02</span>
             </div>
+            <h1 style={{ fontSize: '2rem', fontWeight: 900, letterSpacing: '-0.03em', color: 'var(--agri-ink)' }}>
+              Farm Profile Registration
+            </h1>
+          </div>
 
-            {/* Stepper Tabs Bar */}
-            <div className="stepper-tabs" role="tablist">
-              {steps.map((step) => {
-                const isActive = currentStep === step.num;
-                const isCompleted = currentStep > step.num || (isStepValid(step.num) && currentStep !== step.num);
-                return (
-                  <button
-                    key={step.num}
-                    type="button"
-                    className={`stepper-tab ${isActive ? 'active' : ''} ${isCompleted ? 'completed' : ''}`}
-                    onClick={() => setCurrentStep(step.num)}
-                  >
-                    <span className="step-icon-circle">
-                      {isCompleted ? <i className="fa-solid fa-check"></i> : step.num}
+          {/* Stepper Tabs Bar */}
+          <div className="modal-tabs-technical" style={{ marginBottom: '2rem' }}>
+            <button
+              type="button"
+              className={`modal-tab-btn-technical ${currentStep === 1 ? 'active' : ''}`}
+              onClick={() => setCurrentStep(1)}
+            >
+              01 • FARMER &amp; PLOT
+            </button>
+            <button
+              type="button"
+              className={`modal-tab-btn-technical ${currentStep === 2 ? 'active' : ''}`}
+              onClick={() => {
+                if (isStepValid(1)) setCurrentStep(2);
+                else { setSubmitted(true); showToast?.('Complete step 01 first.', 'warning'); }
+              }}
+            >
+              02 • ACCOUNT SECURITY
+            </button>
+          </div>
+
+          <form onSubmit={handleNextStep}>
+            {/* Honeypot Bot Trap Field */}
+            <input
+              type="text"
+              name="website_trap"
+              value={formData.website_trap}
+              onChange={handleChange}
+              style={{ display: 'none', position: 'absolute', left: '-9999px' }}
+              tabIndex={-1}
+              autoComplete="off"
+              aria-hidden="true"
+            />
+
+            {/* STEP 1: Farmer & Field Details */}
+            {currentStep === 1 && (
+              <div className="auth-step-slide">
+                <div className="console-field" style={{ marginBottom: '1.25rem' }}>
+                  <label htmlFor="fullname">
+                    <span>Full Name</span>
+                    <span style={{ color: 'var(--agri-danger)' }}>*</span>
+                  </label>
+                  <input
+                    type="text"
+                    id="fullname"
+                    name="fullname"
+                    placeholder="Enter your full name"
+                    value={formData.fullname}
+                    onChange={handleChange}
+                    required
+                  />
+                  {(touched.fullname || submitted) && getFieldError('fullname', formData.fullname) && (
+                    <span className="mono-meta" style={{ color: 'var(--agri-danger)', marginTop: '4px', display: 'block' }}>
+                      {getFieldError('fullname', formData.fullname)}
                     </span>
-                    <span>{step.label}</span>
-                  </button>
-                );
-              })}
-            </div>
+                  )}
+                </div>
 
-            {/* Success Banner */}
-            {success && (
-              <div className="form-success-summary" role="status" style={{ display: 'flex', marginBottom: '1.5rem' }}>
-                <i className="fa-solid fa-circle-check"></i>
-                <div>
-                  <strong>Farm Profile Created Successfully!</strong>
-                  <p>Your agricultural plot settings have been stored. Loading dashboard...</p>
+                <div className="console-field" style={{ marginBottom: '1.25rem' }}>
+                  <label htmlFor="phone">
+                    <span>Mobile Number</span>
+                    <span style={{ color: 'var(--agri-danger)' }}>*</span>
+                  </label>
+                  <div style={{ display: 'flex', gap: '0.5rem' }}>
+                    <select
+                      name="countryCode"
+                      value={formData.countryCode}
+                      onChange={handleChange}
+                      style={{ width: '85px', flexShrink: 0 }}
+                    >
+                      <option value="+91">+91</option>
+                    </select>
+                    <input
+                      type="tel"
+                      id="phone"
+                      name="phone"
+                      placeholder="10-digit number"
+                      value={formData.phone}
+                      onChange={handleChange}
+                      required
+                    />
+                  </div>
+                  {(touched.phone || submitted) && getFieldError('phone', formData.phone) && (
+                    <span className="mono-meta" style={{ color: 'var(--agri-danger)', marginTop: '4px', display: 'block' }}>
+                      {getFieldError('phone', formData.phone)}
+                    </span>
+                  )}
+                </div>
+
+                <div className="console-field" style={{ marginBottom: '1.25rem' }}>
+                  <label htmlFor="region">
+                    <span>District / Location</span>
+                    <span style={{ color: 'var(--agri-danger)' }}>*</span>
+                  </label>
+                  <input
+                    type="text"
+                    id="region"
+                    name="region"
+                    placeholder="Enter agricultural district"
+                    value={formData.region}
+                    onChange={handleChange}
+                    required
+                  />
+                  {(touched.region || submitted) && getFieldError('region', formData.region) && (
+                    <span className="mono-meta" style={{ color: 'var(--agri-danger)', marginTop: '4px', display: 'block' }}>
+                      {getFieldError('region', formData.region)}
+                    </span>
+                  )}
+                </div>
+
+                <div className="console-field" style={{ marginBottom: '1.75rem' }}>
+                  <label htmlFor="soilType">
+                    <span>Primary Soil Type</span>
+                    <span style={{ color: 'var(--agri-danger)' }}>*</span>
+                  </label>
+                  <select
+                    id="soilType"
+                    name="soilType"
+                    value={formData.soilType}
+                    onChange={handleChange}
+                    required
+                  >
+                    <option value="loamy">Loamy Soil</option>
+                    <option value="clay-loam">Clay-Loam Soil</option>
+                    <option value="sandy">Sandy Soil</option>
+                    <option value="alluvial">Alluvial Soil</option>
+                    <option value="red">Red Soil</option>
+                    <option value="black">Black Cotton Soil (Regur)</option>
+                    <option value="laterite">Laterite Soil</option>
+                  </select>
                 </div>
               </div>
             )}
 
-            <form onSubmit={handleNextStep}>
-              {/* STEP 1: Farmer & Field Details */}
-              {currentStep === 1 && (
-                <div>
-                  <div className="step-section-title">Farmer &amp; Plot Information</div>
-                  <div className="reference-form-grid">
-                    <div className="ref-field">
-                      <label htmlFor="fullname">Full Name <span style={{ color: '#d9381e' }}>*</span></label>
-                      <input
-                        type="text"
-                        id="fullname"
-                        name="fullname"
-                        placeholder="e.g. Abdullah P I"
-                        value={formData.fullname}
-                        onChange={handleChange}
-                        required
-                      />
-                      {(touched.fullname || submitted) && getFieldError('fullname', formData.fullname) && (
-                        <span role="alert" style={{ fontSize: '0.78rem', color: '#d9381e', marginTop: '0.25rem' }}>{getFieldError('fullname', formData.fullname)}</span>
-                      )}
-                    </div>
-
-                    <div className="ref-field">
-                      <label htmlFor="phone">Mobile Number <span style={{ color: '#d9381e' }}>*</span></label>
-                      <div style={{ display: 'flex', gap: '0.4rem' }}>
-                        <select
-                          name="countryCode"
-                          value={formData.countryCode}
-                          onChange={handleChange}
-                          style={{ width: '80px', flexShrink: 0, padding: '0 0.4rem', fontWeight: 700 }}
-                        >
-                          <option value="+91">🇮🇳 +91</option>
-                        </select>
-                        <input
-                          type="tel"
-                          id="phone"
-                          name="phone"
-                          placeholder="88077 95366"
-                          value={formData.phone}
-                          onChange={handleChange}
-                          style={{ flex: 1 }}
-                          required
-                        />
-                      </div>
-                      {(touched.phone || submitted) && getFieldError('phone', formData.phone) && (
-                        <span role="alert" style={{ fontSize: '0.78rem', color: '#d9381e', marginTop: '0.25rem' }}>{getFieldError('phone', formData.phone)}</span>
-                      )}
-                    </div>
-
-                    <div className="ref-field">
-                      <label htmlFor="region">District / Location <span style={{ color: '#d9381e' }}>*</span></label>
-                      <input
-                        type="text"
-                        id="region"
-                        name="region"
-                        placeholder="e.g. Palakkad, Kerala"
-                        value={formData.region}
-                        onChange={handleChange}
-                        required
-                      />
-                      {(touched.region || submitted) && getFieldError('region', formData.region) && (
-                        <span role="alert" style={{ fontSize: '0.78rem', color: '#d9381e', marginTop: '0.25rem' }}>{getFieldError('region', formData.region)}</span>
-                      )}
-                    </div>
-
-                    <div className="ref-field">
-                      <label htmlFor="soilType">Primary Soil Type <span style={{ color: '#d9381e' }}>*</span></label>
-                      <select
-                        id="soilType"
-                        name="soilType"
-                        value={formData.soilType}
-                        onChange={handleChange}
-                        required
-                      >
-                        <option value="loamy">Loamy Soil</option>
-                        <option value="clayey">Clayey Soil</option>
-                        <option value="sandy">Sandy Soil</option>
-                        <option value="black">Black Cotton Soil</option>
-                        <option value="alluvial">Alluvial Soil</option>
-                      </select>
-                    </div>
-                  </div>
+            {/* STEP 2: Account Security */}
+            {currentStep === 2 && (
+              <div className="auth-step-slide">
+                <div className="console-field" style={{ marginBottom: '1.25rem' }}>
+                  <label htmlFor="username">
+                    <span>Username</span>
+                    <span style={{ color: 'var(--agri-danger)' }}>*</span>
+                  </label>
+                  <input
+                    type="text"
+                    id="username"
+                    name="username"
+                    placeholder="Choose username"
+                    value={formData.username}
+                    onChange={handleChange}
+                    required
+                  />
+                  {(touched.username || submitted) && getFieldError('username', formData.username) && (
+                    <span className="mono-meta" style={{ color: 'var(--agri-danger)', marginTop: '4px', display: 'block' }}>
+                      {getFieldError('username', formData.username)}
+                    </span>
+                  )}
                 </div>
+
+                <div className="console-field" style={{ marginBottom: '1.25rem' }}>
+                  <label htmlFor="email">
+                    <span>Email Address</span>
+                    <span style={{ color: 'var(--agri-danger)' }}>*</span>
+                  </label>
+                  <input
+                    type="email"
+                    id="email"
+                    name="email"
+                    placeholder="Enter email address"
+                    value={formData.email}
+                    onChange={handleChange}
+                    required
+                  />
+                  {(touched.email || submitted) && getFieldError('email', formData.email) && (
+                    <span className="mono-meta" style={{ color: 'var(--agri-danger)', marginTop: '4px', display: 'block' }}>
+                      {getFieldError('email', formData.email)}
+                    </span>
+                  )}
+                </div>
+
+                <div className="console-field" style={{ marginBottom: '1.25rem' }}>
+                  <label htmlFor="password">
+                    <span>Password</span>
+                    <span style={{ color: 'var(--agri-danger)' }}>*</span>
+                  </label>
+                  <input
+                    type="password"
+                    id="password"
+                    name="password"
+                    placeholder="Min 8 chars with uppercase & symbol"
+                    value={formData.password}
+                    onChange={handleChange}
+                    required
+                  />
+                  {(touched.password || submitted) && getFieldError('password', formData.password) && (
+                    <span className="mono-meta" style={{ color: 'var(--agri-danger)', marginTop: '4px', display: 'block' }}>
+                      {getFieldError('password', formData.password)}
+                    </span>
+                  )}
+                </div>
+
+                <div className="console-field" style={{ marginBottom: '1.25rem' }}>
+                  <label htmlFor="confirmPassword">
+                    <span>Confirm Password</span>
+                    <span style={{ color: 'var(--agri-danger)' }}>*</span>
+                  </label>
+                  <input
+                    type="password"
+                    id="confirmPassword"
+                    name="confirmPassword"
+                    placeholder="Re-enter password"
+                    value={formData.confirmPassword}
+                    onChange={handleChange}
+                    required
+                  />
+                  {(touched.confirmPassword || submitted) && getFieldError('confirmPassword', formData.confirmPassword) && (
+                    <span className="mono-meta" style={{ color: 'var(--agri-danger)', marginTop: '4px', display: 'block' }}>
+                      {getFieldError('confirmPassword', formData.confirmPassword)}
+                    </span>
+                  )}
+                </div>
+
+                <div style={{ display: 'flex', alignItems: 'center', gap: '0.5rem', marginBottom: '1.75rem' }}>
+                  <input
+                    type="checkbox"
+                    id="terms"
+                    name="terms"
+                    checked={formData.terms}
+                    onChange={handleChange}
+                    style={{ accentColor: 'var(--agri-accent)', width: '16px', height: '16px', cursor: 'pointer' }}
+                  />
+                  <label htmlFor="terms" style={{ fontSize: '0.86rem', color: 'var(--agri-secondary)', cursor: 'pointer' }}>
+                    I agree to the AgriSense Farm Terms of Service and Privacy Policy
+                  </label>
+                </div>
+              </div>
+            )}
+
+            {/* Stepper Action Buttons */}
+            <div style={{ display: 'flex', gap: '1rem', marginTop: '1rem' }}>
+              {currentStep > 1 ? (
+                <button
+                  type="button"
+                  className="btn-secondary-technical"
+                  onClick={handlePrevStep}
+                  style={{ flex: 1 }}
+                >
+                  <i className="fa-solid fa-arrow-left" style={{ marginRight: '6px' }}></i> PREVIOUS
+                </button>
+              ) : (
+                <Link
+                  to="/"
+                  className="btn-secondary-technical"
+                  style={{ flex: 1 }}
+                >
+                  CANCEL
+                </Link>
               )}
 
-              {/* STEP 2: Account Security */}
-              {currentStep === 2 && (
-                <div>
-                  <div className="step-section-title">Account Credentials &amp; Agreement</div>
-                  <div className="reference-form-grid">
-                    <div className="ref-field">
-                      <label htmlFor="username">Username <span style={{ color: '#d9381e' }}>*</span></label>
-                      <input
-                        type="text"
-                        id="username"
-                        name="username"
-                        placeholder="e.g. agrisense_user1"
-                        value={formData.username}
-                        onChange={handleChange}
-                        required
-                      />
-                      {(touched.username || submitted) && getFieldError('username', formData.username) && (
-                        <span role="alert" style={{ fontSize: '0.78rem', color: '#d9381e', marginTop: '0.25rem' }}>{getFieldError('username', formData.username)}</span>
-                      )}
-                    </div>
-
-                    <div className="ref-field">
-                      <label htmlFor="email">Email ID <span style={{ color: '#d9381e' }}>*</span></label>
-
-                      <input
-                        type="email"
-                        id="email"
-                        name="email"
-                        placeholder="e.g. farmer@example.com"
-                        value={formData.email}
-                        onChange={handleChange}
-                        required
-                      />
-                      {(touched.email || submitted) && getFieldError('email', formData.email) && (
-                        <span role="alert" style={{ fontSize: '0.78rem', color: '#d9381e', marginTop: '0.25rem' }}>{getFieldError('email', formData.email)}</span>
-                      )}
-                    </div>
-
-                    <div className="ref-field">
-                      <label htmlFor="password">Password <span style={{ color: '#d9381e' }}>*</span></label>
-                      <input
-                        type="password"
-                        id="password"
-                        name="password"
-                        placeholder="••••••••"
-                        value={formData.password}
-                        onChange={handleChange}
-                        required
-                      />
-                      {(touched.password || submitted) && getFieldError('password', formData.password) && (
-                        <span role="alert" style={{ fontSize: '0.78rem', color: '#d9381e', marginTop: '0.25rem' }}>{getFieldError('password', formData.password)}</span>
-                      )}
-                    </div>
-
-                    <div className="ref-field">
-                      <label htmlFor="confirmPassword">Confirm Password <span style={{ color: '#d9381e' }}>*</span></label>
-                      <input
-                        type="password"
-                        id="confirmPassword"
-                        name="confirmPassword"
-                        placeholder="••••••••"
-                        value={formData.confirmPassword}
-                        onChange={handleChange}
-                        required
-                      />
-                      {(touched.confirmPassword || submitted) && getFieldError('confirmPassword', formData.confirmPassword) && (
-                        <span role="alert" style={{ fontSize: '0.78rem', color: '#d9381e', marginTop: '0.25rem' }}>{getFieldError('confirmPassword', formData.confirmPassword)}</span>
-                      )}
-                    </div>
-
-                    <div className="ref-field full-span" style={{ marginTop: '0.5rem' }}>
-                      <label style={{ display: 'flex', alignItems: 'center', gap: '0.5rem', cursor: 'pointer' }}>
-                        <input
-                          type="checkbox"
-                          name="terms"
-                          checked={formData.terms}
-                          onChange={handleChange}
-                          style={{ accentColor: '#3b6e47', width: '16px', height: '16px' }}
-                        />
-                        <span>I agree to AgriSense Farm Advisory Terms of Service and Privacy Policy <span style={{ color: '#d9381e' }}>*</span></span>
-                      </label>
-                    </div>
-                  </div>
-                </div>
+              {currentStep < 2 ? (
+                <button
+                  type="submit"
+                  className="btn-primary-technical"
+                  style={{ flex: 1.5 }}
+                >
+                  CONTINUE <i className="fa-solid fa-arrow-right" style={{ marginLeft: '6px' }}></i>
+                </button>
+              ) : (
+                <button
+                  type="submit"
+                  className="btn-primary-technical"
+                  style={{ flex: 1.5 }}
+                  disabled={loading}
+                >
+                  {loading ? (
+                    <span><i className="fa-solid fa-spinner fa-spin" style={{ marginRight: '6px' }}></i> REGISTERING...</span>
+                  ) : (
+                    <span>REGISTER FARM <i className="fa-solid fa-check" style={{ marginLeft: '6px' }}></i></span>
+                  )}
+                </button>
               )}
+            </div>
+          </form>
 
-              {/* Subtext Note */}
-              <div className="registration-disclaimer-text">
-                All fields marked with an asterisk (*) are required to activate your farm advisory profile.
-              </div>
-
-              {/* Footer Action Buttons */}
-              <div className="ref-form-footer">
-                {currentStep > 1 ? (
-                  <button type="button" className="btn-ref-cancel" onClick={handlePrevStep}>
-                    PREVIOUS
-                  </button>
-                ) : (
-                  <button type="button" className="btn-ref-cancel" onClick={() => navigate('/')}>
-                    CANCEL
-                  </button>
-                )}
-
-                {currentStep < 2 ? (
-                  <button type="submit" className="btn-ref-continue">
-                    CONTINUE <i className="fa-solid fa-arrow-right"></i>
-                  </button>
-                ) : (
-                  <button type="submit" className="btn-ref-continue">
-                    REGISTER FARM <i className="fa-solid fa-check"></i>
-                  </button>
-                )}
-              </div>
-            </form>
+          <div style={{ marginTop: '2rem', borderTop: '1px solid var(--agri-line)', paddingTop: '1.5rem', textAlign: 'center' }}>
+            <span style={{ fontSize: '0.92rem', color: 'var(--agri-secondary)' }}>
+              Already have an account?{' '}
+              <Link to="/login" style={{ color: 'var(--agri-accent)', fontWeight: 600 }}>
+                Sign In to Console <i className="fa-solid fa-arrow-right" style={{ fontSize: '0.8rem' }}></i>
+              </Link>
+            </span>
           </div>
         </div>
 
-        {/* Right Column: Registration Guide & Roadmap Panel */}
-        <aside className="register-info-panel">
+        {/* Right: Technical Procedure Roadmap Panel */}
+        <aside className="auth-sidebar-technical">
           <div>
-            <span className="info-panel-badge">
-              <i className="fa-solid fa-seedling"></i> AgriSense Platform Guide
-            </span>
-            <h3 className="info-panel-title">Registration Procedure</h3>
-            <p className="info-panel-subtitle">Complete these 2 simple steps to get data-backed crop advice.</p>
-          </div>
+            <span className="mono-accent">SYSTEM GUIDE • ONBOARDING</span>
+            <h3 style={{ fontSize: '1.4rem', fontWeight: 800, marginTop: '4px', marginBottom: '0.5rem', color: 'var(--agri-ink)' }}>
+              Registration Procedure
+            </h3>
+            <p style={{ color: 'var(--agri-secondary)', fontSize: '0.92rem', lineHeight: 1.5, marginBottom: '2rem' }}>
+              Complete the 2 setup steps to configure crop matching and fertilizer deficit recommendations.
+            </p>
 
-          {/* Procedure Roadmap Timeline */}
-          <div className="procedure-roadmap">
-            {[
-              {
-                num: 1,
-                title: 'Farmer & Field Details',
-                desc: 'Enter your name, 10-digit mobile number, district location & primary soil type.'
-              },
-              {
-                num: 2,
-                title: 'Account Security',
-                desc: 'Enter your email ID, set your account password & agree to privacy terms.'
-              }
-            ].map((step) => {
-              const isActive = currentStep === step.num;
-              const isCompleted = currentStep > step.num;
-              return (
-                <div
-                  key={step.num}
-                  className={`roadmap-item ${isActive ? 'active' : ''} ${isCompleted ? 'completed' : ''}`}
-                >
-                  <div className="roadmap-num">
-                    {isCompleted ? <i className="fa-solid fa-check"></i> : step.num}
-                  </div>
-                  <div className="roadmap-text">
-                    <h4>{step.title}</h4>
-                    <p>{step.desc}</p>
-                  </div>
+            <div style={{ display: 'flex', flexDirection: 'column', gap: '1.5rem' }}>
+              <div style={{ display: 'flex', gap: '1rem', alignItems: 'flex-start' }}>
+                <span className="mono-accent" style={{ border: '1px solid var(--agri-accent)', width: '28px', height: '28px', display: 'flex', alignItems: 'center', justifyContent: 'center', borderRadius: '50%', flexShrink: 0 }}>
+                  01
+                </span>
+                <div>
+                  <strong style={{ fontSize: '0.95rem', color: 'var(--agri-ink)' }}>Farmer &amp; Field Details</strong>
+                  <p style={{ color: 'var(--agri-secondary)', fontSize: '0.85rem', marginTop: '2px', lineHeight: 1.4 }}>
+                    Specify operator name, phone number, district location, and predominant plot soil classification.
+                  </p>
                 </div>
-              );
-            })}
-          </div>
+              </div>
 
-          {/* Highlights Grid */}
-          <div className="info-features-grid">
-            <div className="info-feature-box">
-              <strong>99.2%</strong>
-              <span>ML Accuracy</span>
-            </div>
-            <div className="info-feature-box">
-              <strong>22</strong>
-              <span>Crop Models</span>
-            </div>
-            <div className="info-feature-box">
-              <strong>100%</strong>
-              <span>Confidential</span>
+              <div style={{ display: 'flex', gap: '1rem', alignItems: 'flex-start' }}>
+                <span className="mono-accent" style={{ border: '1px solid var(--agri-line-strong)', width: '28px', height: '28px', display: 'flex', alignItems: 'center', justifyContent: 'center', borderRadius: '50%', flexShrink: 0 }}>
+                  02
+                </span>
+                <div>
+                  <strong style={{ fontSize: '0.95rem', color: 'var(--agri-ink)' }}>Account Security</strong>
+                  <p style={{ color: 'var(--agri-secondary)', fontSize: '0.85rem', marginTop: '2px', lineHeight: 1.4 }}>
+                    Define login username, validated email address, and encrypted access password.
+                  </p>
+                </div>
+              </div>
             </div>
           </div>
 
-          {/* Trust Footer */}
-          <div className="trust-footer-card">
-            <i className="fa-solid fa-shield-halved"></i>
-            <div>
-              <strong style={{ display: 'block', color: '#ffffff', fontSize: '0.86rem' }}>Data Privacy Guaranteed</strong>
-              <span>Your soil and farm location data is stored securely for your personal ML advisory reports.</span>
-            </div>
+          <div style={{ borderTop: '1px solid var(--agri-line)', paddingTop: '1.5rem', marginTop: '2rem' }}>
+            <span className="mono-meta" style={{ color: 'var(--agri-accent)', display: 'block', marginBottom: '4px' }}>
+              DATA CONFIDENTIALITY
+            </span>
+            <p style={{ fontSize: '0.85rem', color: 'var(--agri-secondary)', lineHeight: 1.5 }}>
+              All soil chemical readings and regional farm plot records are encrypted and stored for personalized ML advisory reports.
+            </p>
           </div>
         </aside>
       </div>
