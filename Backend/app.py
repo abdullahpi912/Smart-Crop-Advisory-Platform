@@ -4,6 +4,7 @@ import json
 import datetime
 import random
 import re
+import logging
 from functools import wraps
 from flask import Flask, request, jsonify, session, redirect
 from flask_cors import CORS
@@ -12,6 +13,13 @@ from dotenv import load_dotenv
 from db import get_connection
 
 load_dotenv()
+
+# Configure logging
+logging.basicConfig(
+    level=logging.INFO,
+    format='[%(asctime)s] [%(levelname)s] %(name)s: %(message)s'
+)
+logger = logging.getLogger("agrisense.api")
 
 secret_key = os.environ.get("SECRET_KEY")
 if not secret_key:
@@ -31,7 +39,9 @@ app.config.update(
     PERMANENT_SESSION_LIFETIME=datetime.timedelta(days=7)
 )
 
-CORS(app, supports_credentials=True)  # Enable CORS with credentials support for session cookies
+# Configure CORS with strict allowed origins allowlist
+allowed_origins = [o.strip() for o in os.environ.get("FRONTEND_URL", "http://localhost:5173").split(",") if o.strip()]
+CORS(app, supports_credentials=True, origins=allowed_origins)
 
 # Initialize rate limiter with fallback
 try:
@@ -141,7 +151,7 @@ def init_db():
         conn.close()
 
     except Exception as e:
-        print(f"[DB INIT] Table check skipped/error: {e}")
+        logger.warning("[DB INIT] Table check skipped/error: %s", e)
 
 # Initialize tables on module import
 init_db()
@@ -171,16 +181,16 @@ YIELD_MODEL = None
 try:
     if os.path.exists(CROP_MODEL_PATH):
         CROP_MODEL = joblib.load(CROP_MODEL_PATH)
-        print(f"[ML MODEL 1/3] Successfully loaded Crop Recommendation model from: {CROP_MODEL_PATH}")
+        logger.info("[ML MODEL 1/3] Successfully loaded Crop Recommendation model from: %s", CROP_MODEL_PATH)
     else:
-        print(f"[ML MODEL 1/3] Notice: Crop model file not found at {CROP_MODEL_PATH}")
+        logger.warning("[ML MODEL 1/3] Notice: Crop model file not found at %s", CROP_MODEL_PATH)
 except Exception as e:
     try:
         with open(CROP_MODEL_PATH, 'rb') as f:
             CROP_MODEL = pickle.load(f)
-        print(f"[ML MODEL 1/3] Successfully loaded Crop model via pickle from: {CROP_MODEL_PATH}")
+        logger.info("[ML MODEL 1/3] Successfully loaded Crop model via pickle from: %s", CROP_MODEL_PATH)
     except Exception as ex:
-        print(f"[ML MODEL 1/3] Notice: Crop model load fallback ({ex})")
+        logger.warning("[ML MODEL 1/3] Notice: Crop model load fallback (%s)", ex)
 
 # 2. Load Fertilizer Recommendation Model & Label Encoder
 try:
@@ -189,16 +199,16 @@ try:
             FERT_MODEL = pickle.load(f)
         with open(FERT_ENCODER_PATH, 'rb') as f:
             FERT_ENCODER = pickle.load(f)
-        print(f"[ML MODEL 2/3] Successfully loaded Fertilizer Pipeline & Encoder from: {FERT_MODEL_PATH}")
+        logger.info("[ML MODEL 2/3] Successfully loaded Fertilizer Pipeline & Encoder from: %s", FERT_MODEL_PATH)
     else:
-        print(f"[ML MODEL 2/3] Notice: Fertilizer model or encoder not found at {FERT_MODEL_PATH}")
+        logger.warning("[ML MODEL 2/3] Notice: Fertilizer model or encoder not found at %s", FERT_MODEL_PATH)
 except Exception as e:
     try:
         FERT_MODEL = joblib.load(FERT_MODEL_PATH)
         FERT_ENCODER = joblib.load(FERT_ENCODER_PATH)
-        print(f"[ML MODEL 2/3] Successfully loaded Fertilizer Pipeline & Encoder via joblib")
+        logger.info("[ML MODEL 2/3] Successfully loaded Fertilizer Pipeline & Encoder via joblib")
     except Exception as ex:
-        print(f"[ML MODEL 2/3] Notice: Fertilizer model load fallback ({ex})")
+        logger.warning("[ML MODEL 2/3] Notice: Fertilizer model load fallback (%s)", ex)
 
 # 3. Load Crop Yield / Production Prediction Model
 try:
@@ -208,11 +218,11 @@ try:
         except Exception:
             with open(YIELD_MODEL_PATH, 'rb') as f:
                 YIELD_MODEL = pickle.load(f)
-        print(f"[ML MODEL 3/3] Successfully loaded Crop Yield XGBoost Pipeline from: {YIELD_MODEL_PATH}")
+        logger.info("[ML MODEL 3/3] Successfully loaded Crop Yield XGBoost Pipeline from: %s", YIELD_MODEL_PATH)
     else:
-        print(f"[ML MODEL 3/3] Notice: Yield model not found at {YIELD_MODEL_PATH}")
+        logger.warning("[ML MODEL 3/3] Notice: Yield model not found at %s", YIELD_MODEL_PATH)
 except Exception as e:
-    print(f"[ML MODEL 3/3] Notice: Yield model load fallback ({e})")
+    logger.warning("[ML MODEL 3/3] Notice: Yield model load fallback (%s)", e)
 
 
 # ==========================================
@@ -356,7 +366,7 @@ def predict_crop_ml(n, p, k, temp, hum, ph, rain):
                 pred = CROP_MODEL.predict(df)[0]
                 return str(pred).lower()
             except Exception as ex:
-                print(f"[ML MODEL] Crop inference notice: {ex}")
+                logger.warning("[ML MODEL] Crop inference notice: %s", ex)
 
     return match_crop_agronomic(n, p, k, temp, hum, ph, rain)
 
@@ -411,7 +421,7 @@ def enforce_security_and_log():
             return redirect(url, code=301)
 
     request.start_time = time.time()
-    print(f"[REQUEST] {request.method} {request.path}")
+    logger.info("[REQUEST] %s %s", request.method, request.path)
 
 
 @app.after_request
@@ -428,7 +438,7 @@ def set_security_headers_and_log(response):
     if is_production:
         response.headers['Strict-Transport-Security'] = 'max-age=31536000; includeSubDomains; preload'
 
-    print(f"[RESPONSE] {request.method} {request.path} -> {response.status_code} ({duration_ms:.1f} ms)")
+    logger.info("[RESPONSE] %s %s -> %s (%.1f ms)", request.method, request.path, response.status_code, duration_ms)
     return response
 
 
@@ -623,7 +633,7 @@ def health_check():
         db_status = 'connected'
     except Exception as e:
         total_logs = 0
-        db_status = f'unavailable ({e})'
+        db_status = 'unavailable' if is_production else f'unavailable ({e})'
 
     return jsonify({
         'status': 'healthy',
@@ -805,7 +815,7 @@ def predict_crop():
             conn.commit()
             cursor.close(); conn.close()
         except Exception as dbe:
-            print(f"[DB LOG] Notice: advisory log insertion bypassed ({dbe})")
+            logger.warning("[DB LOG] Notice: advisory log insertion bypassed (%s)", dbe)
 
         return jsonify(response_payload), 201
 
@@ -813,7 +823,7 @@ def predict_crop():
         return jsonify({
             'status': 'error',
             'error': 'Failed to generate recommendation',
-            'details': str(e)
+            'details': str(e) if not is_production else None
         }), 400
 
 
@@ -981,7 +991,7 @@ def predict_fertilizer():
             conn.commit()
             cursor.close(); conn.close()
         except Exception as dbe:
-            print(f"[DB LOG] Notice: advisory log insertion bypassed ({dbe})")
+            logger.warning("[DB LOG] Notice: advisory log insertion bypassed (%s)", dbe)
 
         return jsonify(response_payload), 201
 
@@ -989,7 +999,7 @@ def predict_fertilizer():
         return jsonify({
             'status': 'error',
             'error': 'Failed to generate fertilizer recommendation',
-            'details': str(e)
+            'details': str(e) if not is_production else None
         }), 400
 
 
@@ -1121,7 +1131,7 @@ def predict_crop_yield():
             conn.commit()
             cursor.close(); conn.close()
         except Exception as dbe:
-            print(f"[DB LOG] Notice: advisory log insertion bypassed ({dbe})")
+            logger.warning("[DB LOG] Notice: advisory log insertion bypassed (%s)", dbe)
 
         return jsonify(response_payload), 201
 
@@ -1129,7 +1139,7 @@ def predict_crop_yield():
         return jsonify({
             'status': 'error',
             'error': 'Failed to generate crop yield prediction',
-            'details': str(e)
+            'details': str(e) if not is_production else None
         }), 400
 
 
@@ -1194,7 +1204,7 @@ def create_log():
         return jsonify({
             'status': 'error',
             'message': 'Failed to post advisory log',
-            'details': str(e)
+            'details': str(e) if not is_production else None
         }), 400
 
 
@@ -1273,7 +1283,7 @@ def update_log(log_id):
         return jsonify({
             'status': 'error',
             'message': 'Failed to update advisory log',
-            'details': str(e)
+            'details': str(e) if not is_production else None
         }), 400
 
 
@@ -1336,7 +1346,7 @@ def clear_all_logs():
 # ==========================================
 
 @app.route('/register', methods=['POST'])
-@limiter.limit("5 per minute")
+@limiter.limit("10 per hour")
 def register_user():
     """HTTP POST: Register a new user with hashed password and bot mitigation."""
     if not request.is_json and not request.data:
@@ -1426,7 +1436,7 @@ def register_user():
     except Exception as e:
         return jsonify({
             'error': 'Database error during registration',
-            'details': str(e)
+            'details': str(e) if not is_production else None
         }), 500
 
 
@@ -1475,7 +1485,7 @@ def login_user():
     except Exception as e:
         return jsonify({
             'error': 'Database error during login',
-            'details': str(e)
+            'details': str(e) if not is_production else None
         }), 500
 
 
@@ -1542,7 +1552,7 @@ def user_profile():
             }), 200
 
         except Exception as e:
-            return jsonify({'error': 'Failed to update profile', 'details': str(e)}), 500
+            return jsonify({'error': 'Failed to update profile', 'details': str(e) if not is_production else None}), 500
 
     # GET method
     try:
@@ -1574,7 +1584,7 @@ def user_profile():
         return jsonify({
             'status': 'success',
             'user': {'user_id': user_id, 'username': username},
-            'notice': str(e)
+            'notice': str(e) if not is_production else None
         }), 200
 
 
@@ -1612,7 +1622,7 @@ def change_password():
         return jsonify({'status': 'success', 'message': 'Password changed successfully'}), 200
 
     except Exception as e:
-        return jsonify({'error': 'Failed to change password', 'details': str(e)}), 500
+        return jsonify({'error': 'Failed to change password', 'details': str(e) if not is_production else None}), 500
 
 
 @app.route('/api/user/account', methods=['DELETE', 'POST'])
@@ -1646,7 +1656,7 @@ def delete_account():
         return jsonify({'status': 'success', 'message': 'Account deleted successfully'}), 200
 
     except Exception as e:
-        return jsonify({'error': 'Failed to delete account', 'details': str(e)}), 500
+        return jsonify({'error': 'Failed to delete account', 'details': str(e) if not is_production else None}), 500
 
 
 
@@ -1722,7 +1732,7 @@ def create_user_recommendation():
         }), 201
 
     except Exception as e:
-        return jsonify({'status': 'error', 'message': 'Failed to create recommendation', 'details': str(e)}), 400
+        return jsonify({'status': 'error', 'message': 'Failed to create recommendation', 'details': str(e) if not is_production else None}), 400
 
 
 @app.route('/api/recommendations', methods=['GET'])
@@ -1951,5 +1961,6 @@ def handle_internal_error(e):
 
 
 if __name__ == '__main__':
-    # Run server with environment-conditional debug flag (defaulting to False in production)
-    app.run(host='0.0.0.0', port=5000, debug=is_debug)
+    # Run server with dynamic port binding and environment-conditional debug flag
+    port = int(os.environ.get("PORT", 5000))
+    app.run(host='0.0.0.0', port=port, debug=is_debug)
