@@ -19,7 +19,7 @@ logging.basicConfig(
     level=logging.INFO,
     format='[%(asctime)s] [%(levelname)s] %(name)s: %(message)s'
 )
-logger = logging.getLogger("agrisense.api")
+logger = logging.getLogger("cropling.api")
 
 secret_key = os.environ.get("SECRET_KEY")
 if not secret_key:
@@ -43,6 +43,21 @@ app.config.update(
 allowed_origins = [o.strip() for o in os.environ.get("FRONTEND_URL", "http://localhost:5173").split(",") if o.strip()]
 CORS(app, supports_credentials=True, origins=allowed_origins)
 
+class DummyLimiter:
+    """Fallback no-op limiter when flask-limiter is not installed."""
+    def limit(self, *args, **kwargs):
+        def decorator(f):
+            return f
+        return decorator
+
+    def exempt(self, *args, **kwargs):
+        if args and callable(args[0]) and len(args) == 1 and not kwargs:
+            return args[0]
+        def decorator(f):
+            return f
+        return decorator
+
+
 # Initialize rate limiter with fallback
 try:
     from flask_limiter import Limiter
@@ -56,12 +71,6 @@ try:
         strategy="fixed-window"
     )
 except ImportError:
-    class DummyLimiter:
-        def limit(self, *args, **kwargs):
-            def decorator(f):
-                return f
-            return decorator
-
     limiter = DummyLimiter()
 
 
@@ -74,7 +83,7 @@ def ratelimit_handler(e):
 
 
 def login_required(f):
-    """Decorator to protect endpoints requiring session authentication."""
+    """Decorator to protect endpoints requiring farmer session authentication."""
     @wraps(f)
     def decorated(*args, **kwargs):
         if 'user_id' not in session:
@@ -83,31 +92,65 @@ def login_required(f):
     return decorated
 
 
-def init_db():
-    """Ensures required tables (advisory_logs, users, recommendations, farm_profiles) exist in MySQL agrisense_db."""
+def admin_required(f):
+    """Decorator to protect endpoints requiring admin session privileges."""
+    @wraps(f)
+    def decorated(*args, **kwargs):
+        if session.get('role') != 'admin' or 'admin_id' not in session:
+            return jsonify({'error': 'Admin privileges required'}), 403
+        return f(*args, **kwargs)
+    return decorated
+
+
+def farmer_or_admin_required(f):
+    """Decorator for model or utility endpoints accessible by either farmers or admins."""
+    @wraps(f)
+    def decorated(*args, **kwargs):
+        is_farmer = 'user_id' in session
+        is_admin = session.get('role') == 'admin' and 'admin_id' in session
+        if not is_farmer and not is_admin:
+            return jsonify({'error': 'Authentication required'}), 401
+        return f(*args, **kwargs)
+    return decorated
+
+
+def log_login_attempt(account_name, account_type, success):
+    """Safely logs a login attempt into login_logs without storing credentials."""
     try:
         conn = get_connection()
         cursor = conn.cursor()
-        cursor.execute("""
-            CREATE TABLE IF NOT EXISTS advisory_logs (
-                id INT AUTO_INCREMENT PRIMARY KEY,
-                log_id VARCHAR(20) UNIQUE NOT NULL,
-                timestamp VARCHAR(30),
-                npk_summary VARCHAR(100),
-                climate_summary VARCHAR(100),
-                type VARCHAR(100),
-                crop VARCHAR(50),
-                badge_class VARCHAR(50),
-                recommended_item VARCHAR(150),
-                category VARCHAR(100),
-                confidence VARCHAR(20),
-                dosage_advice VARCHAR(255),
-                soil_health VARCHAR(100),
-                detailed_notes TEXT,
-                inputs_json TEXT,
-                last_updated VARCHAR(30)
-            );
-        """)
+        cursor.execute(
+            "INSERT INTO login_logs (account_name, account_type, success) VALUES (%s, %s, %s)",
+            (account_name, account_type, bool(success))
+        )
+        conn.commit()
+        cursor.close(); conn.close()
+    except Exception as e:
+        logger.warning("[AUDIT LOG] Notice: login attempt log bypassed (%s)", e)
+
+
+def log_admin_action(admin_username, action_type, target_username=None, details=None):
+    """Safely logs an administrative action into admin_action_logs without storing credentials."""
+    try:
+        conn = get_connection()
+        cursor = conn.cursor()
+        cursor.execute(
+            "INSERT INTO admin_action_logs (admin_username, action_type, target_username, details) VALUES (%s, %s, %s, %s)",
+            (admin_username, action_type, target_username, details)
+        )
+        conn.commit()
+        cursor.close(); conn.close()
+    except Exception as e:
+        logger.warning("[AUDIT LOG] Notice: admin action log bypassed (%s)", e)
+
+
+def init_db():
+    """Ensures required tables (users, advisory_logs, recommendations, farm_profiles, admins, login_logs, admin_action_logs) exist in MySQL."""
+    try:
+        conn = get_connection()
+        cursor = conn.cursor()
+
+        # 1. Users table
         cursor.execute("""
             CREATE TABLE IF NOT EXISTS users (
                 id INT AUTO_INCREMENT PRIMARY KEY,
@@ -121,6 +164,48 @@ def init_db():
                 created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
             );
         """)
+
+        # 2. Advisory logs table
+        cursor.execute("""
+            CREATE TABLE IF NOT EXISTS advisory_logs (
+                id INT AUTO_INCREMENT PRIMARY KEY,
+                log_id VARCHAR(20) UNIQUE NOT NULL,
+                user_id INT NULL,
+                timestamp VARCHAR(40),
+                npk_summary VARCHAR(100),
+                climate_summary VARCHAR(100),
+                type VARCHAR(100),
+                crop VARCHAR(50),
+                badge_class VARCHAR(50),
+                recommended_item VARCHAR(150),
+                category VARCHAR(100),
+                confidence VARCHAR(20),
+                dosage_advice VARCHAR(255),
+                soil_health VARCHAR(100),
+                detailed_notes TEXT,
+                inputs_json TEXT,
+                last_updated VARCHAR(40),
+                FOREIGN KEY (user_id) REFERENCES users(id) ON DELETE CASCADE
+            );
+        """)
+
+        # 3. Check and migrate user_id column if advisory_logs was pre-existing
+        try:
+            cursor.execute("""
+                SELECT COUNT(*) FROM information_schema.columns 
+                WHERE table_schema = DATABASE() AND table_name = 'advisory_logs' AND column_name = 'user_id'
+            """)
+            col_exists = cursor.fetchone()[0]
+            if col_exists == 0:
+                cursor.execute("ALTER TABLE advisory_logs ADD COLUMN user_id INT NULL")
+                try:
+                    cursor.execute("ALTER TABLE advisory_logs ADD CONSTRAINT fk_adv_logs_user FOREIGN KEY (user_id) REFERENCES users(id) ON DELETE CASCADE")
+                except Exception:
+                    pass
+        except Exception as col_err:
+            logger.info("[DB INIT] user_id column check notice: %s", col_err)
+
+        # 4. Recommendations table
         cursor.execute("""
             CREATE TABLE IF NOT EXISTS recommendations (
                 id INT AUTO_INCREMENT PRIMARY KEY,
@@ -143,6 +228,8 @@ def init_db():
                 FOREIGN KEY (user_id) REFERENCES users(id) ON DELETE CASCADE
             );
         """)
+
+        # 5. Farm profiles table
         cursor.execute("""
             CREATE TABLE IF NOT EXISTS farm_profiles (
                 id INT AUTO_INCREMENT PRIMARY KEY,
@@ -156,15 +243,41 @@ def init_db():
             );
         """)
 
-        # Ensure seed advisory log #LOG-8942 exists for unit tests & initial logs
-        cursor.execute("SELECT COUNT(*) FROM advisory_logs WHERE log_id = '#LOG-8942'")
-        if cursor.fetchone()[0] == 0:
-            cursor.execute(
-                """INSERT INTO advisory_logs 
-                   (log_id, timestamp, npk_summary, climate_summary, type, crop, badge_class, recommended_item, category, confidence, dosage_advice, soil_health, detailed_notes, inputs_json) 
-                   VALUES (%s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s)""",
-                ('#LOG-8942', '2026-07-24 14:30', 'N: 90 | P: 42 | K: 43', 'pH 6.5 | 202 mm | 26.5°C', 'Crop Match', 'rice', 'badge-crop', 'Paddy Rice 🌾', 'Grains & Cereals', '99.2%', 'Standard wetland paddy dosage', 'Optimal Balanced Soil', 'Ideal high-moisture wetland grain crop.', '{}')
-            )
+        # 6. Admins table
+        cursor.execute("""
+            CREATE TABLE IF NOT EXISTS admins (
+                id INT AUTO_INCREMENT PRIMARY KEY,
+                username VARCHAR(50) UNIQUE NOT NULL,
+                password_hash VARCHAR(255) NOT NULL,
+                favorite_number_hash VARCHAR(255) NOT NULL,
+                security_phrase_hash VARCHAR(255) NOT NULL,
+                security_phrase_hint VARCHAR(100) NOT NULL,
+                created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
+            );
+        """)
+
+        # 7. Login logs table
+        cursor.execute("""
+            CREATE TABLE IF NOT EXISTS login_logs (
+                id INT AUTO_INCREMENT PRIMARY KEY,
+                account_name VARCHAR(50) NOT NULL,
+                account_type ENUM('farmer', 'admin') NOT NULL,
+                success BOOLEAN NOT NULL,
+                attempted_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
+            );
+        """)
+
+        # 8. Admin action logs table
+        cursor.execute("""
+            CREATE TABLE IF NOT EXISTS admin_action_logs (
+                id INT AUTO_INCREMENT PRIMARY KEY,
+                admin_username VARCHAR(50) NOT NULL,
+                action_type VARCHAR(50) NOT NULL,
+                target_username VARCHAR(50),
+                details TEXT,
+                performed_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
+            );
+        """)
 
         conn.commit()
         cursor.close()
@@ -398,17 +511,19 @@ def predict_crop_ml(n, p, k, temp, hum, ph, rain):
 
 
 @app.route('/favicon.ico')
+@limiter.exempt
 def favicon():
     """Silence browser favicon requests returning 204 No Content."""
     return '', 204
 
 
 @app.route('/', methods=['GET'])
+@limiter.exempt
 def root_health_check():
     """HTTP GET: Root health check route verifying backend server is running."""
     return jsonify({
         "status": "running",
-        "service": "Smart Crop Advisory Platform (AgriSense) Backend API",
+        "service": "Cropling Backend API",
 
         "version": "1.0.0",
         "endpoints": {
@@ -423,7 +538,14 @@ def root_health_check():
             "predict": "/api/predict",
             "predict_fertilizer": "/api/predict/fertilizer",
             "predict_yield": "/api/predict/yield",
-            "logs": "/api/logs"
+            "logs": "/api/logs",
+            "admin_login": "/admin/login",
+            "admin_login_hint": "/api/admin/login-hint",
+            "admin_logout": "/admin/logout",
+            "admin_session_check": "/api/admin/session-check",
+            "admin_login_logs": "/api/admin/login-logs",
+            "admin_prediction_logs": "/api/admin/prediction-logs",
+            "admin_users": "/api/admin/users"
         }
     }), 200
 
@@ -615,7 +737,8 @@ def match_crop_agronomic(n, p, k, temp, hum, ph, rain):
 # that used to live in the old in-memory list.
 
 def row_to_log(row):
-    """Converts a MySQL advisory_logs row (dict cursor) into the API's JSON shape."""
+    """Converts a MySQL advisory_logs row (dict cursor) into the API's JSON shape for farmer dashboard.
+    Strictly excludes user_id and username for security and privacy."""
     log = {
         'logId': row['log_id'],
         'timestamp': row['timestamp'],
@@ -637,11 +760,38 @@ def row_to_log(row):
     return log
 
 
+def admin_row_to_log(row):
+    """Converts a joined advisory_logs + users row for the admin prediction logs console.
+    Explicitly includes username (or Anonymous) without exposing raw numeric user_id."""
+    log = {
+        'id': row['id'],
+        'logId': row['log_id'],
+        'username': row.get('username') or 'Anonymous / Public Simulator',
+        'timestamp': row['timestamp'],
+        'npkSummary': row['npk_summary'],
+        'climateSummary': row['climate_summary'],
+        'type': row['type'],
+        'crop': row['crop'],
+        'badgeClass': row['badge_class'],
+        'recommendedItem': row['recommended_item'],
+        'category': row['category'],
+        'confidence': row['confidence'],
+        'dosageAdvice': row['dosage_advice'],
+        'soilHealth': row['soil_health'],
+        'detailedNotes': row['detailed_notes'],
+        'inputs': json.loads(row['inputs_json']) if row.get('inputs_json') else {}
+    }
+    if row.get('last_updated'):
+        log['lastUpdated'] = row['last_updated']
+    return log
+
+
 # ==========================================
 # 1. GET METHOD ENDPOINTS
 # ==========================================
 
 @app.route('/api/health', methods=['GET'])
+@limiter.exempt
 def health_check():
     """HTTP GET: Health check endpoint verifying backend + database status."""
     try:
@@ -697,12 +847,14 @@ def get_crops():
 
 
 @app.route('/api/logs', methods=['GET'])
+@login_required
 def get_logs():
-    """HTTP GET: Retrieve all advisory logs from MySQL, newest first."""
+    """HTTP GET: Retrieve authenticated farmer's advisory logs from MySQL, newest first."""
+    user_id = session.get('user_id')
     try:
         conn = get_connection()
         cursor = conn.cursor(dictionary=True)
-        cursor.execute("SELECT * FROM advisory_logs ORDER BY id DESC")
+        cursor.execute("SELECT * FROM advisory_logs WHERE user_id = %s ORDER BY id DESC", (user_id,))
         rows = cursor.fetchall()
         cursor.close(); conn.close()
         logs = [row_to_log(row) for row in rows]
@@ -717,14 +869,19 @@ def get_logs():
 
 
 @app.route('/api/logs/<log_id>', methods=['GET'])
+@login_required
 def get_log_by_id(log_id):
-    """HTTP GET: Retrieve a specific advisory log record by ID."""
+    """HTTP GET: Retrieve a specific advisory log record owned by the authenticated farmer."""
+    user_id = session.get('user_id')
     formatted_id = log_id if log_id.startswith('#') else f"#{log_id}"
 
     try:
         conn = get_connection()
         cursor = conn.cursor(dictionary=True)
-        cursor.execute("SELECT * FROM advisory_logs WHERE LOWER(log_id) = LOWER(%s)", (formatted_id,))
+        cursor.execute(
+            "SELECT * FROM advisory_logs WHERE LOWER(log_id) = LOWER(%s) AND user_id = %s",
+            (formatted_id, user_id)
+        )
         row = cursor.fetchone()
         cursor.close(); conn.close()
     except Exception:
@@ -787,7 +944,7 @@ def predict_crop():
             'description': 'Recommended based on field soil optimization.'
         })
 
-        timestamp = datetime.datetime.now().strftime('%Y-%m-%d %H:%M')
+        timestamp = datetime.datetime.now(datetime.timezone.utc).isoformat()
         log_id = f"#LOG-{random.randint(1000, 9999)}"
         ph_status = evaluate_ph_status(ph)
 
@@ -820,14 +977,15 @@ def predict_crop():
 
         # Persist the created log to MySQL if database is active
         try:
+            log_user_id = session.get('user_id') if ('user_id' in session and session.get('role') != 'admin') else None
             conn = get_connection()
             cursor = conn.cursor()
             cursor.execute(
                 """INSERT INTO advisory_logs
-                   (log_id, timestamp, npk_summary, climate_summary, type, crop, badge_class,
+                   (log_id, user_id, timestamp, npk_summary, climate_summary, type, crop, badge_class,
                     recommended_item, category, confidence, dosage_advice, soil_health, detailed_notes, inputs_json)
-                   VALUES (%s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s)""",
-                (log_id, timestamp, response_payload['npkSummary'], response_payload['climateSummary'],
+                   VALUES (%s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s)""",
+                (log_id, log_user_id, timestamp, response_payload['npkSummary'], response_payload['climateSummary'],
                  response_payload['type'], raw_crop, response_payload['badgeClass'], response_payload['recommendedItem'],
                  response_payload['category'], response_payload['confidence'], response_payload['dosageAdvice'],
                  response_payload['soilHealth'], response_payload['detailedNotes'], json.dumps(response_payload['inputs']))
@@ -959,7 +1117,7 @@ def predict_fertilizer():
             'advice': 'Apply following local agricultural soil dosage guidelines.'
         })
 
-        timestamp = datetime.datetime.now().strftime('%Y-%m-%d %H:%M')
+        timestamp = datetime.datetime.now(datetime.timezone.utc).isoformat()
         log_id = f"#LOG-{random.randint(1000, 9999)}"
         ph_status = evaluate_ph_status(ph)
 
@@ -996,14 +1154,15 @@ def predict_fertilizer():
 
         # Persist to database if available
         try:
+            log_user_id = session.get('user_id') if ('user_id' in session and session.get('role') != 'admin') else None
             conn = get_connection()
             cursor = conn.cursor()
             cursor.execute(
                 """INSERT INTO advisory_logs
-                   (log_id, timestamp, npk_summary, climate_summary, type, crop, badge_class,
+                   (log_id, user_id, timestamp, npk_summary, climate_summary, type, crop, badge_class,
                     recommended_item, category, confidence, dosage_advice, soil_health, detailed_notes, inputs_json)
-                   VALUES (%s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s)""",
-                (log_id, timestamp, response_payload['npkSummary'], response_payload['climateSummary'],
+                   VALUES (%s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s)""",
+                (log_id, log_user_id, timestamp, response_payload['npkSummary'], response_payload['climateSummary'],
                  response_payload['type'], crop_match, response_payload['badgeClass'], response_payload['recommendedItem'],
                  response_payload['category'], response_payload['confidence'], response_payload['dosageAdvice'],
                  response_payload['soilHealth'], response_payload['detailedNotes'], json.dumps(response_payload['inputs']))
@@ -1103,7 +1262,7 @@ def predict_crop_yield():
 
         yield_per_ha = round(predicted_production_tonnes / area, 2) if area > 0 else 0.0
 
-        timestamp = datetime.datetime.now().strftime('%Y-%m-%d %H:%M')
+        timestamp = datetime.datetime.now(datetime.timezone.utc).isoformat()
         log_id = f"#LOG-{random.randint(1000, 9999)}"
 
         response_payload = {
@@ -1136,14 +1295,15 @@ def predict_crop_yield():
 
         # Persist to database if available
         try:
+            log_user_id = session.get('user_id') if ('user_id' in session and session.get('role') != 'admin') else None
             conn = get_connection()
             cursor = conn.cursor()
             cursor.execute(
                 """INSERT INTO advisory_logs
-                   (log_id, timestamp, npk_summary, climate_summary, type, crop, badge_class,
+                   (log_id, user_id, timestamp, npk_summary, climate_summary, type, crop, badge_class,
                     recommended_item, category, confidence, dosage_advice, soil_health, detailed_notes, inputs_json)
-                   VALUES (%s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s)""",
-                (log_id, timestamp, response_payload['npkSummary'], response_payload['climateSummary'],
+                   VALUES (%s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s)""",
+                (log_id, log_user_id, timestamp, response_payload['npkSummary'], response_payload['climateSummary'],
                  response_payload['type'], crop_match, response_payload['badgeClass'], response_payload['recommendedItem'],
                  response_payload['category'], response_payload['confidence'], response_payload['dosageAdvice'],
                  response_payload['soilHealth'], response_payload['detailedNotes'], json.dumps(response_payload['inputs']))
@@ -1169,6 +1329,7 @@ def predict_crop_yield():
 def create_log():
     """HTTP POST: Post/Create a new custom advisory log entry directly."""
     try:
+        user_id = session.get('user_id')
         data = request.get_json() or {}
         
         required_fields = ['recommendedItem']
@@ -1180,7 +1341,7 @@ def create_log():
                 }), 400
 
         log_id = data.get('logId') or f"#LOG-{random.randint(1000, 9999)}"
-        timestamp = data.get('timestamp') or datetime.datetime.now().strftime('%Y-%m-%d %H:%M')
+        timestamp = data.get('timestamp') or datetime.datetime.now(datetime.timezone.utc).isoformat()
 
         new_log = {
             'logId': log_id if log_id.startswith('#') else f"#{log_id}",
@@ -1203,10 +1364,10 @@ def create_log():
         cursor = conn.cursor()
         cursor.execute(
             """INSERT INTO advisory_logs
-               (log_id, timestamp, npk_summary, climate_summary, type, crop, badge_class,
+               (log_id, user_id, timestamp, npk_summary, climate_summary, type, crop, badge_class,
                 recommended_item, category, confidence, dosage_advice, soil_health, detailed_notes, inputs_json)
-               VALUES (%s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s)""",
-            (new_log['logId'], new_log['timestamp'], new_log['npkSummary'], new_log['climateSummary'],
+               VALUES (%s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s)""",
+            (new_log['logId'], user_id, new_log['timestamp'], new_log['npkSummary'], new_log['climateSummary'],
              new_log['type'], new_log['crop'], new_log['badgeClass'], new_log['recommendedItem'],
              new_log['category'], new_log['confidence'], new_log['dosageAdvice'],
              new_log['soilHealth'], new_log['detailedNotes'], json.dumps(new_log['inputs']))
@@ -1252,12 +1413,16 @@ LOG_FIELD_TO_COLUMN = {
 @app.route('/api/logs/<log_id>', methods=['PUT'])
 @login_required
 def update_log(log_id):
-    """HTTP PUT: Update an existing advisory log record."""
+    """HTTP PUT: Update an existing advisory log record owned by the authenticated farmer."""
+    user_id = session.get('user_id')
     formatted_id = log_id if log_id.startswith('#') else f"#{log_id}"
 
     conn = get_connection()
     cursor = conn.cursor(dictionary=True)
-    cursor.execute("SELECT * FROM advisory_logs WHERE LOWER(log_id) = LOWER(%s)", (formatted_id,))
+    cursor.execute(
+        "SELECT * FROM advisory_logs WHERE LOWER(log_id) = LOWER(%s) AND user_id = %s",
+        (formatted_id, user_id)
+    )
     existing_row = cursor.fetchone()
 
     if not existing_row:
@@ -1280,15 +1445,22 @@ def update_log(log_id):
             set_columns.append("inputs_json = %s")
             set_values.append(json.dumps(update_data['inputs']))
 
-        last_updated = datetime.datetime.now().strftime('%Y-%m-%d %H:%M')
+        last_updated = datetime.datetime.now(datetime.timezone.utc).isoformat()
         set_columns.append("last_updated = %s")
         set_values.append(last_updated)
         set_values.append(existing_row['log_id'])
+        set_values.append(user_id)
 
-        cursor.execute(f"UPDATE advisory_logs SET {', '.join(set_columns)} WHERE log_id = %s", set_values)
+        cursor.execute(
+            f"UPDATE advisory_logs SET {', '.join(set_columns)} WHERE log_id = %s AND user_id = %s",
+            set_values
+        )
         conn.commit()
 
-        cursor.execute("SELECT * FROM advisory_logs WHERE log_id = %s", (existing_row['log_id'],))
+        cursor.execute(
+            "SELECT * FROM advisory_logs WHERE log_id = %s AND user_id = %s",
+            (existing_row['log_id'], user_id)
+        )
         updated_row = cursor.fetchone()
         cursor.close(); conn.close()
 
@@ -1314,12 +1486,16 @@ def update_log(log_id):
 @app.route('/api/logs/<log_id>', methods=['DELETE'])
 @login_required
 def delete_log(log_id):
-    """HTTP DELETE: Delete a specific advisory log record by ID."""
+    """HTTP DELETE: Delete a specific advisory log record by ID owned by the authenticated farmer."""
+    user_id = session.get('user_id')
     formatted_id = log_id if log_id.startswith('#') else f"#{log_id}"
 
     conn = get_connection()
     cursor = conn.cursor()
-    cursor.execute("DELETE FROM advisory_logs WHERE LOWER(log_id) = LOWER(%s)", (formatted_id,))
+    cursor.execute(
+        "DELETE FROM advisory_logs WHERE LOWER(log_id) = LOWER(%s) AND user_id = %s",
+        (formatted_id, user_id)
+    )
     conn.commit()
     deleted = cursor.rowcount
 
@@ -1330,7 +1506,7 @@ def delete_log(log_id):
             'message': f"Advisory log record '{formatted_id}' not found for deletion"
         }), 404
 
-    cursor.execute("SELECT COUNT(*) FROM advisory_logs")
+    cursor.execute("SELECT COUNT(*) FROM advisory_logs WHERE user_id = %s", (user_id,))
     remaining_total = cursor.fetchone()[0]
     cursor.close(); conn.close()
 
@@ -1345,12 +1521,13 @@ def delete_log(log_id):
 @app.route('/api/logs', methods=['DELETE'])
 @login_required
 def clear_all_logs():
-    """HTTP DELETE: Delete/Clear all advisory logs."""
+    """HTTP DELETE: Delete/Clear all advisory logs owned by the authenticated farmer."""
+    user_id = session.get('user_id')
     conn = get_connection()
     cursor = conn.cursor()
-    cursor.execute("SELECT COUNT(*) FROM advisory_logs")
+    cursor.execute("SELECT COUNT(*) FROM advisory_logs WHERE user_id = %s", (user_id,))
     previous_count = cursor.fetchone()[0]
-    cursor.execute("DELETE FROM advisory_logs")
+    cursor.execute("DELETE FROM advisory_logs WHERE user_id = %s", (user_id,))
     conn.commit()
     cursor.close(); conn.close()
 
@@ -1385,8 +1562,7 @@ def register_user():
     fullname = (data.get('fullname') or '').strip() or None
     email = (data.get('email') or '').strip() or None
     phone = (data.get('phone') or '').strip() or None
-    region = (data.get('region') or '').strip() or None
-    soil_type = (data.get('soilType') or data.get('soil_type') or '').strip() or None
+    region = (data.get('region') or data.get('location') or '').strip() or None
 
     # Validation checks
     if not username or not password:
@@ -1408,10 +1584,7 @@ def register_user():
         return jsonify({'error': 'Phone number cannot exceed 30 characters'}), 400
 
     if region and len(region) > 100:
-        return jsonify({'error': 'Region cannot exceed 100 characters'}), 400
-
-    if soil_type and len(soil_type) > 50:
-        return jsonify({'error': 'Soil type cannot exceed 50 characters'}), 400
+        return jsonify({'error': 'Location cannot exceed 100 characters'}), 400
 
     # Never store or log plaintext passwords. Use Werkzeug hashing.
     password_hash = generate_password_hash(password)
@@ -1434,13 +1607,13 @@ def register_user():
             conn.close()
             return jsonify({'error': 'Username or email already exists'}), 400
 
-        # Insert user into MySQL users table using parameterized SQL
+        # Insert user into MySQL users table (soil_type left NULL for backward compatibility)
         insert_sql = """
             INSERT INTO users
             (username, password_hash, fullname, email, phone, region, soil_type)
             VALUES (%s, %s, %s, %s, %s, %s, %s)
         """
-        cursor.execute(insert_sql, (username, password_hash, fullname, email, phone, region, soil_type))
+        cursor.execute(insert_sql, (username, password_hash, fullname, email, phone, region, None))
         conn.commit()
         user_id = cursor.lastrowid
 
@@ -1490,7 +1663,11 @@ def login_user():
         conn.close()
 
         if not user or not check_password_hash(user['password_hash'], password):
+            log_login_attempt(username, 'farmer', False)
             return jsonify({'error': 'Invalid username or password'}), 401
+
+        # Audit successful login attempt
+        log_login_attempt(user['username'], 'farmer', True)
 
         # Establish Flask session
         session['user_id'] = user['id']
@@ -1533,7 +1710,6 @@ def user_profile():
         email = data.get('email')
         phone = data.get('phone')
         region = data.get('region') or data.get('location')
-        soil_type = data.get('soil_type') or data.get('soilType')
 
         try:
             conn = get_connection()
@@ -1541,21 +1717,21 @@ def user_profile():
             if email:
                 cursor.execute(
                     """UPDATE users 
-                       SET fullname = %s, email = %s, phone = %s, region = %s, soil_type = %s 
+                       SET fullname = %s, email = %s, phone = %s, region = %s 
                        WHERE id = %s""",
-                    (fullname, email, phone, region, soil_type, user_id)
+                    (fullname, email, phone, region, user_id)
                 )
             else:
                 cursor.execute(
                     """UPDATE users 
-                       SET fullname = %s, phone = %s, region = %s, soil_type = %s 
+                       SET fullname = %s, phone = %s, region = %s 
                        WHERE id = %s""",
-                    (fullname, phone, region, soil_type, user_id)
+                    (fullname, phone, region, user_id)
                 )
             conn.commit()
 
             cursor.execute(
-                "SELECT id, username, fullname, email, phone, region, soil_type, created_at FROM users WHERE id = %s",
+                "SELECT id, username, fullname, email, phone, region, created_at FROM users WHERE id = %s",
                 (user_id,)
             )
             updated_user = cursor.fetchone()
@@ -1579,7 +1755,7 @@ def user_profile():
         conn = get_connection()
         cursor = conn.cursor(dictionary=True)
         cursor.execute(
-            "SELECT id, username, fullname, email, phone, region, soil_type, created_at FROM users WHERE id = %s",
+            "SELECT id, username, fullname, email, phone, region, created_at FROM users WHERE id = %s",
             (user_id,)
         )
         user = cursor.fetchone()
@@ -1961,7 +2137,400 @@ def create_user_farm():
 
 
 # ==========================================
-# 8. GLOBAL PRODUCTION ERROR HANDLERS
+# 8. ADMIN DASHBOARD & AUDIT ENDPOINTS
+# ==========================================
+
+@app.route('/api/admin/login-hint', methods=['GET'])
+@limiter.limit("20 per minute")
+def admin_login_hint():
+    """HTTP GET: Retrieve visible security phrase hint for a given admin username (no secret data returned).
+    Returns identical response shape and 200 status code for all requests to prevent username enumeration."""
+    username = (request.args.get('username') or '').strip()
+    if not username:
+        return jsonify({'status': 'success', 'hint': ''}), 200
+
+    try:
+        conn = get_connection()
+        cursor = conn.cursor(dictionary=True)
+        cursor.execute("SELECT security_phrase_hint FROM admins WHERE username = %s", (username,))
+        row = cursor.fetchone()
+        cursor.close(); conn.close()
+
+        hint_value = (row['security_phrase_hint'] or '').strip() if row and row.get('security_phrase_hint') else ''
+
+        return jsonify({
+            'status': 'success',
+            'hint': hint_value
+        }), 200
+    except Exception as e:
+        logger.warning("[HINT ENDPOINT] Database exception suppressed to prevent enumeration: %s", e)
+        return jsonify({
+            'status': 'success',
+            'hint': ''
+        }), 200
+
+
+@app.route('/admin/login', methods=['POST'])
+@app.route('/api/admin/login', methods=['POST'])
+@limiter.limit("10 per minute")
+def admin_login():
+    """HTTP POST: Authenticate administrator (4-factor: Username, Password, Favorite Number, Security Phrase)."""
+    if not request.is_json and not request.data:
+        return jsonify({'error': 'Request body is required'}), 400
+
+    data = request.get_json(silent=True) or {}
+    username = (data.get('username') or '').strip()
+    password = data.get('password') or ''
+    favorite_number = data.get('favorite_number') if data.get('favorite_number') is not None else data.get('favoriteNumber')
+    security_phrase = data.get('security_phrase') if data.get('security_phrase') is not None else data.get('securityPhrase')
+
+    if favorite_number is not None:
+        favorite_number = str(favorite_number).strip()
+    if security_phrase is not None:
+        security_phrase = str(security_phrase).strip()
+
+    if not username or not password or not favorite_number or not security_phrase:
+        return jsonify({'error': 'Username, password, favorite number, and security phrase are all required'}), 400
+
+    try:
+        conn = get_connection()
+        cursor = conn.cursor(dictionary=True)
+        cursor.execute(
+            "SELECT id, username, password_hash, favorite_number_hash, security_phrase_hash FROM admins WHERE username = %s",
+            (username,)
+        )
+        admin = cursor.fetchone()
+        cursor.close(); conn.close()
+
+        valid_auth = False
+        if admin:
+            pwd_ok = check_password_hash(admin['password_hash'], password)
+            fn_ok = bool(admin.get('favorite_number_hash')) and check_password_hash(admin['favorite_number_hash'], favorite_number)
+            sp_ok = bool(admin.get('security_phrase_hash')) and check_password_hash(admin['security_phrase_hash'], security_phrase)
+            valid_auth = pwd_ok and fn_ok and sp_ok
+
+        if not admin or not valid_auth:
+            log_login_attempt(username, 'admin', False)
+            return jsonify({'error': 'Invalid admin credentials'}), 401
+
+        # Audit successful admin login
+        log_login_attempt(admin['username'], 'admin', True)
+
+        # Clear session and establish Admin privileges
+        session.clear()
+        session['admin_id'] = admin['id']
+        session['admin_username'] = admin['username']
+        session['role'] = 'admin'
+
+        return jsonify({
+            'status': 'success',
+            'message': f"Welcome back, Administrator {admin['username']}",
+            'admin_username': admin['username']
+        }), 200
+
+    except Exception as e:
+        return jsonify({'error': 'Database error during admin login', 'details': str(e) if not is_production else None}), 500
+
+
+@app.route('/admin/logout', methods=['POST'])
+@app.route('/api/admin/logout', methods=['POST'])
+def admin_logout():
+    """HTTP POST: Terminate administrator session."""
+    session.clear()
+    return jsonify({'status': 'success', 'message': 'Admin session terminated'}), 200
+
+
+@app.route('/api/admin/session-check', methods=['GET'])
+def admin_session_check():
+    """HTTP GET: Check if current session has active admin privileges."""
+    if session.get('role') == 'admin' and 'admin_id' in session:
+        return jsonify({
+            'status': 'success',
+            'authenticated': True,
+            'admin_username': session.get('admin_username')
+        }), 200
+    return jsonify({
+        'status': 'error',
+        'authenticated': False,
+        'error': 'Not authenticated as admin'
+    }), 401
+
+
+@app.route('/api/admin/login-logs', methods=['GET'])
+@admin_required
+def admin_get_login_logs():
+    """HTTP GET: Retrieve login attempt audit logs (farmer and admin attempts)."""
+    try:
+        conn = get_connection()
+        cursor = conn.cursor(dictionary=True)
+        cursor.execute("SELECT id, account_name, account_type, success, attempted_at FROM login_logs ORDER BY id DESC LIMIT 500")
+        rows = cursor.fetchall()
+        cursor.close(); conn.close()
+
+        logs = []
+        for r in rows:
+            logs.append({
+                'id': r['id'],
+                'account_name': r['account_name'],
+                'account_type': r['account_type'],
+                'success': bool(r['success']),
+                'attempted_at': str(r['attempted_at']) if r.get('attempted_at') else ''
+            })
+
+        return jsonify({
+            'status': 'success',
+            'total': len(logs),
+            'logs': logs
+        }), 200
+    except Exception as e:
+        return jsonify({'error': 'Failed to retrieve login audit logs', 'details': str(e) if not is_production else None}), 500
+
+
+@app.route('/api/admin/prediction-logs', methods=['GET'])
+@admin_required
+def admin_get_prediction_logs():
+    """HTTP GET: Retrieve joined prediction logs from advisory_logs with associated username."""
+    try:
+        conn = get_connection()
+        cursor = conn.cursor(dictionary=True)
+        cursor.execute("""
+            SELECT al.id, al.log_id, al.timestamp, al.npk_summary, al.climate_summary,
+                   al.type, al.crop, al.badge_class, al.recommended_item, al.category,
+                   al.confidence, al.dosage_advice, al.soil_health, al.detailed_notes,
+                   al.inputs_json, al.last_updated, u.username
+            FROM advisory_logs al
+            LEFT JOIN users u ON al.user_id = u.id
+            ORDER BY al.id DESC
+            LIMIT 500
+        """)
+        rows = cursor.fetchall()
+        cursor.close(); conn.close()
+
+        logs = [admin_row_to_log(r) for r in rows]
+        return jsonify({
+            'status': 'success',
+            'total': len(logs),
+            'logs': logs
+        }), 200
+    except Exception as e:
+        return jsonify({'error': 'Failed to retrieve prediction logs', 'details': str(e) if not is_production else None}), 500
+
+
+@app.route('/api/admin/users', methods=['GET'])
+@admin_required
+def admin_get_users():
+    """HTTP GET: Retrieve all farmer accounts with profile details (never exposes password hashes)."""
+    try:
+        conn = get_connection()
+        cursor = conn.cursor(dictionary=True)
+        cursor.execute("SELECT id, username, fullname, email, phone, region, created_at FROM users ORDER BY id DESC")
+        rows = cursor.fetchall()
+        cursor.close(); conn.close()
+
+        users = []
+        for u in rows:
+            users.append({
+                'id': u['id'],
+                'username': u['username'],
+                'fullname': u['fullname'],
+                'email': u['email'],
+                'phone': u['phone'],
+                'region': u['region'],
+                'created_at': str(u['created_at']) if u.get('created_at') else ''
+            })
+
+        return jsonify({
+            'status': 'success',
+            'total': len(users),
+            'users': users
+        }), 200
+    except Exception as e:
+        return jsonify({'error': 'Failed to retrieve users', 'details': str(e) if not is_production else None}), 500
+
+
+@app.route('/api/admin/users', methods=['POST'])
+@admin_required
+def admin_create_user():
+    """HTTP POST: Administrator creation of a new farmer account."""
+    admin_user = session.get('admin_username')
+    data = request.get_json(silent=True) or {}
+
+    username = (data.get('username') or '').strip()
+    password = data.get('password') or ''
+    fullname = (data.get('fullname') or '').strip() or None
+    email = (data.get('email') or '').strip() or None
+    phone = (data.get('phone') or '').strip() or None
+    region = (data.get('region') or data.get('location') or '').strip() or None
+
+    if not username or not password:
+        return jsonify({'error': 'Username and password are required'}), 400
+
+    if len(username) < 3 or len(username) > 50:
+        return jsonify({'error': 'Username must be between 3 and 50 characters'}), 400
+
+    if len(password) < 6 or len(password) > 128:
+        return jsonify({'error': 'Password must be between 6 and 128 characters'}), 400
+
+    if email and (len(email) > 150 or not re.match(r"[^@]+@[^@]+\.[^@]+", email)):
+        return jsonify({'error': 'Invalid email address'}), 400
+
+    password_hash = generate_password_hash(password)
+
+    try:
+        conn = get_connection()
+        cursor = conn.cursor(dictionary=True)
+        cursor.execute("SELECT id FROM users WHERE username = %s", (username,))
+        if cursor.fetchone():
+            cursor.close(); conn.close()
+            return jsonify({'error': f"Username '{username}' already exists"}), 400
+
+        cursor.execute(
+            """INSERT INTO users (username, password_hash, fullname, email, phone, region, soil_type)
+               VALUES (%s, %s, %s, %s, %s, %s, %s)""",
+            (username, password_hash, fullname, email, phone, region, None)
+        )
+        conn.commit()
+        new_user_id = cursor.lastrowid
+        cursor.close(); conn.close()
+
+        log_admin_action(
+            admin_username=admin_user,
+            action_type='account_created',
+            target_username=username,
+            details=f"Admin created farmer account '{username}' (email: {email or 'none'})"
+        )
+
+        return jsonify({
+            'status': 'success',
+            'message': f"Farmer account '{username}' created successfully",
+            'user_id': new_user_id,
+            'username': username
+        }), 201
+    except Exception as e:
+        return jsonify({'error': 'Failed to create user', 'details': str(e) if not is_production else None}), 500
+
+
+@app.route('/api/admin/users/<int:user_id>', methods=['PUT'])
+@admin_required
+def admin_update_user(user_id):
+    """HTTP PUT: Administrator update of farmer profile or password reset."""
+    admin_user = session.get('admin_username')
+    data = request.get_json(silent=True) or {}
+
+    try:
+        conn = get_connection()
+        cursor = conn.cursor(dictionary=True)
+        cursor.execute("SELECT id, username, fullname, email, phone, region FROM users WHERE id = %s", (user_id,))
+        target_user = cursor.fetchone()
+
+        if not target_user:
+            cursor.close(); conn.close()
+            return jsonify({'error': 'Target user not found'}), 404
+
+        old_username = target_user['username']
+        new_username = (data.get('username') or old_username).strip()
+        new_fullname = (data.get('fullname') or target_user['fullname'] or '').strip() or None
+        new_email = (data.get('email') or target_user['email'] or '').strip() or None
+        new_phone = (data.get('phone') or target_user['phone'] or '').strip() or None
+        new_region = (data.get('region') or data.get('location') or target_user['region'] or '').strip() or None
+        new_password = data.get('password') or data.get('new_password') or ''
+
+        # Check duplicate username if changed
+        if new_username != old_username:
+            cursor.execute("SELECT id FROM users WHERE username = %s AND id != %s", (new_username, user_id))
+            if cursor.fetchone():
+                cursor.close(); conn.close()
+                return jsonify({'error': f"Username '{new_username}' is already in use"}), 400
+
+        actions_taken = []
+        if new_password:
+            if len(new_password) < 6:
+                cursor.close(); conn.close()
+                return jsonify({'error': 'Password must be at least 6 characters long'}), 400
+            new_hash = generate_password_hash(new_password)
+            cursor.execute(
+                """UPDATE users 
+                   SET username = %s, password_hash = %s, fullname = %s, email = %s, phone = %s, region = %s
+                   WHERE id = %s""",
+                (new_username, new_hash, new_fullname, new_email, new_phone, new_region, user_id)
+            )
+            actions_taken.append("password_reset")
+        else:
+            cursor.execute(
+                """UPDATE users 
+                   SET username = %s, fullname = %s, email = %s, phone = %s, region = %s
+                   WHERE id = %s""",
+                (new_username, new_fullname, new_email, new_phone, new_region, user_id)
+            )
+
+        if new_username != old_username:
+            actions_taken.append("username_changed")
+        if not actions_taken:
+            actions_taken.append("profile_updated")
+
+        conn.commit()
+        cursor.close(); conn.close()
+
+        for action in actions_taken:
+            details_msg = f"Updated profile for user '{new_username}'"
+            if action == "password_reset":
+                details_msg = f"Reset password for user '{new_username}'"
+            elif action == "username_changed":
+                details_msg = f"Changed username from '{old_username}' to '{new_username}'"
+
+            log_admin_action(
+                admin_username=admin_user,
+                action_type=action,
+                target_username=new_username,
+                details=details_msg
+            )
+
+        return jsonify({
+            'status': 'success',
+            'message': f"Account '{new_username}' updated successfully"
+        }), 200
+    except Exception as e:
+        return jsonify({'error': 'Failed to update user', 'details': str(e) if not is_production else None}), 500
+
+
+@app.route('/api/admin/users/<int:user_id>', methods=['DELETE'])
+@admin_required
+def admin_delete_user(user_id):
+    """HTTP DELETE: Administrator permanent deletion of a farmer account and cascading records."""
+    admin_user = session.get('admin_username')
+
+    try:
+        conn = get_connection()
+        cursor = conn.cursor(dictionary=True)
+        cursor.execute("SELECT id, username FROM users WHERE id = %s", (user_id,))
+        target_user = cursor.fetchone()
+
+        if not target_user:
+            cursor.close(); conn.close()
+            return jsonify({'error': 'Target user not found'}), 404
+
+        target_username = target_user['username']
+        cursor.execute("DELETE FROM users WHERE id = %s", (user_id,))
+        conn.commit()
+        cursor.close(); conn.close()
+
+        log_admin_action(
+            admin_username=admin_user,
+            action_type='account_deleted',
+            target_username=target_username,
+            details=f"Admin permanently deleted farmer account '{target_username}' and cascaded logs"
+        )
+
+        return jsonify({
+            'status': 'success',
+            'message': f"Farmer account '{target_username}' and associated logs deleted successfully"
+        }), 200
+    except Exception as e:
+        return jsonify({'error': 'Failed to delete user', 'details': str(e) if not is_production else None}), 500
+
+
+# ==========================================
+# 9. GLOBAL PRODUCTION ERROR HANDLERS
 # ==========================================
 
 @app.errorhandler(404)

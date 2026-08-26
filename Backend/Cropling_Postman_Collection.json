@@ -27,7 +27,7 @@
 				"header": [{ "key": "Content-Type", "value": "application/json" }],
 				"body": {
 					"mode": "raw",
-					"raw": "{\n    \"username\": \"agrisense_farmer1\",\n    \"password\": \"FarmerPass@123\",\n    \"fullname\": \"Abdullah Farmer\",\n    \"email\": \"farmer1@agrisense.io\",\n    \"phone\": \"+91 9876543210\",\n    \"region\": \"Palakkad\",\n    \"soilType\": \"loamy\"\n}"
+					"raw": "{\n    \"username\": \"cropling_farmer1\",\n    \"password\": \"FarmerPass@123\",\n    \"fullname\": \"Abdullah Farmer\",\n    \"email\": \"farmer1@cropling.io\",\n    \"phone\": \"+91 9876543210\",\n    \"region\": \"Palakkad\",\n    \"soilType\": \"loamy\"\n}"
 				},
 				"url": "http://localhost:5000/register"
 			}
@@ -39,7 +39,7 @@
 				"header": [{ "key": "Content-Type", "value": "application/json" }],
 				"body": {
 					"mode": "raw",
-					"raw": "{\n    \"username\": \"agrisense_farmer1\",\n    \"password\": \"FarmerPass@123\"\n}"
+					"raw": "{\n    \"username\": \"cropling_farmer1\",\n    \"password\": \"FarmerPass@123\"\n}"
 				},
 				"url": "http://localhost:5000/login"
 			}

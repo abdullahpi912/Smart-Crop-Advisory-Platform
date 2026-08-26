@@ -1,5 +1,5 @@
 """
-AgriSense - Aiven MySQL Connection & SSL Verification Script
+Cropling - Aiven MySQL Connection & SSL Verification Script
 Tests database round-trip with and without DB_SSL_CA.
 """
 import os
@@ -68,7 +68,7 @@ def test_flask_health_and_routes():
 
 if __name__ == '__main__':
     print("==================================================")
-    print("AgriSense Aiven MySQL Verification Test")
+    print("Cropling Aiven MySQL Verification Test")
     print(f"Target Host: {os.environ.get('DB_HOST')}:{os.environ.get('DB_PORT')}")
     print(f"DB User: {os.environ.get('DB_USER')}")
     print(f"DB Name: {os.environ.get('DB_NAME')}")

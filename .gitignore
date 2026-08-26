@@ -69,3 +69,6 @@ desktop.ini
 cookies.txt
 *.cookie
 
+# SQL Backup files
+backup_before_wipe_*.sql
+*.sql.bak

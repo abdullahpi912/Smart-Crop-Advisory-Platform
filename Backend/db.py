@@ -8,7 +8,7 @@ from dotenv import load_dotenv
 env_path = Path(__file__).resolve().parent / '.env'
 load_dotenv(dotenv_path=env_path)
 
-logger = logging.getLogger("agrisense.db")
+logger = logging.getLogger("cropling.db")
 
 _pool = None
 
@@ -34,7 +34,7 @@ def _init_pool():
                 pool_size, host, port, user, database, ssl_ca, ssl_disabled)
 
     pool_kwargs = {
-        'pool_name': "agrisense_pool",
+        'pool_name': "cropling_pool",
         'pool_size': pool_size,
         'pool_reset_session': True,
         'host': host,

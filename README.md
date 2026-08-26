@@ -1,28 +1,39 @@
-# Smart Crop Advisory Platform (AgriSense)
+# Cropling
 
-**AgriSense** is a full-stack data-backed agricultural advisory platform that recommends suitable crops based on soil nutrient levels (N, P, K) and environmental weather metrics (temperature, humidity, pH, rainfall). It features a React frontend, a Flask REST API backend with MySQL persistent storage, Werkzeug password hashing, Flask session-based authentication, and a trained scikit-learn Machine Learning model.
+**Cropling** is a full-stack data-backed agricultural advisory platform that delivers three specialized machine learning advisory functions: **Crop Selection**, **Fertilizer Dosage Recommendation**, and **Crop Yield & Harvest Forecasting**. It features a modern React frontend, a production-grade Flask REST API backend with MySQL persistent storage, Werkzeug cryptographic hashing, session-based & multi-factor administrative authentication, and trained machine learning pipelines using scikit-learn and XGBoost.
 
 ---
 
 ## 🚀 What It Does
 
-1. **Farmer User Accounts & Security**:
-   - Secure farm profile registration using Werkzeug `generate_password_hash()`. Passwords are **never** stored in plaintext.
-   - Flask session cookie authentication with `/login`, `/logout`, and `@login_required` protected routes.
-2. **Machine Learning Crop Predictions**:
-   - Serves predictions from a trained Random Forest model (`Model/crop_recommendation_model.pkl`) evaluating 7 soil/climate features (`N`, `P`, `K`, `temperature`, `humidity`, `ph`, `rainfall`) across 22 crop classes.
-3. **Advisory History & Plot Management**:
+1. **Multi-Model Agricultural Advisory Engine**:
+   - **Crop Selection**: Recommends optimal crops based on 7 soil nutrient and climate parameters (`N`, `P`, `K`, `temperature`, `humidity`, `pH`, `rainfall`) evaluated across 22 crop classes.
+   - **Fertilizer Recommendation**: Predicts targeted fertilizer types and ranked top-3 shortlists with confidence percentages based on regional district, soil color, target crop, and soil chemistry metrics.
+   - **Crop Yield Forecasting**: Predicts expected crop harvest output (in metric tonnes and tonnes/hectare) using historical regional agricultural patterns across states, seasons, crop varieties, year, and farm area.
+
+2. **Farmer User Accounts & Per-Farmer Isolation**:
+   - Farm profile registration using cryptographic Werkzeug password hashing. Passwords and secret numbers are **never** stored in plaintext.
+   - Secure Flask session cookies with `/login`, `/logout`, and `@login_required` protected routes providing strict per-farmer advisory log isolation.
+
+3. **Administrative Governance & Auditing**:
+   - 4-Factor secured administrative console (Username, Master Password, Favorite Number, and Security Phrase with anti-enumeration dynamic hints).
+   - Real-time audit logging for user login attempts (`login_logs`), administrative account management (`admin_action_logs`), and global prediction telemetry (`advisory_logs`).
+
+4. **Persistent Field Log & Plot Management**:
    - Persistent MySQL storage for general advisory logs (`advisory_logs`), user-bound ML crop recommendations (`recommendations`), and farmer plot profiles (`farm_profiles`).
 
 ---
 
 ## 🛠 Tech Stack
 
-- **Frontend**: React, Vite, React Router, Vanilla CSS, FontAwesome Icons
-- **Backend**: Python 3, Flask, Flask-CORS, Werkzeug Security
-- **Database**: MySQL (`agrisense_db`), MySQL Connector/Python
-- **Machine Learning**: scikit-learn, joblib, NumPy, Pandas (Random Forest Classifier)
-- **Testing**: Python `unittest`, Postman v2.1 API Collections
+- **Frontend**: React 18, Vite, React Router 6, Vanilla CSS, FontAwesome Icons
+- **Backend**: Python 3.10+, Flask, Flask-CORS, Flask-Limiter, Werkzeug Security
+- **Database**: MySQL (`agrisense_db` / Cloud Aiven MySQL), MySQL Connector/Python with connection pooling
+- **Machine Learning**: 
+  - **scikit-learn**: Random Forest Classifier (Crop Recommendation) & Decision Tree Classifier + LabelEncoder (Fertilizer Recommendation)
+  - **XGBoost**: XGBoost Regressor Pipeline with `log1p` target transformation and `expm1` inverse decoding (Crop Yield Prediction)
+  - **Data Processing**: NumPy, Pandas, Joblib
+- **Testing**: Python `unittest` test suites, Postman v2.1 API Collections
 
 ---
 
@@ -31,32 +42,50 @@
 ```text
 Smart-Crop-Advisory-Platform/
 ├── Backend/
-│   ├── app.py                             # Main Flask REST API application
-│   ├── db.py                              # MySQL database connection helper
-│   ├── schema.sql                         # MySQL database schema (logs, users, recommendations, farm_profiles)
-│   ├── routes_plan.md                     # Master API routes plan
+│   ├── app.py                             # Main Flask REST API application & ML inference routes
+│   ├── db.py                              # MySQL connection pool & SSL configuration
+│   ├── schema.sql                         # MySQL database schema (users, logs, recommendations, admins, audit)
+│   ├── db_setup.sql                       # Least-privilege MySQL user setup script
+│   ├── sync_live_schema.py                # Database migration and column sync utility
+│   ├── create_admin.py                    # Standalone CLI admin account provisioning script
+│   ├── verify_live_admin.py               # Security audit and admin verification script
 │   ├── requirements.txt                   # Python backend dependencies
-│   ├── test_http_methods.py               # Automated unittest test suite (17 test cases)
-│   ├── AgriSense_Postman_Collection.json  # Postman API collection for all 21 endpoints
+│   ├── test_admin_and_isolation.py        # 4-factor auth, admin CRUD & data isolation test suite
+│   ├── test_http_methods.py               # HTTP REST methods verification test suite
+│   ├── test_predictions.py                # Machine learning prediction integration test suite
+│   ├── test_rate_limiting.py              # Rate limiting verification test suite
+│   ├── test_timestamp_utc.py              # ISO 8601 UTC timestamp format test suite
+│   ├── Cropling_Postman_Collection.json   # Postman API collection for all endpoints
 │   ├── AUTHENTICATION.md                  # User registration & password hashing documentation
 │   ├── SESSIONS_LOGIN.md                  # Flask session authentication documentation
-│   ├── KICKOFF.md                         # Backend scaffold & route plan documentation
-│   └── FINAL_SUBMISSION.md                # Final project implementation & verification report
+│   ├── routes_plan.md                     # Master API routes plan & ML pipeline status
+│   ├── KICKOFF.md                         # Backend scaffold & design architecture
+│   └── FINAL_SUBMISSION.md                # Final platform implementation report
 ├── Frontend/
 │   ├── src/                               # React source components & pages
-│   │   ├── pages/                         # Page components (Home, Recommend, Dashboard, Login, Register, etc.)
-│   │   ├── components/                    # Shared UI components (Navbar, Footer, Toast)
-│   │   └── App.jsx                        # Application routing & toast state
+│   │   ├── pages/                         # Page components (Home, Recommend, Dashboard, AdminLogin, AdminDashboard, etc.)
+│   │   ├── components/                    # Shared UI components (Navbar, Footer, PresetSwitcher, ResultCard, etc.)
+│   │   ├── lib/                           # Client-side helpers, formatters, and agronomic fallback engines
+│   │   └── App.jsx                        # Application routing, admin guard & toast notifications
 │   ├── index.html                         # HTML entry point
+│   ├── package.json                       # Frontend dependencies & scripts
 │   └── vite.config.js                     # Vite build configuration
-├── Dataset/
-│   └── Crop_recommendation.csv            # 2,200 row soil/climate dataset
 ├── Model/
-│   └── crop_recommendation_model.pkl      # Trained Random Forest ML model
+│   ├── crop_recommendation_model.pkl      # Trained Random Forest ML model (Crop Recommendation)
+│   ├── crop_yield_model.pkl               # Trained XGBoost Pipeline ML model (Crop Yield Prediction)
+│   └── Fertilizer Recommendation/
+│       ├── fertilizer_recommendation_model_v2.pkl  # Trained Decision Tree model
+│       └── fertilizer_label_encoder_v2.pkl         # LabelEncoder mapping fertilizer classes
 ├── Notebook/
-│   └── Crop_Recommendation_Model.ipynb    # Jupyter notebook for ML model training & evaluation
+│   ├── Crop_Recommendation_Full_Analysis.ipynb         # Crop recommendation EDA, training & tuning
+│   ├── Crop_Yield_Prediction_Full_Analysis.ipynb       # Crop yield regression modeling & validation
+│   ├── Fertilizer_Recommendation_Maharashtra_Analysis.ipynb # Fertilizer classification pipeline analysis
+│   └── Dataset/
+│       ├── Crop_recommendation.csv        # 2,200 row soil/climate dataset (Crop Recommendation)
+│       ├── Crop and fertilizer dataset.csv# Soil/district/crop dataset (Fertilizer Recommendation)
+│       └── crop_production.csv            # 246,000+ row national agricultural yield dataset
 ├── .gitignore                             # Excludes node_modules, .venv, __pycache__, .env, etc.
-└── README.md                              # Project documentation
+└── README.md                              # Main platform documentation
 ```
 
 ---
@@ -88,22 +117,30 @@ Create the MySQL database and tables by running `Backend/schema.sql` in MySQL Wo
 SOURCE Backend/schema.sql;
 ```
 
-Optionally set environment variables or use the default local configuration:
+Configure your `.env` file in `Backend/.env`:
 ```bash
 DB_HOST=localhost
+DB_PORT=3306
 DB_USER=root
 DB_PASSWORD=your_mysql_password
 DB_NAME=agrisense_db
-SECRET_KEY=agrisense-secret-key-session-auth
+SECRET_KEY=your-secure-secret-key
 ```
 
-### 4. Run Flask Backend Server
+### 4. Admin Account Provisioning
+Provision an administrator account via the CLI tool:
+```powershell
+cd Backend
+python create_admin.py
+```
+
+### 5. Run Flask Backend Server
 ```powershell
 python Backend/app.py
 ```
 The backend API runs at `http://127.0.0.1:5000`.
 
-### 5. Frontend Setup (React / Vite)
+### 6. Frontend Setup (React / Vite)
 In a separate terminal, navigate to `Frontend` and start the Vite dev server:
 
 ```powershell
@@ -120,55 +157,96 @@ The React frontend runs at `http://localhost:5173`.
 | Method | Route | Purpose | Protected (`@login_required`) | Calls ML Model? |
 |---|---|---|---|---|
 | **GET** | `/` | Root API server status & health check | No | No |
-| **GET** | `/api/health` | Backend & MySQL database status check | No | No |
+| **GET** | `/api/health` | Backend, MySQL database & 3-model loader status check | No | No |
+| **GET** | `/api/options` | Retrieve categorical options for fertilizer & yield models | No | No |
+| **GET** | `/api/crops` | Retrieve available crop metadata catalog | No | No |
 | **POST** | `/register` | User registration & Werkzeug password hashing | No | No |
 | **POST** | `/login` | User login & Flask session establishment | No | No |
 | **POST** | `/logout` | User logout & Flask session clear | No | No |
 | **GET** | `/profile` | Fetch authenticated user profile details | **Yes** | No |
-| **GET** | `/api/crops` | Retrieve crop metadata catalog | No | No |
-| **POST** | `/api/predict` | Anonymous crop prediction | No | **Yes** |
-| **GET** | `/api/logs` | Retrieve general advisory logs | No | No |
-| **GET** | `/api/logs/<id>` | Retrieve single advisory log by ID | No | No |
-| **POST** | `/api/logs` | Create custom advisory log entry | No | No |
-| **PUT** | `/api/logs/<id>` | Update advisory log entry | No | No |
-| **DELETE** | `/api/logs/<id>` | Delete single advisory log entry | No | No |
-| **DELETE** | `/api/logs` | Clear all general advisory logs | No | No |
-| **POST** | `/api/recommendations` | Submit soil parameters for ML prediction & link to user | **Yes** | **Yes** |
+| **PUT** | `/profile` | Update authenticated farmer profile details | **Yes** | No |
+| **PUT** | `/api/user/change-password` | Change farmer password after verifying old password | **Yes** | No |
+| **DELETE** | `/api/user/account` | Delete farmer account and cascaded records | **Yes** | No |
+| **POST** | `/api/predict` | Predict crop recommendation from soil & climate metrics | No | **Yes (Random Forest)** |
+| **POST** | `/api/predict/fertilizer` | Predict fertilizer recommendation & top-3 shortlist | No | **Yes (Decision Tree)** |
+| **POST** | `/api/predict/yield` | Forecast crop harvest production in tonnes & tonnes/ha | No | **Yes (XGBoost Regressor)** |
+| **GET** | `/api/logs` | Retrieve authenticated farmer's advisory logs | **Yes** | No |
+| **GET** | `/api/logs/<id>` | Retrieve single advisory log record by ID | **Yes** | No |
+| **POST** | `/api/logs` | Create custom advisory log entry | **Yes** | No |
+| **PUT** | `/api/logs/<id>` | Update advisory log entry | **Yes** | No |
+| **DELETE** | `/api/logs/<id>` | Delete single advisory log record | **Yes** | No |
+| **DELETE** | `/api/logs` | Clear all advisory logs for authenticated farmer | **Yes** | No |
+| **POST** | `/api/recommendations` | Submit soil parameters for ML crop prediction & link to user | **Yes** | **Yes (Random Forest)** |
 | **GET** | `/api/recommendations` | Retrieve user-specific recommendation history | **Yes** | No |
 | **GET** | `/api/recommendations/<id>` | Retrieve single recommendation record for user | **Yes** | No |
 | **PUT** | `/api/recommendations/<id>` | Update recommendation notes / feedback | **Yes** | No |
 | **DELETE** | `/api/recommendations/<id>` | Delete user recommendation record | **Yes** | No |
 | **GET** | `/api/farms` | List user farm plot profiles | **Yes** | No |
 | **POST** | `/api/farms` | Create farm plot profile for user | **Yes** | No |
-
----
-
-## 🔐 Security & Authentication
-
-- **Password Security**: Passwords are formatted using Werkzeug `generate_password_hash()` before database insertion. Plaintext passwords and hashes are never returned by APIs or logged.
-- **Session Authentication**: Active user state is managed via signed Flask cookie sessions (`session["user_id"]`). `POST /logout` executes `session.clear()`, causing subsequent protected route requests to return HTTP `401 Unauthorized`.
-- **Environment Isolation**: `.gitignore` strictly excludes `.env`, `.venv/`, `node_modules/`, and `__pycache__/`.
+| **GET** | `/api/admin/login-hint` | Retrieve visible security phrase hint (anti-enumeration) | No | No |
+| **POST** | `/admin/login` | 4-Factor Administrator login | No | No |
+| **POST** | `/admin/logout` | Terminate Administrator session | No | No |
+| **GET** | `/api/admin/session-check` | Check active admin session status | No | No |
+| **GET** | `/api/admin/login-logs` | View login audit trail (farmer and admin attempts) | **Admin** | No |
+| **GET** | `/api/admin/prediction-logs` | View global telemetry prediction logs | **Admin** | No |
+| **GET** | `/api/admin/users` | List all farmer accounts | **Admin** | No |
+| **POST** | `/api/admin/users` | Administrator create farmer account | **Admin** | No |
+| **PUT** | `/api/admin/users/<id>` | Administrator update farmer account / reset password | **Admin** | No |
+| **DELETE** | `/api/admin/users/<id>` | Administrator delete farmer account | **Admin** | No |
 
 ---
 
 ## 🤖 Machine Learning Model Details
 
-- **Model Type**: Random Forest Classifier (tuned via GridSearchCV).
-- **Features**: `N` (Nitrogen), `P` (Phosphorus), `K` (Potassium), `temperature` (°C), `humidity` (%), `ph` (scale), `rainfall` (mm).
-- **Classes**: 22 crops (rice, maize, chickpea, kidneybeans, pigeonpeas, mothbeans, mungbean, blackgram, lentil, pomegranate, banana, mango, grapes, watermelon, muskmelon, apple, orange, papaya, coconut, cotton, jute, coffee).
-- **File**: `Model/crop_recommendation_model.pkl`.
+### 1. Crop Recommendation Model
+- **Algorithm**: Random Forest Classifier (tuned via GridSearchCV)
+- **Features (7)**: `N` (Nitrogen), `P` (Phosphorus), `K` (Potassium), `temperature` (°C), `humidity` (%), `ph` (scale), `rainfall` (mm)
+- **Target (22 Classes)**: Rice, Maize, Chickpea, Kidneybeans, Pigeonpeas, Mothbeans, Mungbean, Blackgram, Lentil, Pomegranate, Banana, Mango, Grapes, Watermelon, Muskmelon, Apple, Orange, Papaya, Coconut, Cotton, Jute, Coffee
+- **Artifact**: `Model/crop_recommendation_model.pkl`
+- **Serving Endpoints**: `POST /api/predict` & `POST /api/recommendations`
+
+### 2. Fertilizer Recommendation Model
+- **Algorithm**: Decision Tree Classifier with categorical `LabelEncoder`
+- **Features (9)**: `District_Name`, `Soil_color`, `Crop`, `Nitrogen`, `Phosphorus`, `Potassium`, `pH`, `Rainfall`, `Temperature`
+- **Target**: Fertilizer formulation (e.g., Urea, DAP, 19:19:19 NPK, MOP, 10:26:26 NPK, SSP) with top-3 probability shortlist
+- **Artifacts**: `Model/Fertilizer Recommendation/fertilizer_recommendation_model_v2.pkl` & `fertilizer_label_encoder_v2.pkl`
+- **Serving Endpoint**: `POST /api/predict/fertilizer`
+
+### 3. Crop Yield Prediction Model
+- **Algorithm**: XGBoost Regressor Pipeline with `FunctionTransformer(np.log1p)` transformation on `Area` and `np.expm1` inverse target decoding
+- **Features (5)**: `State_Name`, `Season`, `Crop`, `Crop_Year`, `Area` (hectares)
+- **Target**: Harvest yield in metric tonnes and computed tonnes/hectare
+- **Artifact**: `Model/crop_yield_model.pkl`
+- **Serving Endpoint**: `POST /api/predict/yield`
+
+---
+
+## 🗺️ Extension & Roadmap
+
+Cropling is architected for modular expansion as new agricultural models are developed:
+
+- **Deep Learning Expansion**: The immediate next phase introduces deep learning models, starting with **CNN-based leaf disease detection** from uploaded plant imagery.
+- **Pluggable Architecture**: The backend and frontend are structured so that integrating any future model requires only:
+  1. Placing the serialized model artifacts in `Model/<domain>/`.
+  2. Adding a dedicated endpoint in `Backend/app.py` (e.g. `POST /api/predict/<model_name>`).
+  3. Adding a new mode tab in `Frontend/src/pages/Recommend.jsx` with input schema and result cards.
 
 ---
 
 ## 🧪 Testing
 
-### Automated Unit Test Suite
-Run the 17 automated unittest test cases:
+### Automated Test Suites
+Run the test suites using Python `unittest`:
 ```powershell
-python Backend/test_http_methods.py
+# Admin auth, 4-factor security & data isolation test suite
+python -m unittest Backend/test_admin_and_isolation.py
+
+# ISO 8601 UTC timestamp format test suite
+python -m unittest Backend/test_timestamp_utc.py
+
+# Rate limiting verification test suite
+python -m unittest Backend/test_rate_limiting.py
 ```
-**Expected Result**: `Ran 17 tests ... OK`.
 
 ### Postman Testing
-Import `Backend/AgriSense_Postman_Collection.json` into Postman to test all 21 API endpoints.
-
+Import `Backend/Cropling_Postman_Collection.json` into Postman to test all endpoints.

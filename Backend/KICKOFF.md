@@ -1,14 +1,14 @@
-# Backend Project Scaffold & Architecture (AgriSense Platform)
+# Backend Project Scaffold & Architecture (Cropling Platform)
 
 ## Overview
-This document details the scaffolding, API route design, and database schema plan for the **Smart-Crop-Advisory-Platform (AgriSense)**.
+This document details the scaffolding, API route design, and database schema plan for the **Cropling Platform**.
 
 ---
 
 ## 1. Features Implemented in Backend Scaffold
 
 1. **API Routes Plan (`routes_plan.md`)**:
-   - Comprehensive API endpoint map tailored to AgriSense.
+   - Comprehensive API endpoint map tailored to Cropling.
    - Categorized by method, route, purpose, session protection (`@login_required`), ML model integration, and implementation status.
 
 2. **Database Schema Plan (`schema.sql`)**:
@@ -91,7 +91,7 @@ CREATE TABLE IF NOT EXISTS farm_profiles (
 ```json
 {
   "status": "running",
-  "service": "Smart Crop Advisory Platform (AgriSense) Backend API",
+  "service": "Cropling Backend API",
   "version": "1.0.0",
   "endpoints": {
     "root": "/",

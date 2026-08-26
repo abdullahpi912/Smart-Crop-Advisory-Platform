@@ -1,5 +1,5 @@
 """
-Automated Test Suite for AgriSense Multi-Model API Endpoints
+Automated Test Suite for Cropling Multi-Model API Endpoints
 Verifies:
 - GET /
 - GET /api/health
@@ -12,11 +12,16 @@ Verifies:
 - GET /api/logs
 """
 
+import os
+import sys
 import unittest
+
+sys.path.insert(0, os.path.dirname(os.path.abspath(__file__)))
+
 from app import app
 
 
-class TestAgriSenseMultiModelAPI(unittest.TestCase):
+class TestCroplingMultiModelAPI(unittest.TestCase):
     def setUp(self):
         self.client = app.test_client()
 

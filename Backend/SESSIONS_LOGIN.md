@@ -1,7 +1,7 @@
-# Session Authentication & Login Documentation (AgriSense Platform)
+# Session Authentication & Login Documentation (Cropling Platform)
 
 ## Overview
-This document details the implementation of **Flask Session Authentication & Protected Routes** for the **Smart-Crop-Advisory-Platform (AgriSense)**.
+This document details the implementation of **Flask Session Authentication & Protected Routes** for the **Cropling Platform**.
 
 ---
 
@@ -99,7 +99,7 @@ This document details the implementation of **Flask Session Authentication & Pro
 
 ## 3. Postman 4-Step Testing Guide
 
-Import `Backend/AgriSense_Postman_Collection.json` into Postman and execute the requests sequentially:
+Import `Backend/Cropling_Postman_Collection.json` into Postman and execute the requests sequentially:
 
 1. **Step 1: Login**
    - Execute `POST http://localhost:5000/login`

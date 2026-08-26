@@ -1,7 +1,7 @@
-# User Registration & Password Hashing Documentation (AgriSense Platform)
+# User Registration & Password Hashing Documentation (Cropling Platform)
 
 ## Overview
-This document covers the implementation of **User Registration & Password Hashing** for the **Smart-Crop-Advisory-Platform (AgriSense)**.
+This document covers the implementation of **User Registration & Password Hashing** for the **Cropling Platform**.
 
 ---
 
@@ -97,7 +97,7 @@ python app.py
 ## 5. Postman Collection & Testing Guide
 
 Import the provided Postman collection file:
-`Backend/AgriSense_Postman_Collection.json` into Postman.
+`Backend/Cropling_Postman_Collection.json` into Postman.
 
 ### Test Requests Included:
 1. **Test 1**: Register `agrisense_user1` (`201 Created`)
