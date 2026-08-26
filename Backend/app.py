@@ -34,7 +34,7 @@ app.secret_key = secret_key
 # Configure secure session cookies
 app.config.update(
     SESSION_COOKIE_HTTPONLY=True,
-    SESSION_COOKIE_SAMESITE="Lax",
+    SESSION_COOKIE_SAMESITE="None" if is_production else "Lax",
     SESSION_COOKIE_SECURE=is_production,
     PERMANENT_SESSION_LIFETIME=datetime.timedelta(days=7)
 )
