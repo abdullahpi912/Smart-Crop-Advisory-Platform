@@ -1,17 +1,42 @@
-import React from 'react';
+import React, { useState, useEffect } from 'react';
 import { Link } from 'react-router-dom';
 
 export default function Footer() {
+  const [theme, setTheme] = useState(() => {
+    try {
+      return localStorage.getItem('cropling_theme') || localStorage.getItem('agrisense_theme') || 'light';
+    } catch (_) {
+      return 'light';
+    }
+  });
+
+  useEffect(() => {
+    const updateTheme = () => {
+      const current = document.documentElement.getAttribute('data-theme') || (document.body.classList.contains('dark-mode') ? 'dark' : 'light');
+      setTheme(current);
+    };
+
+    updateTheme();
+
+    const observer = new MutationObserver(updateTheme);
+    observer.observe(document.documentElement, { attributes: true, attributeFilter: ['data-theme', 'class'] });
+    observer.observe(document.body, { attributes: true, attributeFilter: ['class'] });
+
+    return () => observer.disconnect();
+  }, []);
+
   return (
     <footer className="footer-technical" role="contentinfo">
       <div className="page-container">
         {/* Top Metadata & Navigation Row */}
         <div className="footer-top-meta">
           <div style={{ maxWidth: '420px' }}>
-            <Link to="/" style={{ display: 'inline-block', marginBottom: '1rem' }}>
-              <span style={{ fontFamily: 'var(--font-display)', fontSize: '1.5rem', fontWeight: 800, letterSpacing: '-0.03em', color: 'var(--agri-ink)' }}>
-                CROPLING
-              </span>
+            <Link to="/" style={{ display: 'inline-block', marginBottom: '1.15rem' }} aria-label="Cropling Home">
+              <img
+                src={theme === 'dark' ? "/Logo/Logo%20For%20Dark%20Mode.png" : "/Logo/Logo%20For%20Light%20mode.png"}
+                alt="Cropling"
+                className="footer-logo-img"
+              />
             </Link>
             <p style={{ color: 'var(--agri-secondary)', fontSize: '0.95rem', lineHeight: 1.6, marginBottom: '1.25rem' }}>
               Data-backed precision crop selection, fertilizer advisory, and yield forecasting platform powered by a 3-model agronomic engine.

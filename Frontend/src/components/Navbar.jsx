@@ -109,11 +109,18 @@ export default function Navbar() {
       {/* Fixed Top Header */}
       <header className="navbar-fixed" role="banner">
         <div className="nav-inner nav-inner-centered">
-          {/* Left: Sidebar Toggle Menu Button or Admin Console Label */}
+          {/* Left: Logo then Sidebar Menu Toggle Button */}
           <div className="nav-left-section">
+            <Link to="/" className="nav-left-logo-link" onClick={closeSidebar} aria-label="Cropling Home">
+              <img
+                src={theme === 'dark' ? "/Logo/Logo%20For%20Dark%20Mode.png" : "/Logo/Logo%20For%20Light%20mode.png"}
+                alt="Cropling"
+                className="nav-left-logo-img"
+              />
+            </Link>
+
             {isAdminRoute ? (
               <div style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
-                <span className="cl-logo-badge" style={{ width: '28px', height: '28px', fontSize: '11px' }}>CL</span>
                 <span className="mono-meta" style={{ color: 'var(--agri-accent)', fontWeight: 700 }}>
                   ROOT CONSOLE
                 </span>
@@ -133,10 +140,10 @@ export default function Navbar() {
             )}
           </div>
 
-          {/* Center: Brand Title */}
+          {/* Center: Luxury Modern Display Serif Brand Text */}
           <div className="nav-center-brand">
             <Link className="nav-brand-centered" to="/" onClick={closeSidebar} aria-label="Cropling Home">
-              CROPLING
+              <span className="nav-stylish-brand">CROPLING</span>
             </Link>
           </div>
 
@@ -258,7 +265,11 @@ export default function Navbar() {
           <header className="cl-header">
             <div className="cl-image-text">
               <span className="cl-image">
-                <span className="cl-logo-badge">CL</span>
+                <img
+                  src={theme === 'dark' ? "/Logo/Logo%20For%20Dark%20Mode.png" : "/Logo/Logo%20For%20Light%20mode.png"}
+                  alt="Cropling"
+                  className="cl-logo-img"
+                />
               </span>
 
               <div className="cl-text cl-header-text">

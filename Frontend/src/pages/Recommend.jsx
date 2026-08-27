@@ -396,17 +396,28 @@ export default function Recommend({ showToast }) {
       setIsLoading(false);
 
       // Save to localStorage history (only if user is signed in)
-      let isUserAuth = false;
+      let currentUsername = null;
       try {
-        const storedAuth = localStorage.getItem('cropling_user') || localStorage.getItem('agrisense_user') ||
-                           localStorage.getItem('cropling_session') || localStorage.getItem('agrisense_session');
-        isUserAuth = Boolean(storedAuth);
+        const storedUser = localStorage.getItem('cropling_user') || localStorage.getItem('agrisense_user');
+        if (storedUser) {
+          const u = JSON.parse(storedUser);
+          currentUsername = u.username || u.name || u.id;
+        } else {
+          const storedSession = localStorage.getItem('cropling_session') || localStorage.getItem('agrisense_session');
+          if (storedSession) {
+            const s = JSON.parse(storedSession);
+            currentUsername = s.username || s.userId;
+          }
+        }
       } catch (_) {}
 
-      if (isUserAuth) {
+      if (currentUsername) {
         try {
-          const history = JSON.parse(localStorage.getItem('cropling_history') || localStorage.getItem('agrisense_history') || '[]');
-          const updated = JSON.stringify([computed, ...history]);
+          const userKey = `cropling_history_${currentUsername}`;
+          const history = JSON.parse(localStorage.getItem(userKey) || localStorage.getItem('cropling_history') || localStorage.getItem('agrisense_history') || '[]');
+          const cleanHistory = history.filter(h => (h.logId || h.recId) !== (computed.logId || computed.recId));
+          const updated = JSON.stringify([computed, ...cleanHistory]);
+          localStorage.setItem(userKey, updated);
           localStorage.setItem('cropling_history', updated);
           localStorage.setItem('agrisense_history', updated);
           if (isFromBackend) {

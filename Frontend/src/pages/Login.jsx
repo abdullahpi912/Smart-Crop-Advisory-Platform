@@ -87,8 +87,16 @@ export default function Login({ showToast }) {
           });
           localStorage.setItem('cropling_session', sessionPayload);
           localStorage.setItem('agrisense_session', sessionPayload);
-          localStorage.removeItem('cropling_history');
-          localStorage.removeItem('agrisense_history');
+
+          const userKey = `cropling_history_${data.username}`;
+          const existingUserHistory = localStorage.getItem(userKey);
+          if (existingUserHistory) {
+            localStorage.setItem('cropling_history', existingUserHistory);
+            localStorage.setItem('agrisense_history', existingUserHistory);
+          } else {
+            localStorage.removeItem('cropling_history');
+            localStorage.removeItem('agrisense_history');
+          }
         } catch (e) { }
         navigate('/dashboard');
       } else {

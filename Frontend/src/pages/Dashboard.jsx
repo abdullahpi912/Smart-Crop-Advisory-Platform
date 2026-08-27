@@ -49,6 +49,8 @@ export default function Dashboard({ showToast }) {
             setUserProfile(d.user);
             localStorage.setItem('cropling_user', JSON.stringify(d.user));
             localStorage.setItem('agrisense_user', JSON.stringify(d.user));
+            const username = d.user.username || d.user.name || d.user.id || '';
+            const userHistoryKey = `cropling_history_${username}`;
 
             // Fetch authenticated user's real history from backend
             try {
@@ -58,8 +60,8 @@ export default function Dashboard({ showToast }) {
                 const fetchedLogs = dLogs.logs || dLogs.recommendations || [];
                 if (Array.isArray(fetchedLogs) && fetchedLogs.length > 0 && isMounted) {
                   setHistory(fetchedLogs);
+                  localStorage.setItem(userHistoryKey, JSON.stringify(fetchedLogs));
                   localStorage.setItem('cropling_history', JSON.stringify(fetchedLogs));
-                  localStorage.setItem('agrisense_history', JSON.stringify(fetchedLogs));
                   setIsLoadingHistory(false);
                   return;
                 }
@@ -70,17 +72,17 @@ export default function Dashboard({ showToast }) {
                 const fetchedRecs = dRecs.recommendations || dRecs.logs || [];
                 if (Array.isArray(fetchedRecs) && fetchedRecs.length > 0 && isMounted) {
                   setHistory(fetchedRecs);
+                  localStorage.setItem(userHistoryKey, JSON.stringify(fetchedRecs));
                   localStorage.setItem('cropling_history', JSON.stringify(fetchedRecs));
-                  localStorage.setItem('agrisense_history', JSON.stringify(fetchedRecs));
                   setIsLoadingHistory(false);
                   return;
                 }
               }
             } catch (_) {}
 
-            // If backend query returns empty, fall back to active authenticated session cache
+            // If backend query returns empty (or network offline), load this account's scoped history
             try {
-              const cached = localStorage.getItem('cropling_history') || localStorage.getItem('agrisense_history');
+              const cached = localStorage.getItem(userHistoryKey) || localStorage.getItem('cropling_history') || localStorage.getItem('agrisense_history');
               if (cached && isMounted) {
                 const parsed = JSON.parse(cached);
                 if (Array.isArray(parsed) && parsed.length > 0) {
@@ -175,7 +177,9 @@ export default function Dashboard({ showToast }) {
 
   const handleChangePassword = async (e) => {
     e.preventDefault();
-    setModalError('');
+    if (!pwdForm.current || !pwdForm.next || !pwdForm.confirm) {
+      setModalError('All password fields are required'); return;
+    }
     if (pwdForm.next !== pwdForm.confirm) { setModalError('New passwords do not match'); return; }
     if (pwdForm.next.length < 6) { setModalError('New password must be at least 6 characters'); return; }
     setModalLoading(true);
@@ -206,6 +210,8 @@ export default function Dashboard({ showToast }) {
       });
       const d = await r.json();
       if (r.ok) {
+        const username = userProfile?.username || '';
+        if (username) localStorage.removeItem(`cropling_history_${username}`);
         localStorage.removeItem('cropling_user');
         localStorage.removeItem('agrisense_user');
         localStorage.removeItem('cropling_history');
@@ -228,6 +234,8 @@ export default function Dashboard({ showToast }) {
     } catch (_) {}
     const updated = history.filter(h => (h.logId || h.recId) !== logId);
     setHistory(updated);
+    const username = userProfile?.username || '';
+    if (username) localStorage.setItem(`cropling_history_${username}`, JSON.stringify(updated));
     localStorage.setItem('cropling_history', JSON.stringify(updated));
     localStorage.setItem('agrisense_history', JSON.stringify(updated));
     showToast?.(`Removed advisory log ${logId}`, 'info');
@@ -249,6 +257,8 @@ export default function Dashboard({ showToast }) {
     } catch (_) {}
     const updated = history.map(h => (h.logId || h.recId) === itemId ? { ...h, notes: noteText, detailedNotes: noteText } : h);
     setHistory(updated);
+    const username = userProfile?.username || '';
+    if (username) localStorage.setItem(`cropling_history_${username}`, JSON.stringify(updated));
     localStorage.setItem('cropling_history', JSON.stringify(updated));
     localStorage.setItem('agrisense_history', JSON.stringify(updated));
     showToast?.(`Agronomic notes saved for ${itemId}`, 'success');
@@ -265,6 +275,8 @@ export default function Dashboard({ showToast }) {
   const handleConfirmClear = async () => {
     try { await fetch(`${BACKEND}/api/logs`, { method: 'DELETE', credentials: 'include' }); } catch (_) {}
     setHistory([]);
+    const username = userProfile?.username || '';
+    if (username) localStorage.removeItem(`cropling_history_${username}`);
     localStorage.removeItem('cropling_history');
     localStorage.removeItem('agrisense_history');
     showToast?.('History cleared successfully', 'info'); setShowClearModal(false);
