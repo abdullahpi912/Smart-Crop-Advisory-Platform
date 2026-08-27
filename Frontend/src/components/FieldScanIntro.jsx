@@ -10,7 +10,8 @@ export default function FieldScanIntro() {
       id: 'crop',
       title: 'Crop Selection',
       icon: 'fa-wheat-awn',
-      tag: 'RANDOM FOREST • 99.1%',
+      tag: 'RANDOM FOREST • 99.5%',
+      inputCount: 7,
       primary: 'Paddy Rice 🌾',
       subtitle: 'Optimal for current NPK & rainfall vectors',
       badge: 'High Suitability',
@@ -25,7 +26,8 @@ export default function FieldScanIntro() {
       id: 'fertilizer',
       title: 'Fertilizer Advisory',
       icon: 'fa-flask-vial',
-      tag: 'DECISION TREE • 88.4%',
+      tag: 'DECISION TREE • 95% TOP-1',
+      inputCount: 9,
       primary: 'Urea (46% N)',
       subtitle: 'Targeted Nitrogen deficit replenishment',
       badge: 'Top-1 Recommendation',
@@ -40,7 +42,8 @@ export default function FieldScanIntro() {
       id: 'yield',
       title: 'Yield Forecasting',
       icon: 'fa-chart-line',
-      tag: 'XGBOOST PIPELINE',
+      tag: 'XGBOOST • R² 0.98',
+      inputCount: 5,
       primary: '6.85 Metric Tonnes',
       subtitle: 'Projected 2.74 Tonnes / Hectare on 2.5 ha',
       badge: 'Harvest Forecast',
@@ -70,6 +73,13 @@ export default function FieldScanIntro() {
         <div className="hero-unified-grid">
           {/* Left Column: Typography, Value Proposition & Action CTAs */}
           <div className="hero-unified-left">
+            {/* Section Eyebrow Meta */}
+            <div className="section-meta-row" style={{ marginBottom: '0.15rem' }}>
+              <span className="mono-accent">PRECISION AGRONOMY</span>
+              <div className="section-meta-rule" style={{ maxWidth: '30px' }}></div>
+              <span className="mono-meta">3-MODEL AI PLATFORM</span>
+            </div>
+
             {/* Main Headline */}
             <h1 className="hero-display-title">
               GROW SMARTER.<br />
@@ -172,7 +182,7 @@ export default function FieldScanIntro() {
               {/* Stats Matrix Below Image (Updated with 3-Model Platform Scope) */}
               <div className="hero-stats-row">
                 <div className="hero-stat-cell">
-                  <div className="hero-stat-value">7 INPUTS</div>
+                  <div className="hero-stat-value">{activeHighlight.inputCount} INPUTS</div>
                   <div className="hero-stat-label">SOIL &amp; CLIMATE</div>
                 </div>
                 <div className="hero-stat-cell">

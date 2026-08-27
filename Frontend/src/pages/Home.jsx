@@ -101,7 +101,7 @@ export default function Home() {
             </div>
             <h2 className="section-title-large">Field Chemical &amp; Climate Parameters</h2>
             <p className="section-desc-editorial">
-              Essential agricultural indicators evaluated across three machine learning models to classify crop suitability, fertilizer formulations, and harvest output.
+              Primary agronomic indicators used by the Crop Selection engine. Fertilizer Advisory and Yield Forecasting draw on additional regional and crop-specific vectors — see the full model breakdown on the About page.
             </p>
           </div>
 
@@ -210,6 +210,24 @@ export default function Home() {
                   <span className="mono-meta" style={{ color: '#7C97FF' }}>ADVISORY ENGINE</span>
                   <div style={{ fontSize: '1.2rem', fontWeight: 800, marginTop: '4px', color: '#EFEFEE' }}>3-Model Suite</div>
                   <span className="mono-meta" style={{ color: '#85858B' }}>Crop, Fertilizer &amp; Yield Regressor</span>
+                </div>
+              </div>
+
+              <div style={{ display: 'grid', gridTemplateColumns: 'repeat(3, 1fr)', gap: '1.5rem', borderTop: '1px solid rgba(239,239,238,0.12)', paddingTop: '1.5rem', marginTop: '1.5rem' }}>
+                <div>
+                  <span className="mono-meta" style={{ color: '#7C97FF' }}>CROP MODEL</span>
+                  <div style={{ fontSize: '1.2rem', fontWeight: 800, marginTop: '4px', color: '#EFEFEE' }}>99.5% Accuracy</div>
+                  <span className="mono-meta" style={{ color: '#85858B' }}>Random Forest · 22 Classes</span>
+                </div>
+                <div>
+                  <span className="mono-meta" style={{ color: '#7C97FF' }}>FERTILIZER MODEL</span>
+                  <div style={{ fontSize: '1.2rem', fontWeight: 800, marginTop: '4px', color: '#EFEFEE' }}>95% Top-1 · 98% Top-3</div>
+                  <span className="mono-meta" style={{ color: '#85858B' }}>Decision Tree · 19 Classes</span>
+                </div>
+                <div>
+                  <span className="mono-meta" style={{ color: '#7C97FF' }}>YIELD MODEL</span>
+                  <div style={{ fontSize: '1.2rem', fontWeight: 800, marginTop: '4px', color: '#EFEFEE' }}>R² 0.98</div>
+                  <span className="mono-meta" style={{ color: '#85858B' }}>XGBoost · 242K+ Records</span>
                 </div>
               </div>
             </div>

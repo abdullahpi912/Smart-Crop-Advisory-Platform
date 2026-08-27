@@ -509,13 +509,18 @@ export default function Recommend({ showToast }) {
         <div className="console-layout">
           {/* Left: Dynamic Form Panel */}
           <form className="console-panel" onSubmit={handleSubmit}>
-            <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '1.5rem', borderBottom: '1px solid var(--agri-line)', paddingBottom: '0.75rem' }}>
+            <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '1.5rem', borderBottom: '1px solid var(--agri-line)', paddingBottom: '0.75rem', flexWrap: 'wrap', gap: '0.5rem' }}>
               <span className="mono-accent">
                 {mode === 'crop' ? 'SOIL & CLIMATE TELEMETRY' : (mode === 'fertilizer' ? 'DISTRICT & SOIL DOSAGE PARAMETERS' : 'REGIONAL CROP & ACREAGE TELEMETRY')}
               </span>
-              <span className="mono-meta">
-                {mode === 'crop' ? '7 VECTORS REQUIRED' : (mode === 'fertilizer' ? '9 VECTORS REQUIRED' : '5 VECTORS REQUIRED')}
-              </span>
+              <div style={{ display: 'flex', alignItems: 'center', gap: '1rem' }}>
+                <span className="mono-meta" style={{ color: 'var(--agri-accent)' }}>
+                  {mode === 'crop' ? 'RANDOM FOREST · 99.5% ACCURACY' : (mode === 'fertilizer' ? 'DECISION TREE · 95% TOP-1 / 98% TOP-3' : 'XGBOOST · R² 0.98')}
+                </span>
+                <span className="mono-meta">
+                  {mode === 'crop' ? '7 VECTORS REQUIRED' : (mode === 'fertilizer' ? '9 VECTORS REQUIRED' : '5 VECTORS REQUIRED')}
+                </span>
+              </div>
             </div>
 
             {/* MODE 1: CROP FORM */}

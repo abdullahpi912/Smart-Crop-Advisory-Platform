@@ -20,8 +20,8 @@
   --agri-accent-dim: rgba(21, 128, 61, 0.08);
   /* Organic Green Coating Wash */
   --agri-accent-glow: rgba(34, 197, 94, 0.28);
-  --agri-forest: #0D3823;
-  /* Deep Forest Green for Primary CTAs */
+  --agri-forest: #15803D;
+  /* Primary Green for CTAs (matches Sign In button #15803D) */
 
   /* Hairlines with Organic Green Undertone */
   --agri-line: rgba(15, 56, 35, 0.14);
@@ -1266,9 +1266,9 @@ body.dark-mode .cl-switch::before {
   font-weight: 700;
   padding: 13px 26px;
   border-radius: 9999px;
-  background-color: var(--agri-forest);
+  background-color: var(--agri-accent);
   color: #FFFFFF;
-  border: 1px solid var(--agri-forest);
+  border: 1px solid var(--agri-accent);
   display: inline-flex;
   align-items: center;
   justify-content: center;
@@ -1279,8 +1279,8 @@ body.dark-mode .cl-switch::before {
 
 .btn-primary-technical:hover {
   transform: translateY(-2px);
-  background-color: var(--agri-accent);
-  border-color: var(--agri-accent);
+  background-color: #0F632D;
+  border-color: #0F632D;
   color: #FFFFFF;
 }
 
@@ -1340,7 +1340,10 @@ body.dark-mode .cl-switch::before {
 .hero-modern-section {
   position: relative;
   width: 100%;
-  padding: calc(var(--nav-height) + 2.5rem) 0 4.5rem 0;
+  min-height: calc(100vh - var(--nav-height));
+  display: flex;
+  align-items: center;
+  padding: calc(var(--nav-height) + 3.5rem) 0 3.5rem 0;
   border-bottom: 1px solid var(--agri-line);
   background-color: var(--agri-bg);
 }
@@ -1434,14 +1437,14 @@ body.dark-mode .cl-switch::before {
 }
 
 .hero-model-pill-btn.active {
-  background: var(--agri-forest);
-  border-color: var(--agri-forest);
+  background: var(--agri-accent);
+  border-color: var(--agri-accent);
   color: #FFFFFF;
-  box-shadow: 0 2px 8px rgba(13, 56, 35, 0.25);
+  box-shadow: 0 2px 8px rgba(21, 128, 61, 0.25);
 }
 
 .hero-model-pill-btn.active i {
-  color: #4ADE80;
+  color: #FFFFFF;
 }
 
 /* Right Column Showcase Card */
@@ -1456,8 +1459,8 @@ body.dark-mode .cl-switch::before {
   position: relative;
   width: 100%;
   aspect-ratio: 16 / 10;
-  min-height: 360px;
-  max-height: 420px;
+  min-height: 330px;
+  max-height: 390px;
   overflow: hidden;
   border-radius: 10px;
   border: 1px solid var(--agri-line);
@@ -1654,8 +1657,8 @@ body.dark-mode .cl-switch::before {
 /* Home Unified Grid */
 .hero-unified-grid {
   display: grid;
-  grid-template-columns: 1.15fr 0.95fr;
-  gap: 3.5rem;
+  grid-template-columns: 1fr 1fr;
+  gap: 1.75rem;
   align-items: center;
   width: 100%;
 }
@@ -1663,7 +1666,7 @@ body.dark-mode .cl-switch::before {
 @media (max-width: 1024px) {
   .hero-unified-grid {
     grid-template-columns: 1fr;
-    gap: 2.5rem;
+    gap: 2rem;
   }
   .hero-img-container {
     max-height: 340px;
@@ -1673,14 +1676,14 @@ body.dark-mode .cl-switch::before {
 .hero-unified-left {
   display: flex;
   flex-direction: column;
-  gap: 1.25rem;
+  gap: 1.35rem;
 }
 
 .hero-display-title {
   font-family: var(--font-display);
-  font-size: clamp(2.4rem, 4.8vw, 4.2rem);
+  font-size: clamp(2.2rem, 4.2vw, 3.8rem);
   font-weight: 800;
-  line-height: 1.05;
+  line-height: 1.08;
   letter-spacing: -0.03em;
   text-transform: uppercase;
   color: var(--agri-ink);
@@ -1688,10 +1691,10 @@ body.dark-mode .cl-switch::before {
 }
 
 .hero-description-text {
-  font-size: clamp(0.98rem, 1.2vw, 1.1rem);
-  line-height: 1.6;
+  font-size: clamp(0.95rem, 1.1vw, 1.05rem);
+  line-height: 1.65;
   color: var(--agri-secondary);
-  max-width: 560px;
+  max-width: 100%;
   margin: 0;
 }
 
@@ -1699,7 +1702,7 @@ body.dark-mode .cl-switch::before {
   display: flex;
   gap: 1rem;
   flex-wrap: wrap;
-  margin-top: 0.25rem;
+  margin-top: 0.35rem;
 }
 
 .hero-unified-right {
