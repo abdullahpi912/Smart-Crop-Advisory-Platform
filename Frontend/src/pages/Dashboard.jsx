@@ -54,30 +54,43 @@ export default function Dashboard({ showToast }) {
 
             // Fetch authenticated user's real history from backend
             try {
-              const rRecs = await fetch(`${BACKEND}/api/recommendations`, { credentials: 'include' });
-              if (rRecs.ok) {
-                const dRecs = await rRecs.json();
-                if (dRecs.recommendations && dRecs.recommendations.length > 0) {
-                  setHistory(dRecs.recommendations);
-                  localStorage.setItem('cropling_history', JSON.stringify(dRecs.recommendations));
-                  localStorage.setItem('agrisense_history', JSON.stringify(dRecs.recommendations));
-                  return;
-                }
-              }
               const rLogs = await fetch(`${BACKEND}/api/logs`, { credentials: 'include' });
               if (rLogs.ok) {
                 const dLogs = await rLogs.json();
-                if (dLogs.logs && dLogs.logs.length > 0) {
-                  setHistory(dLogs.logs);
-                  localStorage.setItem('cropling_history', JSON.stringify(dLogs.logs));
-                  localStorage.setItem('agrisense_history', JSON.stringify(dLogs.logs));
+                const fetchedLogs = dLogs.logs || dLogs.recommendations || [];
+                if (Array.isArray(fetchedLogs) && fetchedLogs.length > 0) {
+                  setHistory(fetchedLogs);
+                  localStorage.setItem('cropling_history', JSON.stringify(fetchedLogs));
+                  localStorage.setItem('agrisense_history', JSON.stringify(fetchedLogs));
                   return;
                 }
               }
-              setHistory([]);
-            } catch (_) {
-              setHistory([]);
-            }
+              const rRecs = await fetch(`${BACKEND}/api/recommendations`, { credentials: 'include' });
+              if (rRecs.ok) {
+                const dRecs = await rRecs.json();
+                const fetchedRecs = dRecs.recommendations || dRecs.logs || [];
+                if (Array.isArray(fetchedRecs) && fetchedRecs.length > 0) {
+                  setHistory(fetchedRecs);
+                  localStorage.setItem('cropling_history', JSON.stringify(fetchedRecs));
+                  localStorage.setItem('agrisense_history', JSON.stringify(fetchedRecs));
+                  return;
+                }
+              }
+            } catch (_) {}
+
+            // If backend query returns empty, fall back to active authenticated session cache
+            try {
+              const cached = localStorage.getItem('cropling_history') || localStorage.getItem('agrisense_history');
+              if (cached) {
+                const parsed = JSON.parse(cached);
+                if (Array.isArray(parsed) && parsed.length > 0) {
+                  setHistory(parsed);
+                  return;
+                }
+              }
+            } catch (_) {}
+
+            setHistory([]);
             return;
           }
         }
