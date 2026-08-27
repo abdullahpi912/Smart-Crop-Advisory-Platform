@@ -1,5 +1,6 @@
 import React, { useState, useEffect, useRef } from 'react';
 import { Link, NavLink, useLocation } from 'react-router-dom';
+import { API_BASE_URL } from '../lib/apiConfig';
 
 export default function Navbar() {
   const [isSidebarOpen, setIsSidebarOpen] = useState(false);
@@ -61,7 +62,14 @@ export default function Navbar() {
   const closeSidebar = () => setIsSidebarOpen(false);
   const toggleCollapse = () => setIsCollapsed((prev) => !prev);
 
-  const handleLogout = () => {
+  const handleLogout = async () => {
+    try {
+      await fetch(`${API_BASE_URL}/logout`, {
+        method: 'POST',
+        credentials: 'include'
+      });
+    } catch (e) { }
+
     try {
       localStorage.removeItem('cropling_user');
       localStorage.removeItem('agrisense_user');
@@ -69,10 +77,15 @@ export default function Navbar() {
       localStorage.removeItem('agrisense_session');
       localStorage.removeItem('cropling_history');
       localStorage.removeItem('agrisense_history');
+      sessionStorage.removeItem('cropling_admin');
     } catch (e) { }
+
     setUser(null);
     setIsProfileDropdownOpen(false);
     closeSidebar();
+
+    // Trigger full clean page reload to reset all component states to signed-out view
+    window.location.href = '/';
   };
 
   // Distinct Platform Features with clean line icons matching CodingLab template

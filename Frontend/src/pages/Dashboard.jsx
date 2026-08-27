@@ -33,20 +33,15 @@ export default function Dashboard({ showToast }) {
 
   // ── Effects ───────────────────────────────────────────────
   useEffect(() => {
-    const fetchData = async () => {
-      // Optimistic profile load from localStorage
-      try {
-        const stored = localStorage.getItem('cropling_user') || localStorage.getItem('agrisense_user') ||
-                       localStorage.getItem('cropling_session') || localStorage.getItem('agrisense_session');
-        if (stored) setUserProfile(JSON.parse(stored));
-      } catch (_) {}
+    let isMounted = true;
 
+    const fetchData = async () => {
       // Refresh and verify against backend session
       try {
         const r = await fetch(`${BACKEND}/profile`, { credentials: 'include' });
         if (r.ok) {
           const d = await r.json();
-          if (d.user) {
+          if (d.user && isMounted) {
             setIsAuthenticated(true);
             setUserProfile(d.user);
             localStorage.setItem('cropling_user', JSON.stringify(d.user));
@@ -58,7 +53,7 @@ export default function Dashboard({ showToast }) {
               if (rLogs.ok) {
                 const dLogs = await rLogs.json();
                 const fetchedLogs = dLogs.logs || dLogs.recommendations || [];
-                if (Array.isArray(fetchedLogs) && fetchedLogs.length > 0) {
+                if (Array.isArray(fetchedLogs) && fetchedLogs.length > 0 && isMounted) {
                   setHistory(fetchedLogs);
                   localStorage.setItem('cropling_history', JSON.stringify(fetchedLogs));
                   localStorage.setItem('agrisense_history', JSON.stringify(fetchedLogs));
@@ -69,7 +64,7 @@ export default function Dashboard({ showToast }) {
               if (rRecs.ok) {
                 const dRecs = await rRecs.json();
                 const fetchedRecs = dRecs.recommendations || dRecs.logs || [];
-                if (Array.isArray(fetchedRecs) && fetchedRecs.length > 0) {
+                if (Array.isArray(fetchedRecs) && fetchedRecs.length > 0 && isMounted) {
                   setHistory(fetchedRecs);
                   localStorage.setItem('cropling_history', JSON.stringify(fetchedRecs));
                   localStorage.setItem('agrisense_history', JSON.stringify(fetchedRecs));
@@ -81,7 +76,7 @@ export default function Dashboard({ showToast }) {
             // If backend query returns empty, fall back to active authenticated session cache
             try {
               const cached = localStorage.getItem('cropling_history') || localStorage.getItem('agrisense_history');
-              if (cached) {
+              if (cached && isMounted) {
                 const parsed = JSON.parse(cached);
                 if (Array.isArray(parsed) && parsed.length > 0) {
                   setHistory(parsed);
@@ -90,18 +85,25 @@ export default function Dashboard({ showToast }) {
               }
             } catch (_) {}
 
-            setHistory([]);
+            if (isMounted) setHistory([]);
             return;
           }
         }
       } catch (_) {}
 
       // Unauthenticated or profile fetch failed
-      setIsAuthenticated(false);
-      setUserProfile(null);
-      setHistory([]);
+      if (isMounted) {
+        setIsAuthenticated(false);
+        setUserProfile(null);
+        setHistory([]);
+      }
     };
+
     fetchData();
+
+    return () => {
+      isMounted = false;
+    };
   }, []);
 
   // Sync profile form whenever userProfile changes
