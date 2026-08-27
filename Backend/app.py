@@ -980,25 +980,26 @@ def predict_crop():
             }
         }
 
-        # Persist the created log to MySQL if database is active
-        try:
-            log_user_id = session.get('user_id') if ('user_id' in session and session.get('role') != 'admin') else None
-            conn = get_connection()
-            cursor = conn.cursor()
-            cursor.execute(
-                """INSERT INTO advisory_logs
-                   (log_id, user_id, timestamp, npk_summary, climate_summary, type, crop, badge_class,
-                    recommended_item, category, confidence, dosage_advice, soil_health, detailed_notes, inputs_json)
-                   VALUES (%s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s)""",
-                (log_id, log_user_id, timestamp, response_payload['npkSummary'], response_payload['climateSummary'],
-                 response_payload['type'], raw_crop, response_payload['badgeClass'], response_payload['recommendedItem'],
-                 response_payload['category'], response_payload['confidence'], response_payload['dosageAdvice'],
-                 response_payload['soilHealth'], response_payload['detailedNotes'], json.dumps(response_payload['inputs']))
-            )
-            conn.commit()
-            cursor.close(); conn.close()
-        except Exception as dbe:
-            logger.warning("[DB LOG] Notice: advisory log insertion bypassed (%s)", dbe)
+        # Persist the created log to MySQL only if an authenticated user session is active
+        log_user_id = session.get('user_id') if ('user_id' in session and session.get('role') != 'admin') else None
+        if log_user_id is not None:
+            try:
+                conn = get_connection()
+                cursor = conn.cursor()
+                cursor.execute(
+                    """INSERT INTO advisory_logs
+                       (log_id, user_id, timestamp, npk_summary, climate_summary, type, crop, badge_class,
+                        recommended_item, category, confidence, dosage_advice, soil_health, detailed_notes, inputs_json)
+                       VALUES (%s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s)""",
+                    (log_id, log_user_id, timestamp, response_payload['npkSummary'], response_payload['climateSummary'],
+                     response_payload['type'], raw_crop, response_payload['badgeClass'], response_payload['recommendedItem'],
+                     response_payload['category'], response_payload['confidence'], response_payload['dosageAdvice'],
+                     response_payload['soilHealth'], response_payload['detailedNotes'], json.dumps(response_payload['inputs']))
+                )
+                conn.commit()
+                cursor.close(); conn.close()
+            except Exception as dbe:
+                logger.warning("[DB LOG] Notice: advisory log insertion bypassed (%s)", dbe)
 
         return jsonify(response_payload), 201
 
@@ -1157,25 +1158,26 @@ def predict_fertilizer():
             }
         }
 
-        # Persist to database if available
-        try:
-            log_user_id = session.get('user_id') if ('user_id' in session and session.get('role') != 'admin') else None
-            conn = get_connection()
-            cursor = conn.cursor()
-            cursor.execute(
-                """INSERT INTO advisory_logs
-                   (log_id, user_id, timestamp, npk_summary, climate_summary, type, crop, badge_class,
-                    recommended_item, category, confidence, dosage_advice, soil_health, detailed_notes, inputs_json)
-                   VALUES (%s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s)""",
-                (log_id, log_user_id, timestamp, response_payload['npkSummary'], response_payload['climateSummary'],
-                 response_payload['type'], crop_match, response_payload['badgeClass'], response_payload['recommendedItem'],
-                 response_payload['category'], response_payload['confidence'], response_payload['dosageAdvice'],
-                 response_payload['soilHealth'], response_payload['detailedNotes'], json.dumps(response_payload['inputs']))
-            )
-            conn.commit()
-            cursor.close(); conn.close()
-        except Exception as dbe:
-            logger.warning("[DB LOG] Notice: advisory log insertion bypassed (%s)", dbe)
+        # Persist to database only if an authenticated user session is active
+        log_user_id = session.get('user_id') if ('user_id' in session and session.get('role') != 'admin') else None
+        if log_user_id is not None:
+            try:
+                conn = get_connection()
+                cursor = conn.cursor()
+                cursor.execute(
+                    """INSERT INTO advisory_logs
+                       (log_id, user_id, timestamp, npk_summary, climate_summary, type, crop, badge_class,
+                        recommended_item, category, confidence, dosage_advice, soil_health, detailed_notes, inputs_json)
+                       VALUES (%s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s)""",
+                    (log_id, log_user_id, timestamp, response_payload['npkSummary'], response_payload['climateSummary'],
+                     response_payload['type'], crop_match, response_payload['badgeClass'], response_payload['recommendedItem'],
+                     response_payload['category'], response_payload['confidence'], response_payload['dosageAdvice'],
+                     response_payload['soilHealth'], response_payload['detailedNotes'], json.dumps(response_payload['inputs']))
+                )
+                conn.commit()
+                cursor.close(); conn.close()
+            except Exception as dbe:
+                logger.warning("[DB LOG] Notice: advisory log insertion bypassed (%s)", dbe)
 
         return jsonify(response_payload), 201
 
@@ -1298,25 +1300,26 @@ def predict_crop_yield():
             }
         }
 
-        # Persist to database if available
-        try:
-            log_user_id = session.get('user_id') if ('user_id' in session and session.get('role') != 'admin') else None
-            conn = get_connection()
-            cursor = conn.cursor()
-            cursor.execute(
-                """INSERT INTO advisory_logs
-                   (log_id, user_id, timestamp, npk_summary, climate_summary, type, crop, badge_class,
-                    recommended_item, category, confidence, dosage_advice, soil_health, detailed_notes, inputs_json)
-                   VALUES (%s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s)""",
-                (log_id, log_user_id, timestamp, response_payload['npkSummary'], response_payload['climateSummary'],
-                 response_payload['type'], crop_match, response_payload['badgeClass'], response_payload['recommendedItem'],
-                 response_payload['category'], response_payload['confidence'], response_payload['dosageAdvice'],
-                 response_payload['soilHealth'], response_payload['detailedNotes'], json.dumps(response_payload['inputs']))
-            )
-            conn.commit()
-            cursor.close(); conn.close()
-        except Exception as dbe:
-            logger.warning("[DB LOG] Notice: advisory log insertion bypassed (%s)", dbe)
+        # Persist to database only if an authenticated user session is active
+        log_user_id = session.get('user_id') if ('user_id' in session and session.get('role') != 'admin') else None
+        if log_user_id is not None:
+            try:
+                conn = get_connection()
+                cursor = conn.cursor()
+                cursor.execute(
+                    """INSERT INTO advisory_logs
+                       (log_id, user_id, timestamp, npk_summary, climate_summary, type, crop, badge_class,
+                        recommended_item, category, confidence, dosage_advice, soil_health, detailed_notes, inputs_json)
+                       VALUES (%s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s)""",
+                    (log_id, log_user_id, timestamp, response_payload['npkSummary'], response_payload['climateSummary'],
+                     response_payload['type'], crop_match, response_payload['badgeClass'], response_payload['recommendedItem'],
+                     response_payload['category'], response_payload['confidence'], response_payload['dosageAdvice'],
+                     response_payload['soilHealth'], response_payload['detailedNotes'], json.dumps(response_payload['inputs']))
+                )
+                conn.commit()
+                cursor.close(); conn.close()
+            except Exception as dbe:
+                logger.warning("[DB LOG] Notice: advisory log insertion bypassed (%s)", dbe)
 
         return jsonify(response_payload), 201
 

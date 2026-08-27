@@ -10,6 +10,7 @@ export default function Dashboard({ showToast }) {
   const navigate = useNavigate();
 
   // ── State ────────────────────────────────────────────────
+  const [isAuthenticated, setIsAuthenticated]   = useState(false);
   const [history, setHistory]                   = useState([]);
   const [userProfile, setUserProfile]           = useState(null);
 
@@ -30,98 +31,62 @@ export default function Dashboard({ showToast }) {
   // Clear-history modal
   const [showClearModal, setShowClearModal]     = useState(false);
 
-  // ── Seed data ─────────────────────────────────────────────
-  const defaultHistory = [
-    {
-      logId: '#LOG-8942',
-      timestamp: '2026-07-24T14:30:00Z',
-      npkSummary: 'N: 90.0 | P: 42.0 | K: 43.0',
-      climateSummary: 'pH 6.5 | 202 mm | 26.5°C',
-      type: 'Crop Match (ML)',
-      badgeClass: 'badge-crop',
-      recommendedItem: '🌾 Paddy Rice',
-      confidence: '99.2%',
-      inputs: { nitrogen: 90, phosphorus: 42, potassium: 43, temperature: 26.5, humidity: 80, ph: 6.5, rainfall: 202, mode: 'crop' }
-    },
-    {
-      logId: '#LOG-8938',
-      timestamp: '2026-07-22T16:45:00Z',
-      npkSummary: 'N: 50.0 | P: 20.0 | K: 30.0',
-      climateSummary: 'pH 6.5 | 120 mm | 28.0°C',
-      type: 'Fertilizer Recommendation (ML)',
-      badgeClass: 'badge-fertilizer',
-      recommendedItem: '12:32:16 NPK',
-      confidence: '96.4%',
-      inputs: { district_name: 'Kolhapur', soil_color: 'Black', crop: 'Sugarcane', nitrogen: 50, phosphorus: 20, potassium: 30, ph: 6.5, rainfall: 120, temperature: 28, mode: 'fertilizer' }
-    },
-    {
-      logId: '#LOG-8935',
-      timestamp: '2026-07-19T11:20:00Z',
-      npkSummary: 'Area: 10.0 ha | Year: 2024',
-      climateSummary: 'State: Maharashtra | Season: Kharif',
-      type: 'Crop Yield Prediction (ML)',
-      badgeClass: 'badge-yield',
-      recommendedItem: 'Rice: 24.50 Tonnes',
-      confidence: 'ML Regressor',
-      inputs: { state_name: 'Maharashtra', season: 'Kharif', crop: 'Rice', crop_year: 2024, area: 10.0, mode: 'yield' }
-    }
-  ];
-
   // ── Effects ───────────────────────────────────────────────
   useEffect(() => {
     const fetchData = async () => {
-      // Load profile from localStorage first
+      // Optimistic profile load from localStorage
       try {
         const stored = localStorage.getItem('cropling_user') || localStorage.getItem('agrisense_user') ||
                        localStorage.getItem('cropling_session') || localStorage.getItem('agrisense_session');
         if (stored) setUserProfile(JSON.parse(stored));
       } catch (_) {}
 
-      // Refresh from backend
+      // Refresh and verify against backend session
       try {
         const r = await fetch(`${BACKEND}/profile`, { credentials: 'include' });
         if (r.ok) {
           const d = await r.json();
           if (d.user) {
+            setIsAuthenticated(true);
             setUserProfile(d.user);
             localStorage.setItem('cropling_user', JSON.stringify(d.user));
             localStorage.setItem('agrisense_user', JSON.stringify(d.user));
+
+            // Fetch authenticated user's real history from backend
+            try {
+              const rRecs = await fetch(`${BACKEND}/api/recommendations`, { credentials: 'include' });
+              if (rRecs.ok) {
+                const dRecs = await rRecs.json();
+                if (dRecs.recommendations && dRecs.recommendations.length > 0) {
+                  setHistory(dRecs.recommendations);
+                  localStorage.setItem('cropling_history', JSON.stringify(dRecs.recommendations));
+                  localStorage.setItem('agrisense_history', JSON.stringify(dRecs.recommendations));
+                  return;
+                }
+              }
+              const rLogs = await fetch(`${BACKEND}/api/logs`, { credentials: 'include' });
+              if (rLogs.ok) {
+                const dLogs = await rLogs.json();
+                if (dLogs.logs && dLogs.logs.length > 0) {
+                  setHistory(dLogs.logs);
+                  localStorage.setItem('cropling_history', JSON.stringify(dLogs.logs));
+                  localStorage.setItem('agrisense_history', JSON.stringify(dLogs.logs));
+                  return;
+                }
+              }
+              setHistory([]);
+            } catch (_) {
+              setHistory([]);
+            }
+            return;
           }
         }
       } catch (_) {}
 
-      // Load history
-      try {
-        const r = await fetch(`${BACKEND}/api/recommendations`, { credentials: 'include' });
-        if (r.ok) {
-          const d = await r.json();
-          if (d.recommendations?.length) {
-            setHistory(d.recommendations);
-            localStorage.setItem('cropling_history', JSON.stringify(d.recommendations));
-            localStorage.setItem('agrisense_history', JSON.stringify(d.recommendations));
-            return;
-          }
-        }
-        const r2 = await fetch(`${BACKEND}/api/logs`, { credentials: 'include' });
-        if (r2.ok) {
-          const d2 = await r2.json();
-          if (d2.logs?.length) {
-            setHistory(d2.logs);
-            localStorage.setItem('cropling_history', JSON.stringify(d2.logs));
-            localStorage.setItem('agrisense_history', JSON.stringify(d2.logs));
-            return;
-          }
-        }
-      } catch (_) {}
-
-      try {
-        const cached = localStorage.getItem('cropling_history') || localStorage.getItem('agrisense_history');
-        setHistory(cached ? JSON.parse(cached) : defaultHistory);
-        if (!localStorage.getItem('cropling_history') && !localStorage.getItem('agrisense_history')) {
-          localStorage.setItem('cropling_history', JSON.stringify(defaultHistory));
-          localStorage.setItem('agrisense_history', JSON.stringify(defaultHistory));
-        }
-      } catch (_) { setHistory(defaultHistory); }
+      // Unauthenticated or profile fetch failed
+      setIsAuthenticated(false);
+      setUserProfile(null);
+      setHistory([]);
     };
     fetchData();
   }, []);
@@ -280,8 +245,10 @@ export default function Dashboard({ showToast }) {
     showToast?.('History cleared successfully', 'info'); setShowClearModal(false);
   };
 
-  const totalRuns = history.length;
-  const topCropItem = history.length > 0 ? (history[0].recommendedItem || history[0].crop_name) : 'Paddy Rice';
+  const totalRuns = isAuthenticated ? history.length : 0;
+  const topCropItem = isAuthenticated && history.length > 0
+    ? (history[0].recommendedItem || history[0].fertilizer || history[0].crop_name)
+    : 'No data yet';
 
   return (
     <>
@@ -306,21 +273,36 @@ export default function Dashboard({ showToast }) {
             <div className="dashboard-stat-cell">
               <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '0.75rem' }}>
                 <span className="mono-meta" style={{ color: 'var(--agri-accent)' }}>PRIMARY PLOT</span>
-                <button
-                  type="button"
-                  onClick={openProfileModal}
-                  className="mono-meta"
-                  style={{ background: 'none', border: '1px solid var(--agri-line)', padding: '3px 8px', cursor: 'pointer', borderRadius: '9999px' }}
-                >
-                  <i className="fa-solid fa-pen" style={{ marginRight: '4px' }}></i> EDIT
-                </button>
+                {isAuthenticated && (
+                  <button
+                    type="button"
+                    onClick={openProfileModal}
+                    className="mono-meta"
+                    style={{ background: 'none', border: '1px solid var(--agri-line)', padding: '3px 8px', cursor: 'pointer', borderRadius: '9999px' }}
+                  >
+                    <i className="fa-solid fa-pen" style={{ marginRight: '4px' }}></i> EDIT
+                  </button>
+                )}
               </div>
-              <strong style={{ fontFamily: 'var(--font-display)', fontSize: '1.4rem', color: 'var(--agri-ink)', display: 'block', lineHeight: 1.1 }}>
-                {userProfile?.fullname || 'Green Valley Plot A'}
-              </strong>
-              <span className="mono-meta" style={{ display: 'block', marginTop: '6px', color: 'var(--agri-muted)' }}>
-                {userProfile?.region || 'Palakkad Agronomic Belt'}
-              </span>
+              {isAuthenticated ? (
+                <>
+                  <strong style={{ fontFamily: 'var(--font-display)', fontSize: '1.4rem', color: 'var(--agri-ink)', display: 'block', lineHeight: 1.1 }}>
+                    {userProfile?.fullname || userProfile?.name || 'My Farm Plot'}
+                  </strong>
+                  <span className="mono-meta" style={{ display: 'block', marginTop: '6px', color: 'var(--agri-muted)' }}>
+                    {userProfile?.region || userProfile?.location || 'Region Unspecified'}
+                  </span>
+                </>
+              ) : (
+                <>
+                  <strong style={{ fontFamily: 'var(--font-display)', fontSize: '1.2rem', color: 'var(--agri-ink)', display: 'block', lineHeight: 1.3 }}>
+                    Sign in to set up your farm plot
+                  </strong>
+                  <Link to="/login" className="btn-primary-technical" style={{ marginTop: '10px', padding: '6px 14px', fontSize: '11px', display: 'inline-flex' }}>
+                    <i className="fa-solid fa-right-to-bracket"></i> SIGN IN
+                  </Link>
+                </>
+              )}
             </div>
 
             {/* Total Advisories */}
@@ -341,7 +323,7 @@ export default function Dashboard({ showToast }) {
                 {topCropItem}
               </strong>
               <span className="mono-meta" style={{ display: 'block', marginTop: '6px', color: 'var(--agri-muted)' }}>
-                AVG CONFIDENCE: 98.6%
+                {isAuthenticated && history.length > 0 ? 'AVG CONFIDENCE: 98.6%' : 'AWAITING LOGGED DATA'}
               </span>
             </div>
 
@@ -368,7 +350,7 @@ export default function Dashboard({ showToast }) {
                 <h3 style={{ fontSize: '1.3rem', fontWeight: 800, marginTop: '2px' }}>Soil, Fertilizer &amp; Yield Advisory History</h3>
               </div>
               <div style={{ display: 'flex', gap: '0.75rem', alignItems: 'center' }}>
-                {history.length > 0 && (
+                {isAuthenticated && history.length > 0 && (
                   <button
                     type="button"
                     onClick={() => setShowClearModal(true)}
@@ -403,7 +385,15 @@ export default function Dashboard({ showToast }) {
                   </tr>
                 </thead>
                 <tbody>
-                  {history.length > 0 ? (
+                  {!isAuthenticated ? (
+                    <tr>
+                      <td colSpan="8" style={{ textAlign: 'center', padding: '4rem 2rem', color: 'var(--agri-muted)' }}>
+                        <span className="mono-meta" style={{ display: 'block', marginBottom: '0.5rem' }}>SIGN IN REQUIRED</span>
+                        <span>Sign in to store and view your advisory history. </span>
+                        <Link to="/login" style={{ color: 'var(--agri-accent)', fontWeight: 600 }}>Sign in now</Link>
+                      </td>
+                    </tr>
+                  ) : history.length > 0 ? (
                     history.map((item, idx) => {
                       const badge = item.badgeClass || (
                         item.type?.includes('Fertilizer')

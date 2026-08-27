@@ -87,6 +87,8 @@ export default function Login({ showToast }) {
           });
           localStorage.setItem('cropling_session', sessionPayload);
           localStorage.setItem('agrisense_session', sessionPayload);
+          localStorage.removeItem('cropling_history');
+          localStorage.removeItem('agrisense_history');
         } catch (e) { }
         navigate('/dashboard');
       } else {

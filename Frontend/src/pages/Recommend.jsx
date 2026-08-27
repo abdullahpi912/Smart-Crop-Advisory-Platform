@@ -395,19 +395,30 @@ export default function Recommend({ showToast }) {
       setResult(computed);
       setIsLoading(false);
 
-      // Save to localStorage history
+      // Save to localStorage history (only if user is signed in)
+      let isUserAuth = false;
       try {
-        const history = JSON.parse(localStorage.getItem('cropling_history') || localStorage.getItem('agrisense_history') || '[]');
-        const updated = JSON.stringify([computed, ...history]);
-        localStorage.setItem('cropling_history', updated);
-        localStorage.setItem('agrisense_history', updated);
-        if (isFromBackend) {
-          showToast?.(`Live ML model prediction generated successfully!`, 'success');
-        } else {
-          showToast?.(`Advisory calculated and logged to farm dashboard!`, 'success');
+        const storedAuth = localStorage.getItem('cropling_user') || localStorage.getItem('agrisense_user') ||
+                           localStorage.getItem('cropling_session') || localStorage.getItem('agrisense_session');
+        isUserAuth = Boolean(storedAuth);
+      } catch (_) {}
+
+      if (isUserAuth) {
+        try {
+          const history = JSON.parse(localStorage.getItem('cropling_history') || localStorage.getItem('agrisense_history') || '[]');
+          const updated = JSON.stringify([computed, ...history]);
+          localStorage.setItem('cropling_history', updated);
+          localStorage.setItem('agrisense_history', updated);
+          if (isFromBackend) {
+            showToast?.(`Live ML model prediction generated successfully!`, 'success');
+          } else {
+            showToast?.(`Advisory calculated and logged to farm dashboard!`, 'success');
+          }
+        } catch (err) {
+          console.error('Failed to update history', err);
         }
-      } catch (err) {
-        console.error('Failed to update history', err);
+      } else {
+        showToast?.('Prediction complete — sign in to save this to your farm dashboard!', 'info');
       }
     }, 240);
   };

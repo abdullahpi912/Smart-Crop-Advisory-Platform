@@ -67,6 +67,8 @@ export default function Navbar() {
       localStorage.removeItem('agrisense_user');
       localStorage.removeItem('cropling_session');
       localStorage.removeItem('agrisense_session');
+      localStorage.removeItem('cropling_history');
+      localStorage.removeItem('agrisense_history');
     } catch (e) { }
     setUser(null);
     setIsProfileDropdownOpen(false);

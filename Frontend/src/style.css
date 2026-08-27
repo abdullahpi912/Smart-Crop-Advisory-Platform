@@ -2715,7 +2715,7 @@ body.dark-mode .marquee-bg-word {
 }
 
 /* ==========================================================================
-   Toast Notification System
+   Toast Notification System (Sleek Glassmorphic Precision Telemetry)
    ========================================================================== */
 
 .toast-technical {
@@ -2723,35 +2723,153 @@ body.dark-mode .marquee-bg-word {
   bottom: 2rem;
   right: 2rem;
   z-index: 100000;
-  background-color: var(--agri-ink);
-  color: var(--agri-bg);
-  border: 1px solid var(--agri-line-strong);
-  padding: 1rem 1.5rem;
+  background: rgba(10, 20, 14, 0.94);
+  backdrop-filter: blur(16px);
+  -webkit-backdrop-filter: blur(16px);
+  color: #FFFFFF;
+  border-radius: 12px;
+  box-shadow: 0 16px 40px -8px rgba(0, 0, 0, 0.55), 0 0 0 1px rgba(255, 255, 255, 0.1);
+  overflow: hidden;
+  max-width: 440px;
+  min-width: 320px;
+  padding: 0;
+  display: flex;
+  flex-direction: column;
+  animation: toastSlide 0.35s cubic-bezier(0.16, 1, 0.3, 1);
+  transition: transform 0.25s ease, box-shadow 0.25s ease;
+}
+
+.toast-technical:hover {
+  transform: translateY(-2px);
+  box-shadow: 0 20px 48px -6px rgba(0, 0, 0, 0.65), 0 0 0 1px rgba(255, 255, 255, 0.16);
+}
+
+.toast-inner-content {
   display: flex;
   align-items: center;
-  gap: 1rem;
-  max-width: 420px;
-  animation: toastSlide 0.35s var(--ease-precision);
+  gap: 0.9rem;
+  padding: 0.95rem 1.15rem;
+}
+
+.toast-icon-orb {
+  width: 36px;
+  height: 36px;
+  border-radius: 9px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-size: 1.05rem;
+  flex-shrink: 0;
+}
+
+.toast-text-block {
+  display: flex;
+  flex-direction: column;
+  gap: 3px;
+  flex: 1;
+  min-width: 0;
+}
+
+.toast-meta-row {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+}
+
+.toast-pulse-dot {
+  width: 6px;
+  height: 6px;
+  border-radius: 50%;
+  flex-shrink: 0;
+  animation: pulseGlow 1.8s ease-in-out infinite;
+}
+
+.toast-meta-tag {
+  font-family: var(--font-mono);
+  font-size: 9.5px;
+  font-weight: 700;
+  letter-spacing: 0.08em;
+  text-transform: uppercase;
+}
+
+.toast-message-text {
+  font-family: var(--font-body);
+  font-size: 0.92rem;
+  color: #F3F4F6;
+  font-weight: 500;
+  line-height: 1.4;
+  margin: 0;
+  word-break: break-word;
+}
+
+.toast-close-btn {
+  background: rgba(255, 255, 255, 0.07);
+  border: 1px solid rgba(255, 255, 255, 0.1);
+  color: #9CA3AF;
+  width: 26px;
+  height: 26px;
+  border-radius: 50%;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  cursor: pointer;
+  margin-left: auto;
+  font-size: 0.75rem;
+  flex-shrink: 0;
+  transition: all 0.2s ease;
+}
+
+.toast-close-btn:hover {
+  background: rgba(255, 255, 255, 0.2);
+  color: #FFFFFF;
+  transform: scale(1.1);
+}
+
+.toast-progress-track {
+  width: 100%;
+  height: 3px;
+  background: rgba(255, 255, 255, 0.08);
+  overflow: hidden;
+}
+
+.toast-progress-bar {
+  height: 100%;
+  transition: width 0.04s linear;
+}
+
+.toast-technical.toast-info,
+.toast-technical.info {
+  border: 1px solid rgba(74, 222, 128, 0.35);
+  box-shadow: 0 16px 40px -8px rgba(0, 0, 0, 0.55), 0 0 15px rgba(34, 197, 94, 0.15);
+}
+
+.toast-technical.toast-success,
+.toast-technical.success {
+  border: 1px solid rgba(74, 222, 128, 0.45);
+  box-shadow: 0 16px 40px -8px rgba(0, 0, 0, 0.55), 0 0 15px rgba(34, 197, 94, 0.25);
+}
+
+.toast-technical.toast-error,
+.toast-technical.error {
+  border: 1px solid rgba(248, 113, 113, 0.45);
+  box-shadow: 0 16px 40px -8px rgba(0, 0, 0, 0.55), 0 0 15px rgba(239, 68, 68, 0.25);
+}
+
+.toast-technical.toast-warning,
+.toast-technical.warning {
+  border: 1px solid rgba(251, 191, 36, 0.45);
+  box-shadow: 0 16px 40px -8px rgba(0, 0, 0, 0.55), 0 0 15px rgba(245, 158, 11, 0.25);
 }
 
 @keyframes toastSlide {
   from {
     opacity: 0;
-    transform: translateY(18px);
+    transform: translateY(20px) scale(0.96);
   }
-
   to {
     opacity: 1;
-    transform: translateY(0);
+    transform: translateY(0) scale(1);
   }
-}
-
-.toast-technical.error {
-  border-left: 4px solid var(--agri-danger);
-}
-
-.toast-technical.success {
-  border-left: 4px solid var(--agri-accent);
 }
 
 /* ==========================================================================
