@@ -75,8 +75,10 @@ export default function App() {
         <Routes>
           <Route path="/" element={<Home />} />
           <Route path="/index.html" element={<Home />} />
-          <Route path="/recommend" element={<Recommend showToast={showToast} />} />
-          <Route path="/recommend.html" element={<Recommend showToast={showToast} />} />
+          <Route path="/recommend" element={<Recommend showToast={showToast} mode="crop" key="crop" />} />
+          <Route path="/recommend.html" element={<Recommend showToast={showToast} mode="crop" key="crop" />} />
+          <Route path="/recommend/fertilizer" element={<Recommend showToast={showToast} mode="fertilizer" key="fertilizer" />} />
+          <Route path="/recommend/yield" element={<Recommend showToast={showToast} mode="yield" key="yield" />} />
           <Route path="/crops" element={<CropLibrary />} />
           <Route path="/crops.html" element={<CropLibrary />} />
           <Route path="/dashboard" element={<Dashboard showToast={showToast} />} />

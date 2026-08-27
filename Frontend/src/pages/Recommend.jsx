@@ -1,6 +1,7 @@
 import React, { useState, useEffect, useRef } from 'react';
-import { useLocation } from 'react-router-dom';
+import { useLocation, Link } from 'react-router-dom';
 import ResultCard from '../components/ResultCard';
+import DocumentUpload from '../components/DocumentUpload';
 import { calculateRecommendation } from '../lib/recommendationEngine';
 import { API_BASE_URL } from '../lib/apiConfig';
 
@@ -20,82 +21,91 @@ const DEFAULT_YIELD_OPTIONS = {
     'Odisha', 'Puducherry', 'Punjab', 'Rajasthan', 'Sikkim', 'Tamil Nadu', 'Telangana',
     'Tripura', 'Uttar Pradesh', 'Uttarakhand', 'West Bengal'
   ],
-  seasons: ['Autumn', 'Kharif', 'Rabi', 'Summer', 'Whole Year', 'Winter'],
+  seasons: ['Autumn', 'Kharif', 'Rabi', 'Summer', 'Winter', 'Whole Year'],
   crops: [
-    'Apple', 'Arcanut (Processed)', 'Arecanut', 'Arhar/Tur', 'Ash Gourd', 'Atcanut (Raw)',
-    'Bajra', 'Banana', 'Barley', 'Bean', 'Beans & Mutter(Vegetable)', 'Beet Root', 'Ber',
-    'Bhindi', 'Bitter Gourd', 'Black pepper', 'Blackgram', 'Bottle Gourd', 'Brinjal',
-    'Cabbage', 'Cardamom', 'Carrot', 'Cashewnut', 'Cashewnut Processed', 'Cashewnut Raw',
-    'Castor seed', 'Cauliflower', 'Citrus Fruit', 'Coconut', 'Coffee', 'Colocosia',
-    'Cond-spcs other', 'Coriander', 'Cotton(lint)', 'Cowpea(Lobia)', 'Cucumber', 'Drum Stick',
-    'Dry chillies', 'Dry ginger', 'Garlic', 'Ginger', 'Gram', 'Grapes', 'Groundnut',
-    'Guar seed', 'Horse-gram', 'Jack Fruit', 'Jobster', 'Jowar', 'Jute', 'Jute & mesta',
-    'Kapas', 'Khesari', 'Korra', 'Lab-Lab', 'Lemon', 'Lentil', 'Linseed', 'Litchi', 'Maize',
-    'Mango', 'Masoor', 'Mesta', 'Moong(Green Gram)', 'Moth', 'Niger seed', 'Oilseeds total',
-    'Onion', 'Orange', 'Other  Rabi pulses', 'Other Cereals & Millets', 'Other Citrus Fruit',
-    'Other Dry Fruit', 'Other Fresh Fruits', 'Other Kharif pulses', 'Other Vegetables',
-    'Paddy', 'Papaya', 'Peach', 'Pear', 'Peas  (vegetable)', 'Peas & beans (Pulses)',
-    'Perilla', 'Pineapple', 'Plums', 'Pome Fruit', 'Pome Granet', 'Potato', 'Pulses total',
-    'Pump Kin', 'Ragi', 'Rajmash Kholar', 'Rapeseed &Mustard', 'Redish', 'Ribed Guard',
-    'Rice', 'Ricebean (nagadal)', 'Rubber', 'Safflower', 'Samai', 'Sannhamp', 'Sapota',
-    'Sesamum', 'Small millets', 'Snak Guard', 'Soyabean', 'Sugarcane', 'Sunflower',
-    'Sweet potato', 'Tapioca', 'Tea', 'Tobacco', 'Tomato', 'Total foodgrain', 'Turmeric',
-    'Turnip', 'Urad', 'Varagu', 'Water Melon', 'Wheat', 'Yam', 'other fibres',
-    'other misc. pulses', 'other oilseeds'
+    'Rice', 'Wheat', 'Sugarcane', 'Cotton(lint)', 'Maize', 'Soyabean', 'Bajra', 'Jowar',
+    'Gram', 'Moong(Green Gram)', 'Urad', 'Arhar/Tur', 'Groundnut', 'Sunflower', 'Sesamum',
+    'Rapeseed &Mustard', 'Tobacco', 'Jute', 'Tea', 'Coffee', 'Coconut', 'Arecanut',
+    'Onion', 'Potato', 'Tapioca', 'Banana', 'Dry chillies', 'Turmeric', 'Cardamom',
+    'Black pepper', 'Coriander', 'Garlic', 'Ginger', 'Cashewnut', 'Castor seed',
+    'Other Cereals & Millets', 'Horse-gram', 'Khesari', 'Oilseeds total', 'Sannhamp',
+    'Guar seed', 'Moth', 'Barley', 'Peas & beans (Pulses)'
   ]
 };
 
-// Searchable Combobox Component
-function SearchableCombobox({ options = [], value, onChange, placeholder = 'Select or search crop...' }) {
+// Searchable Combobox Component with Seamless Single-Input In-Place Search
+function SearchableCombobox({ id, options = [], value, onChange, placeholder = 'Search from 124 agricultural crop species...', disabled }) {
   const [isOpen, setIsOpen] = useState(false);
   const [query, setQuery] = useState('');
   const wrapperRef = useRef(null);
+  const inputRef = useRef(null);
+
+  const filtered = query.trim()
+    ? options.filter((opt) => opt.toLowerCase().includes(query.toLowerCase()))
+    : options;
 
   useEffect(() => {
     const handleClickOutside = (e) => {
       if (wrapperRef.current && !wrapperRef.current.contains(e.target)) {
         setIsOpen(false);
+        setQuery('');
       }
     };
     document.addEventListener('mousedown', handleClickOutside);
     return () => document.removeEventListener('mousedown', handleClickOutside);
   }, []);
 
-  const filtered = query.trim()
-    ? options.filter((opt) => opt.toLowerCase().includes(query.toLowerCase()))
-    : options;
+  const handleSelect = (opt) => {
+    onChange(opt);
+    setIsOpen(false);
+    setQuery('');
+  };
 
   return (
-    <div className="searchable-combobox" ref={wrapperRef}>
+    <div className={`searchable-combobox ${isOpen ? 'open' : ''}`} ref={wrapperRef}>
       <div className="searchable-combobox-input-wrapper">
         <input
+          ref={inputRef}
+          id={id}
           type="text"
           value={isOpen ? query : (value || '')}
-          placeholder={placeholder}
+          placeholder={isOpen ? placeholder : (value || placeholder)}
           onFocus={() => {
-            setIsOpen(true);
-            setQuery('');
+            if (!disabled) {
+              setIsOpen(true);
+              setQuery('');
+            }
+          }}
+          onClick={() => {
+            if (!disabled && !isOpen) {
+              setIsOpen(true);
+              setQuery('');
+            }
           }}
           onChange={(e) => {
             setQuery(e.target.value);
             if (!isOpen) setIsOpen(true);
           }}
-          required
+          disabled={disabled}
+          autoComplete="off"
+          required={!value}
         />
-        <i className="fa-solid fa-chevron-down searchable-combobox-icon"></i>
+        <i className={`fa-solid fa-chevron-down searchable-combobox-icon ${isOpen ? 'rotated' : ''}`}></i>
       </div>
 
-      {isOpen && (
-        <div className="searchable-combobox-dropdown">
+      {isOpen && !disabled && (
+        <div className="searchable-combobox-dropdown" role="listbox">
           {filtered.length > 0 ? (
             filtered.map((opt) => (
               <div
                 key={opt}
+                role="option"
+                aria-selected={opt === value}
                 className={`searchable-combobox-option ${opt === value ? 'selected' : ''}`}
-                onClick={() => {
-                  onChange(opt);
-                  setIsOpen(false);
-                  setQuery('');
+                onMouseDown={(e) => {
+                  // Prevent input blur before click registers
+                  e.preventDefault();
+                  handleSelect(opt);
                 }}
               >
                 <span>{opt}</span>
@@ -111,11 +121,11 @@ function SearchableCombobox({ options = [], value, onChange, placeholder = 'Sele
   );
 }
 
-export default function Recommend({ showToast }) {
+export default function Recommend({ showToast, mode = 'crop' }) {
   const location = useLocation();
 
-  const [mode, setMode] = useState('crop'); // 'crop' | 'fertilizer' | 'yield'
   const [preset, setPreset] = useState('custom');
+  const [highlightedFields, setHighlightedFields] = useState(new Set());
 
   // Options catalog from backend /api/options
   const [optionsData, setOptionsData] = useState({
@@ -125,35 +135,35 @@ export default function Recommend({ showToast }) {
 
   // Form State for Model 1: Crop Selection
   const [cropFormData, setCropFormData] = useState({
-    nitrogen: 90,
-    phosphorus: 42,
-    potassium: 43,
-    temperature: 26.5,
-    humidity: 80,
-    ph: 6.5,
-    rainfall: 202
+    nitrogen: '',
+    phosphorus: '',
+    potassium: '',
+    temperature: '',
+    humidity: '',
+    ph: '',
+    rainfall: ''
   });
 
   // Form State for Model 2: Fertilizer Advisory
   const [fertilizerFormData, setFertilizerFormData] = useState({
-    district_name: 'Kolhapur',
-    soil_color: 'Black',
-    crop: 'Sugarcane',
-    nitrogen: 50.0,
-    phosphorus: 20.0,
-    potassium: 30.0,
-    ph: 6.5,
-    rainfall: 120.0,
-    temperature: 28.0
+    district_name: '',
+    soil_color: '',
+    crop: '',
+    nitrogen: '',
+    phosphorus: '',
+    potassium: '',
+    ph: '',
+    rainfall: '',
+    temperature: ''
   });
 
   // Form State for Model 3: Crop Yield Prediction
   const [yieldFormData, setYieldFormData] = useState({
-    state_name: 'Maharashtra',
-    season: 'Kharif',
-    crop: 'Rice',
-    crop_year: 2024,
-    area: 10.0
+    state_name: '',
+    season: '',
+    crop: '',
+    crop_year: '',
+    area: ''
   });
 
   const [result, setResult] = useState(null);
@@ -194,10 +204,8 @@ export default function Recommend({ showToast }) {
   useEffect(() => {
     if (location.state) {
       const s = location.state;
-      const targetMode = s.mode || 'crop';
-      setMode(targetMode);
 
-      if (targetMode === 'crop') {
+      if (mode === 'crop') {
         setCropFormData((prev) => ({
           ...prev,
           nitrogen: s.nitrogen ?? prev.nitrogen,
@@ -208,7 +216,7 @@ export default function Recommend({ showToast }) {
           ph: s.ph ?? prev.ph,
           rainfall: s.rainfall ?? prev.rainfall
         }));
-      } else if (targetMode === 'fertilizer') {
+      } else if (mode === 'fertilizer') {
         setFertilizerFormData((prev) => ({
           ...prev,
           district_name: s.district_name || s.district || prev.district_name,
@@ -221,7 +229,7 @@ export default function Recommend({ showToast }) {
           rainfall: s.rainfall ?? prev.rainfall,
           temperature: s.temperature ?? prev.temperature
         }));
-      } else if (targetMode === 'yield') {
+      } else if (mode === 'yield') {
         setYieldFormData((prev) => ({
           ...prev,
           state_name: s.state_name || s.state || prev.state_name,
@@ -233,13 +241,13 @@ export default function Recommend({ showToast }) {
       }
 
       setPreset('custom');
-      showToast?.(`Loaded ${targetMode.toUpperCase()} advisory inputs from farm history log`, 'info');
+      showToast?.(`Loaded ${mode.toUpperCase()} advisory inputs from farm history log`, 'info');
     }
-  }, [location.state]);
+  }, [location.state, mode]);
 
   // Preset definitions per mode
   const cropPresets = {
-    custom: { nitrogen: 90, phosphorus: 42, potassium: 43, temperature: 26.5, humidity: 80, ph: 6.5, rainfall: 202 },
+    custom: { nitrogen: '', phosphorus: '', potassium: '', temperature: '', humidity: '', ph: '', rainfall: '' },
     rice: { nitrogen: 90, phosphorus: 42, potassium: 43, temperature: 26.5, humidity: 82, ph: 6.5, rainfall: 220 },
     coffee: { nitrogen: 100, phosphorus: 20, potassium: 30, temperature: 25.0, humidity: 75, ph: 5.8, rainfall: 1600 },
     cotton: { nitrogen: 120, phosphorus: 45, potassium: 40, temperature: 30.5, humidity: 55, ph: 7.2, rainfall: 75 },
@@ -247,7 +255,7 @@ export default function Recommend({ showToast }) {
   };
 
   const fertilizerPresets = {
-    custom: { district_name: 'Kolhapur', soil_color: 'Black', crop: 'Sugarcane', nitrogen: 50.0, phosphorus: 20.0, potassium: 30.0, ph: 6.5, rainfall: 120.0, temperature: 28.0 },
+    custom: { district_name: '', soil_color: '', crop: '', nitrogen: '', phosphorus: '', potassium: '', ph: '', rainfall: '', temperature: '' },
     sugarcane_black: { district_name: 'Kolhapur', soil_color: 'Black', crop: 'Sugarcane', nitrogen: 75.0, phosphorus: 50.0, potassium: 100.0, ph: 6.5, rainfall: 1000.0, temperature: 20.0 },
     wheat_pune: { district_name: 'Pune', soil_color: 'Dark Brown', crop: 'Wheat', nitrogen: 35.0, phosphorus: 40.0, potassium: 35.0, ph: 6.2, rainfall: 180.0, temperature: 24.0 },
     cotton_solapur: { district_name: 'Solapur', soil_color: 'Medium Brown', crop: 'Cotton', nitrogen: 20.0, phosphorus: 60.0, potassium: 25.0, ph: 7.2, rainfall: 70.0, temperature: 32.0 },
@@ -255,15 +263,71 @@ export default function Recommend({ showToast }) {
   };
 
   const yieldPresets = {
-    custom: { state_name: 'Maharashtra', season: 'Kharif', crop: 'Rice', crop_year: 2024, area: 10.0 },
+    custom: { state_name: '', season: '', crop: '', crop_year: '', area: '' },
     maharashtra_rice: { state_name: 'Maharashtra', season: 'Kharif', crop: 'Rice', crop_year: 2024, area: 10.0 },
     punjab_wheat: { state_name: 'Punjab', season: 'Rabi', crop: 'Wheat', crop_year: 2024, area: 5.0 },
     up_sugarcane: { state_name: 'Uttar Pradesh', season: 'Whole Year', crop: 'Sugarcane', crop_year: 2024, area: 8.0 },
     gujarat_cotton: { state_name: 'Gujarat', season: 'Kharif', crop: 'Cotton(lint)', crop_year: 2024, area: 6.0 }
   };
 
+  const clearHighlight = (name) => {
+    setHighlightedFields((prev) => {
+      if (prev.has(name)) {
+        const next = new Set(prev);
+        next.delete(name);
+        return next;
+      }
+      return prev;
+    });
+  };
+
+  const handleExtracted = (extracted, fieldsFound) => {
+    if (!extracted) return;
+
+    if (mode === 'crop') {
+      setCropFormData((prev) => ({
+        ...prev,
+        nitrogen: extracted.nitrogen !== undefined && extracted.nitrogen !== null ? extracted.nitrogen : prev.nitrogen,
+        phosphorus: extracted.phosphorus !== undefined && extracted.phosphorus !== null ? extracted.phosphorus : prev.phosphorus,
+        potassium: extracted.potassium !== undefined && extracted.potassium !== null ? extracted.potassium : prev.potassium,
+        temperature: extracted.temperature !== undefined && extracted.temperature !== null ? extracted.temperature : prev.temperature,
+        humidity: extracted.humidity !== undefined && extracted.humidity !== null ? extracted.humidity : prev.humidity,
+        ph: extracted.ph !== undefined && extracted.ph !== null ? extracted.ph : prev.ph,
+        rainfall: extracted.rainfall !== undefined && extracted.rainfall !== null ? extracted.rainfall : prev.rainfall
+      }));
+    } else if (mode === 'fertilizer') {
+      setFertilizerFormData((prev) => ({
+        ...prev,
+        district_name: extracted.district_name || prev.district_name,
+        soil_color: extracted.soil_color || prev.soil_color,
+        crop: extracted.crop || prev.crop,
+        nitrogen: extracted.nitrogen !== undefined && extracted.nitrogen !== null ? extracted.nitrogen : prev.nitrogen,
+        phosphorus: extracted.phosphorus !== undefined && extracted.phosphorus !== null ? extracted.phosphorus : prev.phosphorus,
+        potassium: extracted.potassium !== undefined && extracted.potassium !== null ? extracted.potassium : prev.potassium,
+        ph: extracted.ph !== undefined && extracted.ph !== null ? extracted.ph : prev.ph,
+        rainfall: extracted.rainfall !== undefined && extracted.rainfall !== null ? extracted.rainfall : prev.rainfall,
+        temperature: extracted.temperature !== undefined && extracted.temperature !== null ? extracted.temperature : prev.temperature
+      }));
+    } else if (mode === 'yield') {
+      setYieldFormData((prev) => ({
+        ...prev,
+        state_name: extracted.state_name || prev.state_name,
+        season: extracted.season || prev.season,
+        crop: extracted.crop || prev.crop,
+        crop_year: extracted.crop_year !== undefined && extracted.crop_year !== null ? extracted.crop_year : prev.crop_year,
+        area: extracted.area !== undefined && extracted.area !== null ? extracted.area : prev.area
+      }));
+    }
+
+    setPreset('custom');
+    if (fieldsFound && fieldsFound.length > 0) {
+      setHighlightedFields(new Set(fieldsFound));
+    }
+  };
+
   const handleSelectCropPreset = (id) => {
     setPreset(id);
+    setHighlightedFields(new Set());
     if (cropPresets[id]) {
       setCropFormData(cropPresets[id]);
       showToast?.(`Loaded ${id.toUpperCase()} crop preset`, 'info');
@@ -272,6 +336,7 @@ export default function Recommend({ showToast }) {
 
   const handleSelectFertPreset = (id) => {
     setPreset(id);
+    setHighlightedFields(new Set());
     if (fertilizerPresets[id]) {
       setFertilizerFormData(fertilizerPresets[id]);
       showToast?.(`Loaded ${id.toUpperCase()} fertilizer preset`, 'info');
@@ -280,6 +345,7 @@ export default function Recommend({ showToast }) {
 
   const handleSelectYieldPreset = (id) => {
     setPreset(id);
+    setHighlightedFields(new Set());
     if (yieldPresets[id]) {
       setYieldFormData(yieldPresets[id]);
       showToast?.(`Loaded ${id.toUpperCase()} yield preset`, 'info');
@@ -289,18 +355,21 @@ export default function Recommend({ showToast }) {
   const handleCropChange = (e) => {
     const { name, value } = e.target;
     setCropFormData((prev) => ({ ...prev, [name]: value }));
+    clearHighlight(name);
     setPreset('custom');
   };
 
   const handleFertilizerChange = (e) => {
     const { name, value } = e.target;
     setFertilizerFormData((prev) => ({ ...prev, [name]: value }));
+    clearHighlight(name);
     setPreset('custom');
   };
 
   const handleYieldChange = (e) => {
     const { name, value } = e.target;
     setYieldFormData((prev) => ({ ...prev, [name]: value }));
+    clearHighlight(name);
     setPreset('custom');
   };
 
@@ -450,44 +519,13 @@ export default function Recommend({ showToast }) {
           </p>
         </div>
 
-        {/* 3-Mode Switcher Tabs */}
-        <div className="mode-tab-group">
-          <button
-            type="button"
-            className={`mode-tab-btn ${mode === 'crop' ? 'active' : ''}`}
-            onClick={() => {
-              setMode('crop');
-              setPreset('custom');
-              setResult(null);
-            }}
-          >
-            <i className="fa-solid fa-wheat-awn" style={{ marginRight: '8px' }}></i>
-            01 • CROP SELECTION
-          </button>
-          <button
-            type="button"
-            className={`mode-tab-btn ${mode === 'fertilizer' ? 'active' : ''}`}
-            onClick={() => {
-              setMode('fertilizer');
-              setPreset('custom');
-              setResult(null);
-            }}
-          >
-            <i className="fa-solid fa-flask-vial" style={{ marginRight: '8px' }}></i>
-            02 • FERTILIZER ADVISORY
-          </button>
-          <button
-            type="button"
-            className={`mode-tab-btn ${mode === 'yield' ? 'active' : ''}`}
-            onClick={() => {
-              setMode('yield');
-              setPreset('custom');
-              setResult(null);
-            }}
-          >
-            <i className="fa-solid fa-chart-line" style={{ marginRight: '8px' }}></i>
-            03 • YIELD PREDICTION
-          </button>
+        {/* Centered Model Title */}
+        <div className="mode-page-title" style={{ textAlign: 'center', marginBottom: '1.5rem' }}>
+          <h2 className="section-title-large" style={{ fontSize: '1.75rem' }}>
+            {mode === 'crop' && (<><i className="fa-solid fa-wheat-awn" style={{ marginRight: '10px' }}></i>CROP SELECTION</>)}
+            {mode === 'fertilizer' && (<><i className="fa-solid fa-flask-vial" style={{ marginRight: '10px' }}></i>FERTILIZER ADVISORY</>)}
+            {mode === 'yield' && (<><i className="fa-solid fa-chart-line" style={{ marginRight: '10px' }}></i>YIELD PREDICTION</>)}
+          </h2>
         </div>
 
         {/* Dynamic Preset Switcher */}
@@ -548,7 +586,7 @@ export default function Recommend({ showToast }) {
             {/* MODE 1: CROP FORM */}
             {mode === 'crop' && (
               <div className="console-field-grid">
-                <div className="console-field">
+                <div className={`console-field ${highlightedFields.has('nitrogen') ? 'field-autofilled' : ''}`}>
                   <label htmlFor="nitrogen">
                     <span>NITROGEN (N)</span>
                     <span style={{ color: 'var(--agri-accent)' }}>KG/HA</span>
@@ -558,7 +596,7 @@ export default function Recommend({ showToast }) {
                       type="number"
                       id="nitrogen"
                       name="nitrogen"
-                      placeholder="e.g. 90"
+                      placeholder="Enter Nitrogen (0–140 kg/ha)"
                       step="any"
                       required
                       value={cropFormData.nitrogen}
@@ -567,7 +605,7 @@ export default function Recommend({ showToast }) {
                   </div>
                 </div>
 
-                <div className="console-field">
+                <div className={`console-field ${highlightedFields.has('phosphorus') ? 'field-autofilled' : ''}`}>
                   <label htmlFor="phosphorus">
                     <span>PHOSPHORUS (P)</span>
                     <span style={{ color: 'var(--agri-accent)' }}>KG/HA</span>
@@ -577,7 +615,7 @@ export default function Recommend({ showToast }) {
                       type="number"
                       id="phosphorus"
                       name="phosphorus"
-                      placeholder="e.g. 42"
+                      placeholder="Enter Phosphorus (5–145 kg/ha)"
                       step="any"
                       required
                       value={cropFormData.phosphorus}
@@ -586,7 +624,7 @@ export default function Recommend({ showToast }) {
                   </div>
                 </div>
 
-                <div className="console-field">
+                <div className={`console-field ${highlightedFields.has('potassium') ? 'field-autofilled' : ''}`}>
                   <label htmlFor="potassium">
                     <span>POTASSIUM (K)</span>
                     <span style={{ color: 'var(--agri-accent)' }}>KG/HA</span>
@@ -596,7 +634,7 @@ export default function Recommend({ showToast }) {
                       type="number"
                       id="potassium"
                       name="potassium"
-                      placeholder="e.g. 43"
+                      placeholder="Enter Potassium (5–205 kg/ha)"
                       step="any"
                       required
                       value={cropFormData.potassium}
@@ -605,7 +643,7 @@ export default function Recommend({ showToast }) {
                   </div>
                 </div>
 
-                <div className="console-field">
+                <div className={`console-field ${highlightedFields.has('ph') ? 'field-autofilled' : ''}`}>
                   <label htmlFor="ph">
                     <span>SOIL pH</span>
                     <span style={{ color: 'var(--agri-accent)' }}>0 – 14</span>
@@ -615,7 +653,7 @@ export default function Recommend({ showToast }) {
                       type="number"
                       id="ph"
                       name="ph"
-                      placeholder="e.g. 6.5"
+                      placeholder="Enter Soil pH (3.5–10)"
                       step="0.1"
                       min="0"
                       max="14"
@@ -626,7 +664,7 @@ export default function Recommend({ showToast }) {
                   </div>
                 </div>
 
-                <div className="console-field">
+                <div className={`console-field ${highlightedFields.has('temperature') ? 'field-autofilled' : ''}`}>
                   <label htmlFor="temperature">
                     <span>TEMPERATURE</span>
                     <span style={{ color: 'var(--agri-accent)' }}>&deg;C</span>
@@ -636,7 +674,7 @@ export default function Recommend({ showToast }) {
                       type="number"
                       id="temperature"
                       name="temperature"
-                      placeholder="e.g. 26.5"
+                      placeholder="Enter Temperature (9–44 °C)"
                       step="any"
                       required
                       value={cropFormData.temperature}
@@ -645,7 +683,7 @@ export default function Recommend({ showToast }) {
                   </div>
                 </div>
 
-                <div className="console-field">
+                <div className={`console-field ${highlightedFields.has('humidity') ? 'field-autofilled' : ''}`}>
                   <label htmlFor="humidity">
                     <span>HUMIDITY</span>
                     <span style={{ color: 'var(--agri-accent)' }}>%</span>
@@ -655,7 +693,7 @@ export default function Recommend({ showToast }) {
                       type="number"
                       id="humidity"
                       name="humidity"
-                      placeholder="e.g. 80"
+                      placeholder="Enter Humidity (14–100 %)"
                       step="any"
                       required
                       value={cropFormData.humidity}
@@ -664,7 +702,7 @@ export default function Recommend({ showToast }) {
                   </div>
                 </div>
 
-                <div className="console-field console-field-full">
+                <div className={`console-field console-field-full ${highlightedFields.has('rainfall') ? 'field-autofilled' : ''}`}>
                   <label htmlFor="rainfall">
                     <span>SEASONAL RAINFALL</span>
                     <span style={{ color: 'var(--agri-accent)' }}>MM</span>
@@ -674,7 +712,7 @@ export default function Recommend({ showToast }) {
                       type="number"
                       id="rainfall"
                       name="rainfall"
-                      placeholder="e.g. 202"
+                      placeholder="Enter Seasonal Rainfall (20–300 mm)"
                       step="any"
                       required
                       value={cropFormData.rainfall}
@@ -688,7 +726,7 @@ export default function Recommend({ showToast }) {
             {/* MODE 2: FERTILIZER FORM */}
             {mode === 'fertilizer' && (
               <div className="console-field-grid">
-                <div className="console-field">
+                <div className={`console-field ${highlightedFields.has('district_name') ? 'field-autofilled' : ''}`}>
                   <label htmlFor="fert_district">
                     <span>DISTRICT</span>
                     <span style={{ color: 'var(--agri-accent)' }}>MAHARASHTRA</span>
@@ -701,6 +739,7 @@ export default function Recommend({ showToast }) {
                       onChange={handleFertilizerChange}
                       required
                     >
+                      <option value="" disabled>Select district...</option>
                       {optionsData.fertilizer.districts.map((d) => (
                         <option key={d} value={d}>{d}</option>
                       ))}
@@ -708,7 +747,7 @@ export default function Recommend({ showToast }) {
                   </div>
                 </div>
 
-                <div className="console-field">
+                <div className={`console-field ${highlightedFields.has('soil_color') ? 'field-autofilled' : ''}`}>
                   <label htmlFor="fert_soil">
                     <span>SOIL COLOR</span>
                     <span style={{ color: 'var(--agri-accent)' }}>TYPE</span>
@@ -721,6 +760,7 @@ export default function Recommend({ showToast }) {
                       onChange={handleFertilizerChange}
                       required
                     >
+                      <option value="" disabled>Select soil color...</option>
                       {optionsData.fertilizer.soilColors.map((s) => (
                         <option key={s} value={s}>{s}</option>
                       ))}
@@ -728,7 +768,7 @@ export default function Recommend({ showToast }) {
                   </div>
                 </div>
 
-                <div className="console-field console-field-full">
+                <div className={`console-field console-field-full ${highlightedFields.has('crop') ? 'field-autofilled' : ''}`}>
                   <label htmlFor="fert_crop">
                     <span>TARGET CROP</span>
                     <span style={{ color: 'var(--agri-accent)' }}>FIELD CROP</span>
@@ -741,6 +781,7 @@ export default function Recommend({ showToast }) {
                       onChange={handleFertilizerChange}
                       required
                     >
+                      <option value="" disabled>Select target crop...</option>
                       {optionsData.fertilizer.crops.map((c) => (
                         <option key={c} value={c}>{c}</option>
                       ))}
@@ -748,7 +789,7 @@ export default function Recommend({ showToast }) {
                   </div>
                 </div>
 
-                <div className="console-field">
+                <div className={`console-field ${highlightedFields.has('nitrogen') ? 'field-autofilled' : ''}`}>
                   <label htmlFor="fert_n">
                     <span>NITROGEN (N)</span>
                     <span style={{ color: 'var(--agri-accent)' }}>KG/HA</span>
@@ -757,6 +798,7 @@ export default function Recommend({ showToast }) {
                     type="number"
                     id="fert_n"
                     name="nitrogen"
+                    placeholder="Enter Nitrogen (20–150 kg/ha)"
                     step="any"
                     required
                     value={fertilizerFormData.nitrogen}
@@ -764,7 +806,7 @@ export default function Recommend({ showToast }) {
                   />
                 </div>
 
-                <div className="console-field">
+                <div className={`console-field ${highlightedFields.has('phosphorus') ? 'field-autofilled' : ''}`}>
                   <label htmlFor="fert_p">
                     <span>PHOSPHORUS (P)</span>
                     <span style={{ color: 'var(--agri-accent)' }}>KG/HA</span>
@@ -773,6 +815,7 @@ export default function Recommend({ showToast }) {
                     type="number"
                     id="fert_p"
                     name="phosphorus"
+                    placeholder="Enter Phosphorus (10–90 kg/ha)"
                     step="any"
                     required
                     value={fertilizerFormData.phosphorus}
@@ -780,7 +823,7 @@ export default function Recommend({ showToast }) {
                   />
                 </div>
 
-                <div className="console-field">
+                <div className={`console-field ${highlightedFields.has('potassium') ? 'field-autofilled' : ''}`}>
                   <label htmlFor="fert_k">
                     <span>POTASSIUM (K)</span>
                     <span style={{ color: 'var(--agri-accent)' }}>KG/HA</span>
@@ -789,6 +832,7 @@ export default function Recommend({ showToast }) {
                     type="number"
                     id="fert_k"
                     name="potassium"
+                    placeholder="Enter Potassium (5–150 kg/ha)"
                     step="any"
                     required
                     value={fertilizerFormData.potassium}
@@ -796,7 +840,7 @@ export default function Recommend({ showToast }) {
                   />
                 </div>
 
-                <div className="console-field">
+                <div className={`console-field ${highlightedFields.has('ph') ? 'field-autofilled' : ''}`}>
                   <label htmlFor="fert_ph">
                     <span>SOIL pH</span>
                     <span style={{ color: 'var(--agri-accent)' }}>0 – 14</span>
@@ -805,6 +849,7 @@ export default function Recommend({ showToast }) {
                     type="number"
                     id="fert_ph"
                     name="ph"
+                    placeholder="Enter Soil pH (5.5–8.5)"
                     step="0.1"
                     min="0"
                     max="14"
@@ -814,7 +859,7 @@ export default function Recommend({ showToast }) {
                   />
                 </div>
 
-                <div className="console-field">
+                <div className={`console-field ${highlightedFields.has('temperature') ? 'field-autofilled' : ''}`}>
                   <label htmlFor="fert_temp">
                     <span>TEMPERATURE</span>
                     <span style={{ color: 'var(--agri-accent)' }}>&deg;C</span>
@@ -823,6 +868,7 @@ export default function Recommend({ showToast }) {
                     type="number"
                     id="fert_temp"
                     name="temperature"
+                    placeholder="Enter Temperature (10–40 °C)"
                     step="any"
                     required
                     value={fertilizerFormData.temperature}
@@ -830,7 +876,7 @@ export default function Recommend({ showToast }) {
                   />
                 </div>
 
-                <div className="console-field">
+                <div className={`console-field ${highlightedFields.has('rainfall') ? 'field-autofilled' : ''}`}>
                   <label htmlFor="fert_rain">
                     <span>RAINFALL</span>
                     <span style={{ color: 'var(--agri-accent)' }}>MM</span>
@@ -839,6 +885,7 @@ export default function Recommend({ showToast }) {
                     type="number"
                     id="fert_rain"
                     name="rainfall"
+                    placeholder="Enter Seasonal Rainfall (300–1700 mm)"
                     step="any"
                     required
                     value={fertilizerFormData.rainfall}
@@ -851,7 +898,7 @@ export default function Recommend({ showToast }) {
             {/* MODE 3: YIELD PREDICTION FORM */}
             {mode === 'yield' && (
               <div className="console-field-grid">
-                <div className="console-field">
+                <div className={`console-field ${highlightedFields.has('state_name') ? 'field-autofilled' : ''}`}>
                   <label htmlFor="yield_state">
                     <span>STATE / REGION</span>
                     <span style={{ color: 'var(--agri-accent)' }}>INDIA</span>
@@ -864,6 +911,7 @@ export default function Recommend({ showToast }) {
                       onChange={handleYieldChange}
                       required
                     >
+                      <option value="" disabled>Select state / region...</option>
                       {optionsData.yield.states.map((s) => (
                         <option key={s} value={s}>{s}</option>
                       ))}
@@ -871,7 +919,7 @@ export default function Recommend({ showToast }) {
                   </div>
                 </div>
 
-                <div className="console-field">
+                <div className={`console-field ${highlightedFields.has('season') ? 'field-autofilled' : ''}`}>
                   <label htmlFor="yield_season">
                     <span>GROWING SEASON</span>
                     <span style={{ color: 'var(--agri-accent)' }}>CYCLE</span>
@@ -884,6 +932,7 @@ export default function Recommend({ showToast }) {
                       onChange={handleYieldChange}
                       required
                     >
+                      <option value="" disabled>Select growing season...</option>
                       {optionsData.yield.seasons.map((s) => (
                         <option key={s} value={s}>{s}</option>
                       ))}
@@ -891,7 +940,7 @@ export default function Recommend({ showToast }) {
                   </div>
                 </div>
 
-                <div className="console-field console-field-full">
+                <div className={`console-field console-field-full ${highlightedFields.has('crop') ? 'field-autofilled' : ''}`}>
                   <label>
                     <span>CROP SPECIES</span>
                     <span style={{ color: 'var(--agri-accent)' }}>124 CROPS</span>
@@ -901,13 +950,14 @@ export default function Recommend({ showToast }) {
                     value={yieldFormData.crop}
                     onChange={(selectedCrop) => {
                       setYieldFormData((prev) => ({ ...prev, crop: selectedCrop }));
+                      clearHighlight('crop');
                       setPreset('custom');
                     }}
                     placeholder="Search from 124 agricultural crop species..."
                   />
                 </div>
 
-                <div className="console-field">
+                <div className={`console-field ${highlightedFields.has('crop_year') ? 'field-autofilled' : ''}`}>
                   <label htmlFor="yield_year">
                     <span>CROP YEAR</span>
                     <span style={{ color: 'var(--agri-accent)' }}>YEAR</span>
@@ -916,7 +966,7 @@ export default function Recommend({ showToast }) {
                     type="number"
                     id="yield_year"
                     name="crop_year"
-                    placeholder="e.g. 2024"
+                    placeholder="Enter Crop Year (e.g. 2024)"
                     min="1990"
                     max="2035"
                     required
@@ -925,7 +975,7 @@ export default function Recommend({ showToast }) {
                   />
                 </div>
 
-                <div className="console-field">
+                <div className={`console-field ${highlightedFields.has('area') ? 'field-autofilled' : ''}`}>
                   <label htmlFor="yield_area">
                     <span>FARM AREA</span>
                     <span style={{ color: 'var(--agri-accent)' }}>HECTARES</span>
@@ -934,7 +984,7 @@ export default function Recommend({ showToast }) {
                     type="number"
                     id="yield_area"
                     name="area"
-                    placeholder="e.g. 10.0"
+                    placeholder="Enter Farm Area (e.g. 1–50 hectares)"
                     step="any"
                     min="0.01"
                     required
@@ -968,10 +1018,38 @@ export default function Recommend({ showToast }) {
             </div>
           </form>
 
-          {/* Right: Results / Processing Telemetry Card */}
-          <div>
+          {/* Right: AI Document Auto-Fill & Advisory Results Card */}
+          <div className="recommend-right-column">
+            <DocumentUpload
+              modelType={mode}
+              showToast={showToast}
+              onExtracted={handleExtracted}
+            />
+
             <ResultCard result={result} isLoading={isLoading} processingStage={processingStage} mode={mode} />
           </div>
+        </div>
+
+        {/* Cross-Navigation to other models */}
+        <div className="model-cross-nav" style={{ display: 'flex', justifyContent: 'center', gap: '1rem', marginTop: '2.5rem', flexWrap: 'wrap' }}>
+          {mode !== 'fertilizer' && (
+            <Link to="/recommend/fertilizer" className="btn-secondary-technical">
+              <i className="fa-solid fa-flask-vial" style={{ marginRight: '8px' }}></i>
+              Try Fertilizer Advisory
+            </Link>
+          )}
+          {mode !== 'yield' && (
+            <Link to="/recommend/yield" className="btn-secondary-technical">
+              <i className="fa-solid fa-chart-line" style={{ marginRight: '8px' }}></i>
+              Try Yield Prediction
+            </Link>
+          )}
+          {mode !== 'crop' && (
+            <Link to="/recommend" className="btn-secondary-technical">
+              <i className="fa-solid fa-wheat-awn" style={{ marginRight: '8px' }}></i>
+              Try Crop Selection
+            </Link>
+          )}
         </div>
       </div>
     </main>

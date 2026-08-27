@@ -268,7 +268,10 @@ export default function Dashboard({ showToast }) {
   const handleRerun = (item) => {
     const itemInputs = item.inputs || {};
     const mode = itemInputs.mode || (item.type?.includes('Fertilizer') ? 'fertilizer' : (item.type?.includes('Yield') ? 'yield' : 'crop'));
-    navigate('/recommend', { state: { ...itemInputs, mode } });
+    const targetPath = mode === 'fertilizer' ? '/recommend/fertilizer'
+      : mode === 'yield' ? '/recommend/yield'
+      : '/recommend';
+    navigate(targetPath, { state: { ...itemInputs, mode } });
     showToast?.(`Rerunning ${mode.toUpperCase()} advisory for ${item.logId || item.recId}`, 'info');
   };
 

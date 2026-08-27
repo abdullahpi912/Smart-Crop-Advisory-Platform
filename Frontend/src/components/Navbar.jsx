@@ -5,6 +5,7 @@ import { API_BASE_URL } from '../lib/apiConfig';
 export default function Navbar() {
   const [isSidebarOpen, setIsSidebarOpen] = useState(false);
   const [isCollapsed, setIsCollapsed] = useState(false);
+  const [expandedMenu, setExpandedMenu] = useState(null);
   const [isProfileDropdownOpen, setIsProfileDropdownOpen] = useState(false);
   const [searchQuery, setSearchQuery] = useState('');
   const [user, setUser] = useState(null);
@@ -29,6 +30,12 @@ export default function Navbar() {
       }
     } catch (e) {
       setUser(null);
+    }
+  }, [location.pathname]);
+
+  useEffect(() => {
+    if (location.pathname.startsWith('/recommend')) {
+      setExpandedMenu('Crop Advisory');
     }
   }, [location.pathname]);
 
@@ -60,7 +67,13 @@ export default function Navbar() {
 
   const toggleSidebar = () => setIsSidebarOpen((prev) => !prev);
   const closeSidebar = () => setIsSidebarOpen(false);
-  const toggleCollapse = () => setIsCollapsed((prev) => !prev);
+  const toggleCollapse = () => {
+    setIsCollapsed((prev) => {
+      const next = !prev;
+      if (next) setExpandedMenu(null);
+      return next;
+    });
+  };
 
   const handleLogout = async () => {
     try {
@@ -88,19 +101,40 @@ export default function Navbar() {
     window.location.href = '/';
   };
 
-  // Distinct Platform Features with clean line icons matching CodingLab template
+  // Distinct Platform Features with expandable submenus
   const menuFeatures = [
     { path: '/', label: 'Dashboard', icon: 'fa-solid fa-house' },
-    { path: '/recommend', label: 'Crop Advisory', icon: 'fa-solid fa-chart-simple', badge: 'AI', badgeColor: '#15803D' },
+    {
+      label: 'Crop Advisory',
+      icon: 'fa-solid fa-chart-simple',
+      badge: 'AI',
+      badgeColor: '#15803D',
+      children: [
+        { path: '/recommend', label: 'Crop Selection', icon: 'fa-solid fa-wheat-awn' },
+        { path: '/recommend/fertilizer', label: 'Fertilizer Advisory', icon: 'fa-solid fa-flask-vial' },
+        { path: '/recommend/yield', label: 'Yield Prediction', icon: 'fa-solid fa-chart-line' }
+      ]
+    },
     { path: '/crops', label: 'Crop Library', icon: 'fa-solid fa-seedling' },
     { path: '/dashboard', label: 'Farm Analytics', icon: 'fa-solid fa-chart-line' },
     { path: '/about', label: 'Architecture', icon: 'fa-solid fa-chart-pie' },
     { path: '/contact', label: 'Field Support', icon: 'fa-solid fa-headset' }
   ];
 
-  const filteredFeatures = menuFeatures.filter(item =>
-    item.label.toLowerCase().includes(searchQuery.toLowerCase())
-  );
+  const filteredFeatures = menuFeatures
+    .map((item) => {
+      if (item.children) {
+        const matchingChildren = item.children.filter((child) =>
+          child.label.toLowerCase().includes(searchQuery.toLowerCase())
+        );
+        const parentMatches = item.label.toLowerCase().includes(searchQuery.toLowerCase());
+        if (parentMatches) return item;
+        if (matchingChildren.length > 0) return { ...item, children: matchingChildren };
+        return null;
+      }
+      return item.label.toLowerCase().includes(searchQuery.toLowerCase()) ? item : null;
+    })
+    .filter(Boolean);
 
   const isAdminRoute = location.pathname.startsWith('/admin');
 
@@ -315,27 +349,67 @@ export default function Navbar() {
               {/* Nav Menu Links */}
               <ul className="cl-menu-links">
                 {filteredFeatures.map((item) => (
-                  <li className="cl-nav-link" key={item.path}>
-                    <NavLink
-                      to={item.path}
-                      className={({ isActive }) =>
-                        `cl-link ${isActive && location.pathname === item.path ? 'active' : ''}`
-                      }
-                      onClick={closeSidebar}
-                      title={isCollapsed ? item.label : undefined}
-                    >
-                      <i className={`${item.icon} cl-icon`}></i>
-                      <span className="cl-text cl-nav-text">{item.label}</span>
-                      {item.badge && (
-                        <span
-                          className="cl-badge"
-                          style={{ backgroundColor: item.badgeColor }}
-                        >
-                          {item.badge}
-                        </span>
+                  item.children ? (
+                    <li className="cl-nav-link cl-nav-parent" key={item.label}>
+                      <button
+                        type="button"
+                        className={`cl-link cl-parent-toggle ${expandedMenu === item.label ? 'expanded' : ''} ${location.pathname.startsWith('/recommend') ? 'active' : ''}`}
+                        onClick={() => setExpandedMenu(expandedMenu === item.label ? null : item.label)}
+                        title={isCollapsed ? item.label : undefined}
+                        aria-expanded={expandedMenu === item.label}
+                      >
+                        <i className={`${item.icon} cl-icon`}></i>
+                        <span className="cl-text cl-nav-text">{item.label}</span>
+                        {item.badge && (
+                          <span className="cl-badge" style={{ backgroundColor: item.badgeColor }}>
+                            {item.badge}
+                          </span>
+                        )}
+                        <i className={`fa-solid fa-chevron-down cl-submenu-chevron ${expandedMenu === item.label ? 'rotated' : ''}`}></i>
+                      </button>
+
+                      {expandedMenu === item.label && (
+                        <ul className="cl-submenu">
+                          {item.children.map((child) => (
+                            <li className="cl-nav-link cl-nav-sublink" key={child.path}>
+                              <NavLink
+                                to={child.path}
+                                end
+                                className={({ isActive }) => `cl-link cl-sublink ${isActive ? 'active' : ''}`}
+                                onClick={closeSidebar}
+                                title={isCollapsed ? child.label : undefined}
+                              >
+                                <i className={`${child.icon} cl-icon`}></i>
+                                <span className="cl-text cl-nav-text">{child.label}</span>
+                              </NavLink>
+                            </li>
+                          ))}
+                        </ul>
                       )}
-                    </NavLink>
-                  </li>
+                    </li>
+                  ) : (
+                    <li className="cl-nav-link" key={item.path}>
+                      <NavLink
+                        to={item.path}
+                        className={({ isActive }) =>
+                          `cl-link ${isActive && location.pathname === item.path ? 'active' : ''}`
+                        }
+                        onClick={closeSidebar}
+                        title={isCollapsed ? item.label : undefined}
+                      >
+                        <i className={`${item.icon} cl-icon`}></i>
+                        <span className="cl-text cl-nav-text">{item.label}</span>
+                        {item.badge && (
+                          <span
+                            className="cl-badge"
+                            style={{ backgroundColor: item.badgeColor }}
+                          >
+                            {item.badge}
+                          </span>
+                        )}
+                      </NavLink>
+                    </li>
+                  )
                 ))}
               </ul>
             </div>

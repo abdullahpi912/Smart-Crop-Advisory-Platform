@@ -12,6 +12,13 @@ from werkzeug.security import generate_password_hash, check_password_hash
 from dotenv import load_dotenv
 from db import get_connection
 
+try:
+    from google import genai
+    from google.genai import types
+    GENAI_AVAILABLE = True
+except ImportError:
+    GENAI_AVAILABLE = False
+
 load_dotenv()
 
 # Configure logging
@@ -25,18 +32,22 @@ secret_key = os.environ.get("SECRET_KEY")
 if not secret_key:
     raise RuntimeError("SECRET_KEY environment variable is not set. Please configure it in your environment or .env file.")
 
+# Optional Gemini API key for document extraction (degrades gracefully if missing)
+gemini_api_key = os.environ.get("GEMINI_API_KEY")
+
 is_production = os.environ.get("FLASK_ENV") == "production" or os.environ.get("ENV") == "production"
 is_debug = os.environ.get("FLASK_DEBUG", "False").lower() in ("true", "1", "t")
 
 app = Flask(__name__)
 app.secret_key = secret_key
 
-# Configure secure session cookies
+# Configure secure session cookies and max upload size (10 MB)
 app.config.update(
     SESSION_COOKIE_HTTPONLY=True,
     SESSION_COOKIE_SAMESITE="None" if is_production else "Lax",
     SESSION_COOKIE_SECURE=is_production,
-    PERMANENT_SESSION_LIFETIME=datetime.timedelta(days=7)
+    PERMANENT_SESSION_LIFETIME=datetime.timedelta(days=7),
+    MAX_CONTENT_LENGTH=10 * 1024 * 1024
 )
 
 # Configure CORS with strict allowed origins allowlist
@@ -1332,6 +1343,246 @@ def predict_crop_yield():
             'error': 'Failed to generate crop yield prediction',
             'details': str(e) if not is_production else None
         }), 400
+
+
+# ==========================================
+# 4b. AI SOIL LAB REPORT & DOCUMENT EXTRACTION
+# ==========================================
+
+@app.route('/api/analyze-document', methods=['POST'])
+@limiter.limit("30 per hour")
+def analyze_document():
+    """
+    HTTP POST: Extract agronomic and soil parameters from uploaded image/PDF lab report
+    using Google Gemini API (gemini-flash-latest / multi-model fallback). Zero disk persistence.
+    """
+    current_key = os.environ.get("GEMINI_API_KEY") or gemini_api_key
+    if not current_key or not GENAI_AVAILABLE:
+        return jsonify({
+            'status': 'error',
+            'error': 'Document analysis is not configured on this server.'
+        }), 503
+
+    if 'file' not in request.files:
+        return jsonify({'status': 'error', 'error': 'No file uploaded'}), 400
+
+    file = request.files['file']
+    if not file or file.filename == '':
+        return jsonify({'status': 'error', 'error': 'No file selected'}), 400
+
+    filename = file.filename
+    ext = '.' + filename.rsplit('.', 1)[-1].lower() if '.' in filename else ''
+    allowed_extensions = {'.jpg', '.jpeg', '.png', '.webp', '.pdf'}
+
+    if ext not in allowed_extensions:
+        return jsonify({
+            'status': 'error',
+            'error': f"Unsupported file type '{ext}'. Supported formats: JPG, PNG, WEBP, PDF."
+        }), 400
+
+    # In-memory byte read with size enforcement (8MB)
+    file_bytes = file.read()
+    if len(file_bytes) > 8 * 1024 * 1024:
+        return jsonify({
+            'status': 'error',
+            'error': 'File size exceeds maximum allowed limit of 8 MB.'
+        }), 400
+
+    mime_type_map = {
+        '.jpg': 'image/jpeg',
+        '.jpeg': 'image/jpeg',
+        '.png': 'image/png',
+        '.webp': 'image/webp',
+        '.pdf': 'application/pdf'
+    }
+    mime_type = mime_type_map.get(ext, 'image/jpeg')
+
+    model_type = request.form.get('model_type', 'crop').lower().strip()
+
+    if model_type == 'crop':
+        expected_keys = ["nitrogen", "phosphorus", "potassium", "temperature", "humidity", "ph", "rainfall"]
+        prompt_text = (
+            "You are an expert agricultural document parsing assistant. "
+            "Analyze the provided soil test, agronomic lab report, or field telemetry document. "
+            "Extract ONLY the following 7 parameters for Crop Selection:\n"
+            "- nitrogen: numeric soil nitrogen (N) level in kg/ha or ppm\n"
+            "- phosphorus: numeric soil phosphorus (P) level in kg/ha or ppm\n"
+            "- potassium: numeric soil potassium (K) level in kg/ha or ppm\n"
+            "- temperature: numeric ambient/soil temperature in °C\n"
+            "- humidity: numeric relative humidity in %\n"
+            "- ph: numeric soil pH (value between 0.0 and 14.0)\n"
+            "- rainfall: numeric annual/seasonal rainfall in mm\n\n"
+            "CRITICAL RULES:\n"
+            "1. If a variable is NOT clearly present in the document, set its value to null.\n"
+            "2. NEVER guess or fabricate values.\n"
+            "3. Return a STRICT JSON object only matching this schema:\n"
+            "{\n"
+            '  "nitrogen": <number|null>,\n'
+            '  "phosphorus": <number|null>,\n'
+            '  "potassium": <number|null>,\n'
+            '  "temperature": <number|null>,\n'
+            '  "humidity": <number|null>,\n'
+            '  "ph": <number|null>,\n'
+            '  "rainfall": <number|null>\n'
+            "}"
+        )
+    elif model_type == 'fertilizer':
+        expected_keys = ["district_name", "soil_color", "crop", "nitrogen", "phosphorus", "potassium", "ph", "rainfall", "temperature"]
+        prompt_text = (
+            "You are an expert agronomic document extraction assistant. "
+            "Analyze the provided soil testing or fertilizer recommendation document. "
+            "Extract ONLY the following variables for Fertilizer Advisory:\n"
+            "- district_name: string Indian district or city name (e.g. Kolhapur, Pune, Solapur, Sangli, Satara)\n"
+            "- soil_color: string soil classification (e.g. Black, Red, Medium Brown, Dark Brown, Clayey, Sandy)\n"
+            "- crop: string target crop name (e.g. Sugarcane, Wheat, Cotton, Rice, Soybean, Groundnut, Maize)\n"
+            "- nitrogen: numeric soil nitrogen level in kg/ha\n"
+            "- phosphorus: numeric soil phosphorus level in kg/ha\n"
+            "- potassium: numeric soil potassium level in kg/ha\n"
+            "- ph: numeric soil pH (0 to 14)\n"
+            "- rainfall: numeric annual/seasonal rainfall in mm\n"
+            "- temperature: numeric ambient temperature in °C\n\n"
+            "CRITICAL RULES:\n"
+            "1. If a variable is NOT clearly present in the document, set its value to null.\n"
+            "2. NEVER guess or fabricate values.\n"
+            "3. Return a STRICT JSON object only matching this schema:\n"
+            "{\n"
+            '  "district_name": <string|null>,\n'
+            '  "soil_color": <string|null>,\n'
+            '  "crop": <string|null>,\n'
+            '  "nitrogen": <number|null>,\n'
+            '  "phosphorus": <number|null>,\n'
+            '  "potassium": <number|null>,\n'
+            '  "ph": <number|null>,\n'
+            '  "rainfall": <number|null>,\n'
+            '  "temperature": <number|null>\n'
+            "}"
+        )
+    else:  # yield
+        expected_keys = ["state_name", "season", "crop", "crop_year", "area"]
+        prompt_text = (
+            "You are an expert agronomic document extraction assistant. "
+            "Analyze the provided agricultural production or acreage document. "
+            "Extract ONLY the following variables for Crop Yield Prediction:\n"
+            "- state_name: string Indian State or Region (e.g. Maharashtra, Punjab, Uttar Pradesh, Gujarat)\n"
+            "- season: string growing season (Kharif, Rabi, Summer, Whole Year, Autumn, Winter)\n"
+            "- crop: string crop name (e.g. Rice, Wheat, Sugarcane, Cotton, Maize)\n"
+            "- crop_year: numeric calendar year (e.g. 2024)\n"
+            "- area: numeric farm size in hectares\n\n"
+            "CRITICAL RULES:\n"
+            "1. If a variable is NOT clearly present in the document, set its value to null.\n"
+            "2. NEVER guess or fabricate values.\n"
+            "3. Return a STRICT JSON object only matching this schema:\n"
+            "{\n"
+            '  "state_name": <string|null>,\n'
+            '  "season": <string|null>,\n'
+            '  "crop": <string|null>,\n'
+            '  "crop_year": <number|null>,\n'
+            '  "area": <number|null>\n'
+            "}"
+        )
+
+    # Multi-model fallback sequence for optimal speed, availability, and vision accuracy
+    CANDIDATE_GEMINI_MODELS = [
+        "gemini-flash-latest",
+        "gemini-3.5-flash",
+        "gemini-3.6-flash",
+        "gemini-3.7-flash",
+        "gemini-flash-lite-latest",
+        "gemini-2.5-pro",
+    ]
+
+    response = None
+    last_error = None
+
+    try:
+        client = genai.Client(api_key=current_key)
+        file_part = types.Part.from_bytes(data=file_bytes, mime_type=mime_type)
+
+        for model_name in CANDIDATE_GEMINI_MODELS:
+            try:
+                response = client.models.generate_content(
+                    model=model_name,
+                    contents=[prompt_text, file_part],
+                    config=types.GenerateContentConfig(
+                        response_mime_type="application/json",
+                        temperature=0.1
+                    )
+                )
+                if response and response.text:
+                    logger.info("[AI EXTRACTION] Successfully processed with model: %s", model_name)
+                    break
+            except Exception as m_err:
+                last_error = m_err
+                logger.warning("[AI EXTRACTION] Model '%s' failed: %s. Trying next fallback...", model_name, m_err)
+                continue
+
+        if response is None or not response.text:
+            raise last_error or RuntimeError("All candidate AI vision models failed to return content.")
+
+    except Exception as api_err:
+        err_msg = str(api_err).lower()
+        logger.warning("[AI EXTRACTION] All Gemini models failed: %s", api_err)
+        if any(w in err_msg for w in ['429', 'quota', 'rate', 'resourceexhausted']):
+            return jsonify({
+                'status': 'error',
+                'error': 'AI analysis quota is temporarily busy. Please wait a minute and try again.'
+            }), 429
+        return jsonify({
+            'status': 'error',
+            'error': 'AI document analysis failed. Please ensure the document is clear and readable.',
+            'details': str(api_err) if not is_production else None
+        }), 502
+
+    raw_text = response.text.strip() if response and response.text else ""
+    if raw_text.startswith("```"):
+        lines = raw_text.splitlines()
+        if lines[0].startswith("```"):
+            lines = lines[1:]
+        if lines and lines[-1].startswith("```"):
+            lines = lines[:-1]
+        raw_text = "\n".join(lines).strip()
+
+    try:
+        extracted_raw = json.loads(raw_text) if raw_text else {}
+    except Exception as parse_err:
+        logger.warning("[AI EXTRACTION] JSON decode error on Gemini response: %s (raw text: %s)", parse_err, raw_text[:200])
+        return jsonify({
+            'status': 'error',
+            'error': 'AI extraction returned an unreadable response. Please enter parameters manually.'
+        }), 502
+
+    cleaned_extracted = {}
+    fields_found = []
+    fields_missing = []
+
+    for k in expected_keys:
+        val = extracted_raw.get(k)
+        if val is not None and str(val).strip() != "" and str(val).strip().lower() != "null":
+            # Coerce numeric values if expected
+            if k in ('nitrogen', 'phosphorus', 'potassium', 'temperature', 'humidity', 'ph', 'rainfall', 'crop_year', 'area'):
+                try:
+                    num_val = float(val) if ('.' in str(val) or k in ('ph', 'temperature', 'area')) else int(float(val))
+                    cleaned_extracted[k] = num_val
+                    fields_found.append(k)
+                except (ValueError, TypeError):
+                    cleaned_extracted[k] = val
+                    fields_found.append(k)
+            else:
+                cleaned_extracted[k] = str(val).strip()
+                fields_found.append(k)
+        else:
+            cleaned_extracted[k] = None
+            fields_missing.append(k)
+
+    logger.info("[AI EXTRACTION] Completed for model_type=%s: %d found, %d missing (ext=%s, size=%d bytes)",
+                model_type, len(fields_found), len(fields_missing), ext, len(file_bytes))
+
+    return jsonify({
+        'status': 'success',
+        'extracted': cleaned_extracted,
+        'fields_found': fields_found,
+        'fields_missing': fields_missing
+    }), 200
 
 
 
