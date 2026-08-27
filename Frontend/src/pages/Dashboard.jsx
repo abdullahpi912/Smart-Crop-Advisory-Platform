@@ -11,6 +11,7 @@ export default function Dashboard({ showToast }) {
 
   // ── State ────────────────────────────────────────────────
   const [isAuthenticated, setIsAuthenticated]   = useState(false);
+  const [isLoadingHistory, setIsLoadingHistory] = useState(true);
   const [history, setHistory]                   = useState([]);
   const [userProfile, setUserProfile]           = useState(null);
 
@@ -36,6 +37,8 @@ export default function Dashboard({ showToast }) {
     let isMounted = true;
 
     const fetchData = async () => {
+      if (isMounted) setIsLoadingHistory(true);
+
       // Refresh and verify against backend session
       try {
         const r = await fetch(`${BACKEND}/profile`, { credentials: 'include' });
@@ -57,6 +60,7 @@ export default function Dashboard({ showToast }) {
                   setHistory(fetchedLogs);
                   localStorage.setItem('cropling_history', JSON.stringify(fetchedLogs));
                   localStorage.setItem('agrisense_history', JSON.stringify(fetchedLogs));
+                  setIsLoadingHistory(false);
                   return;
                 }
               }
@@ -68,6 +72,7 @@ export default function Dashboard({ showToast }) {
                   setHistory(fetchedRecs);
                   localStorage.setItem('cropling_history', JSON.stringify(fetchedRecs));
                   localStorage.setItem('agrisense_history', JSON.stringify(fetchedRecs));
+                  setIsLoadingHistory(false);
                   return;
                 }
               }
@@ -80,12 +85,16 @@ export default function Dashboard({ showToast }) {
                 const parsed = JSON.parse(cached);
                 if (Array.isArray(parsed) && parsed.length > 0) {
                   setHistory(parsed);
+                  setIsLoadingHistory(false);
                   return;
                 }
               }
             } catch (_) {}
 
-            if (isMounted) setHistory([]);
+            if (isMounted) {
+              setHistory([]);
+              setIsLoadingHistory(false);
+            }
             return;
           }
         }
@@ -96,6 +105,7 @@ export default function Dashboard({ showToast }) {
         setIsAuthenticated(false);
         setUserProfile(null);
         setHistory([]);
+        setIsLoadingHistory(false);
       }
     };
 
@@ -400,7 +410,21 @@ export default function Dashboard({ showToast }) {
                   </tr>
                 </thead>
                 <tbody>
-                  {!isAuthenticated ? (
+                  {isLoadingHistory ? (
+                    <tr>
+                      <td colSpan="8" style={{ padding: 0 }}>
+                        <div className="table-loading-container">
+                          <span className="table-loading-title">LOADING</span>
+                          <div className="table-loading-track">
+                            <div className="table-loading-bar-fill"></div>
+                          </div>
+                          <span className="table-loading-meta">
+                            Querying Telemetry Logs // Filtering Account Records...
+                          </span>
+                        </div>
+                      </td>
+                    </tr>
+                  ) : !isAuthenticated ? (
                     <tr>
                       <td colSpan="8" style={{ textAlign: 'center', padding: '4rem 2rem', color: 'var(--agri-muted)' }}>
                         <span className="mono-meta" style={{ display: 'block', marginBottom: '0.5rem' }}>SIGN IN REQUIRED</span>
