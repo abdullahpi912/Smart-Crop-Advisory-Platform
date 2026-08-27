@@ -1,5 +1,6 @@
 import React, { useState } from 'react';
 import { Link, useNavigate } from 'react-router-dom';
+import { API_BASE_URL } from '../lib/apiConfig';
 
 export default function Login({ showToast }) {
   const navigate = useNavigate();
@@ -16,11 +17,41 @@ export default function Login({ showToast }) {
   // Admin Form State
   const [adminUsername, setAdminUsername] = useState('');
   const [adminPassword, setAdminPassword] = useState('');
+  const [adminFavoriteNumber, setAdminFavoriteNumber] = useState('');
+  const [adminSecurityPhrase, setAdminSecurityPhrase] = useState('');
+  const [adminHint, setAdminHint] = useState('');
+  const [adminHintLoading, setAdminHintLoading] = useState(false);
   const [adminLoading, setAdminLoading] = useState(false);
 
   const [errorMsg, setErrorMsg] = useState('');
 
-  const backendUrl = import.meta.env?.VITE_API_BASE_URL || 'http://localhost:5000';
+  const backendUrl = API_BASE_URL;
+
+  const fetchAdminHint = async (user) => {
+    const trimmed = (user || '').trim();
+    if (!trimmed) {
+      setAdminHint('');
+      return;
+    }
+    setAdminHintLoading(true);
+    try {
+      const response = await fetch(`${backendUrl}/api/admin/login-hint?username=${encodeURIComponent(trimmed)}`);
+      if (response.ok) {
+        const data = await response.json();
+        if (data && data.hint) {
+          setAdminHint(data.hint);
+        } else {
+          setAdminHint('');
+        }
+      } else {
+        setAdminHint('');
+      }
+    } catch (e) {
+      setAdminHint('');
+    } finally {
+      setAdminHintLoading(false);
+    }
+  };
 
   // ── Farmer Login Submit Handler ──────────────────────────────────────────
   const handleFarmerSubmit = async (e) => {
@@ -77,9 +108,9 @@ export default function Login({ showToast }) {
     e.preventDefault();
     setErrorMsg('');
 
-    if (!adminUsername.trim() || !adminPassword) {
-      setErrorMsg('Please provide administrator username and password.');
-      showToast?.('Username and password are required.', 'warning');
+    if (!adminUsername.trim() || !adminPassword || !adminFavoriteNumber.trim() || !adminSecurityPhrase.trim()) {
+      setErrorMsg('Please enter all four required credentials: username, password, favorite number, and security phrase.');
+      showToast?.('All 4 credentials are required.', 'warning');
       return;
     }
 
@@ -92,7 +123,9 @@ export default function Login({ showToast }) {
         credentials: 'include',
         body: JSON.stringify({
           username: adminUsername.trim(),
-          password: adminPassword
+          password: adminPassword,
+          favorite_number: adminFavoriteNumber.trim(),
+          security_phrase: adminSecurityPhrase.trim()
         })
       });
 
@@ -264,13 +297,13 @@ export default function Login({ showToast }) {
           )}
 
           {/* ══════════════════════════════════════════════════════════════════
-              TAB 2: ADMIN LOGIN FORM
+              TAB 2: ADMIN LOGIN FORM (4-Factor Auth)
           ══════════════════════════════════════════════════════════════════ */}
           {roleTab === 'admin' && (
             <form onSubmit={handleAdminSubmit}>
-              {/* Administrator Username */}
+              {/* Factor 1: Administrator Username */}
               <div className="console-field" style={{ marginBottom: '1.25rem' }}>
-                <label htmlFor="admin-username">Administrator Username</label>
+                <label htmlFor="admin-username">1. Administrator Username</label>
                 <div className="input-wrapper">
                   <input
                     type="text"
@@ -281,13 +314,14 @@ export default function Login({ showToast }) {
                     required
                     value={adminUsername}
                     onChange={(e) => setAdminUsername(e.target.value)}
+                    onBlur={() => fetchAdminHint(adminUsername)}
                   />
                 </div>
               </div>
 
-              {/* Master Password */}
-              <div className="console-field" style={{ marginBottom: '1.75rem' }}>
-                <label htmlFor="admin-password">Master Password</label>
+              {/* Factor 2: Master Password */}
+              <div className="console-field" style={{ marginBottom: '1.25rem' }}>
+                <label htmlFor="admin-password">2. Master Password</label>
                 <div className="input-wrapper">
                   <input
                     type="password"
@@ -302,6 +336,51 @@ export default function Login({ showToast }) {
                 </div>
               </div>
 
+              {/* Factor 3: Favorite Number */}
+              <div className="console-field" style={{ marginBottom: '1.25rem' }}>
+                <label htmlFor="admin-fav-number">3. Favorite Number</label>
+                <div className="input-wrapper">
+                  <input
+                    type="password"
+                    id="admin-fav-number"
+                    name="adminFavoriteNumber"
+                    placeholder="Enter secret favorite number"
+                    autoComplete="off"
+                    required
+                    value={adminFavoriteNumber}
+                    onChange={(e) => setAdminFavoriteNumber(e.target.value)}
+                  />
+                </div>
+              </div>
+
+              {/* Factor 4: Security Phrase & Dynamic Hint */}
+              <div className="console-field" style={{ marginBottom: '1.75rem' }}>
+                <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '0.35rem' }}>
+                  <label htmlFor="admin-security-phrase" style={{ margin: 0 }}>4. Security Phrase</label>
+                  {adminHintLoading ? (
+                    <span className="mono-meta" style={{ fontSize: '10px', color: 'var(--agri-muted)' }}>
+                      <i className="fa-solid fa-spinner fa-spin" style={{ marginRight: '4px' }}></i> Loading hint...
+                    </span>
+                  ) : adminHint ? (
+                    <span className="mono-meta" style={{ fontSize: '11px', color: 'var(--agri-accent)', fontWeight: 600 }}>
+                      Hint: {adminHint}
+                    </span>
+                  ) : null}
+                </div>
+                <div className="input-wrapper">
+                  <input
+                    type="password"
+                    id="admin-security-phrase"
+                    name="adminSecurityPhrase"
+                    placeholder="Enter secret security phrase"
+                    autoComplete="off"
+                    required
+                    value={adminSecurityPhrase}
+                    onChange={(e) => setAdminSecurityPhrase(e.target.value)}
+                  />
+                </div>
+              </div>
+
               <button
                 type="submit"
                 className="btn-primary-technical"
@@ -311,7 +390,7 @@ export default function Login({ showToast }) {
                 {adminLoading ? (
                   <span><i className="fa-solid fa-spinner fa-spin" style={{ marginRight: '8px' }}></i> AUTHENTICATING...</span>
                 ) : (
-                  <span><i className="fa-solid fa-shield-halved" style={{ marginRight: '8px' }}></i> SIGN IN TO ADMIN CONSOLE</span>
+                  <span><i className="fa-solid fa-shield-halved" style={{ marginRight: '8px' }}></i> VERIFY 4-FACTOR AUTH & SIGN IN</span>
                 )}
               </button>
 
@@ -320,7 +399,7 @@ export default function Login({ showToast }) {
                   CLI PROVISIONED
                 </span>
                 <span className="mono-meta" style={{ fontSize: '10px', color: 'var(--agri-accent)' }}>
-                  ROOT CONSOLE
+                  4-FACTOR ROOT CONSOLE
                 </span>
               </div>
             </form>

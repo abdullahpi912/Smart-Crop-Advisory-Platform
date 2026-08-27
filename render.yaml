@@ -22,6 +22,8 @@ services:
         sync: false
       - key: DB_NAME
         value: agrisense_db
+      - key: FRONTEND_URL
+        value: https://cropling.netlify.app,http://localhost:5173,http://localhost:3000
 
   # 2. Frontend React + Vite Static Site
   - type: web

@@ -1,5 +1,6 @@
 import React, { useState } from 'react';
 import { Link, useNavigate } from 'react-router-dom';
+import { API_BASE_URL } from '../lib/apiConfig';
 
 export default function AdminLogin({ showToast }) {
   const navigate = useNavigate();
@@ -12,7 +13,7 @@ export default function AdminLogin({ showToast }) {
   const [loading, setLoading] = useState(false);
   const [errorMsg, setErrorMsg] = useState('');
 
-  const backendUrl = import.meta.env?.VITE_API_BASE_URL || 'http://localhost:5000';
+  const backendUrl = API_BASE_URL;
 
   const fetchHint = async (user) => {
     const trimmed = (user || '').trim();

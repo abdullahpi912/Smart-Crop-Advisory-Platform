@@ -1,5 +1,6 @@
 import React, { useState, useEffect } from 'react';
 import ReactDOM from 'react-dom';
+import { API_BASE_URL } from '../lib/apiConfig';
 
 export default function EditProfileModal({ isOpen, onClose, userProfile, onProfileUpdated, showToast, onAccountDeleted }) {
   const [activeTab, setActiveTab] = useState('info'); // 'info' | 'password' | 'delete'
@@ -25,7 +26,7 @@ export default function EditProfileModal({ isOpen, onClose, userProfile, onProfi
   const [isLoading, setIsLoading] = useState(false);
   const [errorMsg, setErrorMsg] = useState('');
 
-  const backendUrl = import.meta.env?.VITE_API_BASE_URL || 'http://localhost:5000';
+  const backendUrl = API_BASE_URL;
 
   useEffect(() => {
     if (userProfile) {

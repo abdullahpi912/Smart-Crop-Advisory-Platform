@@ -2,8 +2,9 @@ import React, { useState, useEffect } from 'react';
 import ReactDOM from 'react-dom';
 import { Link, useNavigate } from 'react-router-dom';
 import { formatTimestamp } from '../lib/formatters';
+import { API_BASE_URL } from '../lib/apiConfig';
 
-const BACKEND = import.meta.env?.VITE_API_BASE_URL || 'http://localhost:5000';
+const BACKEND = API_BASE_URL;
 
 export default function Dashboard({ showToast }) {
   const navigate = useNavigate();

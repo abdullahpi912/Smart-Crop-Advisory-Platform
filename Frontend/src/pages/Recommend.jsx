@@ -2,6 +2,7 @@ import React, { useState, useEffect, useRef } from 'react';
 import { useLocation } from 'react-router-dom';
 import ResultCard from '../components/ResultCard';
 import { calculateRecommendation } from '../lib/recommendationEngine';
+import { API_BASE_URL } from '../lib/apiConfig';
 
 // Default static fallbacks for instant UI rendering if backend is offline
 const DEFAULT_FERTILIZER_OPTIONS = {
@@ -162,7 +163,7 @@ export default function Recommend({ showToast }) {
   // Fetch model options from backend on mount
   useEffect(() => {
     const fetchOptions = async () => {
-      const backendUrl = import.meta.env?.VITE_API_BASE_URL || 'http://localhost:5000';
+      const backendUrl = API_BASE_URL;
       try {
         const response = await fetch(`${backendUrl}/api/options`);
         if (response.ok) {
@@ -315,7 +316,7 @@ export default function Recommend({ showToast }) {
 
     let computed = null;
     let isFromBackend = false;
-    const backendUrl = import.meta.env?.VITE_API_BASE_URL || 'http://localhost:5000';
+    const backendUrl = API_BASE_URL;
 
     try {
       if (mode === 'crop') {

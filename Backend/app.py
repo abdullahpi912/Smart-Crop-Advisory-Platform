@@ -40,7 +40,12 @@ app.config.update(
 )
 
 # Configure CORS with strict allowed origins allowlist
-allowed_origins = [o.strip() for o in os.environ.get("FRONTEND_URL", "http://localhost:5173").split(",") if o.strip()]
+default_origins = "https://cropling.netlify.app,http://localhost:5173,http://localhost:3000,http://127.0.0.1:5173"
+raw_frontend_url = os.environ.get("FRONTEND_URL", default_origins)
+allowed_origins = [o.strip() for o in raw_frontend_url.split(",") if o.strip()]
+for prod_origin in ["https://cropling.netlify.app", "http://localhost:5173"]:
+    if prod_origin not in allowed_origins:
+        allowed_origins.append(prod_origin)
 CORS(app, supports_credentials=True, origins=allowed_origins)
 
 class DummyLimiter:

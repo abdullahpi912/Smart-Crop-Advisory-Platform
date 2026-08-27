@@ -1,5 +1,6 @@
 import React, { useState, useEffect } from 'react';
 import { Link, useNavigate } from 'react-router-dom';
+import { API_BASE_URL } from '../lib/apiConfig';
 
 export default function Register({ showToast }) {
   const navigate = useNavigate();
@@ -172,7 +173,7 @@ export default function Register({ showToast }) {
     };
 
     try {
-      const backendUrl = import.meta.env?.VITE_API_BASE_URL || 'http://localhost:5000';
+      const backendUrl = API_BASE_URL;
       const response = await fetch(`${backendUrl}/register`, {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },

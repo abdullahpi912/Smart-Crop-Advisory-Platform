@@ -1,7 +1,8 @@
 import React, { useState, useEffect } from 'react';
 import { useNavigate } from 'react-router-dom';
+import { API_BASE_URL } from '../lib/apiConfig';
 
-const BACKEND = import.meta.env?.VITE_API_BASE_URL || 'http://localhost:5000';
+const BACKEND = API_BASE_URL;
 
 export default function AdminDashboard({ showToast }) {
   const navigate = useNavigate();
