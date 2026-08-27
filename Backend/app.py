@@ -5,6 +5,7 @@ import datetime
 import random
 import re
 import logging
+import concurrent.futures
 from functools import wraps
 from flask import Flask, request, jsonify, session, redirect
 from flask_cors import CORS
@@ -53,10 +54,19 @@ app.config.update(
 # Configure CORS with strict allowed origins allowlist
 default_origins = "https://cropling.netlify.app,http://localhost:5173,http://localhost:3000,http://127.0.0.1:5173"
 raw_frontend_url = os.environ.get("FRONTEND_URL", default_origins)
-allowed_origins = [o.strip() for o in raw_frontend_url.split(",") if o.strip()]
-for prod_origin in ["https://cropling.netlify.app", "http://localhost:5173"]:
-    if prod_origin not in allowed_origins:
-        allowed_origins.append(prod_origin)
+allowed_origins = [o.strip().rstrip('/') for o in raw_frontend_url.split(",") if o.strip()]
+for prod_origin in [
+    "https://cropling.netlify.app",
+    "https://agrisense-frontend.onrender.com",
+    "https://smart-crop-advisory-platform.onrender.com",
+    "http://localhost:5173",
+    "http://127.0.0.1:5173",
+    "http://localhost:3000",
+    "http://127.0.0.1:3000"
+]:
+    cleaned = prod_origin.rstrip('/')
+    if cleaned not in allowed_origins:
+        allowed_origins.append(cleaned)
 CORS(app, supports_credentials=True, origins=allowed_origins)
 
 class DummyLimiter:
@@ -1350,6 +1360,7 @@ def predict_crop_yield():
 # ==========================================
 
 @app.route('/api/analyze-document', methods=['POST'])
+@login_required
 @limiter.limit("30 per hour")
 def analyze_document():
     """
@@ -1398,6 +1409,12 @@ def analyze_document():
     mime_type = mime_type_map.get(ext, 'image/jpeg')
 
     model_type = request.form.get('model_type', 'crop').lower().strip()
+    ALLOWED_MODEL_TYPES = {'crop', 'fertilizer', 'yield'}
+    if model_type not in ALLOWED_MODEL_TYPES:
+        return jsonify({
+            'status': 'error',
+            'error': f"Invalid model_type '{model_type}'. Must be one of: {', '.join(sorted(ALLOWED_MODEL_TYPES))}"
+        }), 400
 
     if model_type == 'crop':
         expected_keys = ["nitrogen", "phosphorus", "potassium", "temperature", "humidity", "ph", "rainfall"]
@@ -1491,16 +1508,13 @@ def analyze_document():
         "gemini-2.5-pro",
     ]
 
-    response = None
-    last_error = None
-
-    try:
+    def _call_gemini():
         client = genai.Client(api_key=current_key)
         file_part = types.Part.from_bytes(data=file_bytes, mime_type=mime_type)
-
+        m_err = None
         for model_name in CANDIDATE_GEMINI_MODELS:
             try:
-                response = client.models.generate_content(
+                res = client.models.generate_content(
                     model=model_name,
                     contents=[prompt_text, file_part],
                     config=types.GenerateContentConfig(
@@ -1508,17 +1522,28 @@ def analyze_document():
                         temperature=0.1
                     )
                 )
-                if response and response.text:
+                if res and res.text:
                     logger.info("[AI EXTRACTION] Successfully processed with model: %s", model_name)
-                    break
-            except Exception as m_err:
-                last_error = m_err
-                logger.warning("[AI EXTRACTION] Model '%s' failed: %s. Trying next fallback...", model_name, m_err)
+                    return res
+            except Exception as m_ex:
+                m_err = m_ex
+                logger.warning("[AI EXTRACTION] Model '%s' failed: %s. Trying next fallback...", model_name, m_ex)
                 continue
+        if m_err:
+            raise m_err
+        raise RuntimeError("All candidate AI vision models failed to return content.")
 
-        if response is None or not response.text:
-            raise last_error or RuntimeError("All candidate AI vision models failed to return content.")
-
+    response = None
+    try:
+        with concurrent.futures.ThreadPoolExecutor(max_workers=1) as executor:
+            future = executor.submit(_call_gemini)
+            response = future.result(timeout=30)
+    except concurrent.futures.TimeoutError:
+        logger.warning("[AI EXTRACTION] Gemini document analysis timed out after 30 seconds.")
+        return jsonify({
+            'status': 'error',
+            'error': 'AI analysis timed out, please try again.'
+        }), 504
     except Exception as api_err:
         err_msg = str(api_err).lower()
         logger.warning("[AI EXTRACTION] All Gemini models failed: %s", api_err)

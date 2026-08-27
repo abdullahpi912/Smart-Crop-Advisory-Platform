@@ -126,14 +126,17 @@ export default function DocumentUpload({ modelType = 'crop', showToast, onExtrac
       currentP += Math.floor(Math.random() * 8) + 4;
       if (currentP > 90) {
         currentP = 90;
-        setProgressStatus('Extracting agricultural vectors with Gemini 2.5 Flash...');
+        setProgressStatus('Extracting agricultural telemetry from report...');
       } else if (currentP > 60) {
-        setProgressStatus('Analyzing document layout & agronomic telemetry...');
+        setProgressStatus('Analyzing document layout & parameter values...');
       } else if (currentP > 35) {
-        setProgressStatus('Reading document tokens into Gemini AI model...');
+        setProgressStatus('Scanning document tokens and telemetry data...');
       }
       setUploadProgress(currentP);
     }, 180);
+
+    const controller = new AbortController();
+    const timeoutId = setTimeout(() => controller.abort(), 45000);
 
     try {
       const formData = new FormData();
@@ -143,6 +146,7 @@ export default function DocumentUpload({ modelType = 'crop', showToast, onExtrac
       const response = await fetch(`${API_BASE_URL}/api/analyze-document`, {
         method: 'POST',
         credentials: 'include',
+        signal: controller.signal,
         body: formData
       });
 
@@ -185,14 +189,21 @@ export default function DocumentUpload({ modelType = 'crop', showToast, onExtrac
           );
         } else if (response.status === 503) {
           showToast?.('AI document analysis is not configured on this server.', 'info');
+        } else if (response.status === 504) {
+          showToast?.('This is taking longer than usual — please try again.', 'warning');
         } else {
           showToast?.(data.error || 'Failed to extract values from document. Please verify document clarity.', 'error');
         }
       }
     } catch (err) {
-      console.error('Document analysis network error:', err);
-      showToast?.('Network error while analyzing document. Please check connection and try again.', 'error');
+      console.error('Document analysis request error:', err);
+      if (err.name === 'AbortError') {
+        showToast?.('This is taking longer than usual — please try again.', 'warning');
+      } else {
+        showToast?.('Reconnecting to the server — this can take up to a minute on first use, please retry shortly.', 'warning');
+      }
     } finally {
+      clearTimeout(timeoutId);
       if (progressTimerRef.current) clearInterval(progressTimerRef.current);
       setIsAnalyzing(false);
       setUploadProgress(0);
@@ -247,14 +258,21 @@ export default function DocumentUpload({ modelType = 'crop', showToast, onExtrac
         }}
         aria-label="Upload soil test report or agricultural document for AI auto-fill"
       >
+        {/* Subtle decorative ambient glow element */}
+        <div className="doc-upload-ambient-glow" aria-hidden="true"></div>
+
         {isAnalyzing ? (
           <div className="doc-upload-progress-wrapper">
             <div className="doc-upload-progress-header">
               <div className="doc-upload-progress-file">
-                <i className={`fa-solid ${activeFile?.ext === 'PDF' ? 'fa-file-pdf' : 'fa-file-image'} doc-upload-file-icon`}></i>
+                <div className="doc-upload-analyzing-orb">
+                  <i className={`fa-solid ${activeFile?.ext === 'PDF' ? 'fa-file-pdf' : 'fa-file-image'}`}></i>
+                </div>
                 <div className="doc-upload-file-info">
                   <span className="doc-upload-file-name">{activeFile?.name || 'Document'}</span>
-                  <span className="doc-upload-file-meta">{activeFile?.ext} &bull; {activeFile?.size}</span>
+                  <span className="doc-upload-file-meta">
+                    <span className="doc-format-pill">{activeFile?.ext}</span> &bull; {activeFile?.size}
+                  </span>
                 </div>
               </div>
               <div className="doc-upload-progress-pct">
@@ -275,7 +293,10 @@ export default function DocumentUpload({ modelType = 'crop', showToast, onExtrac
                 <i className="fa-solid fa-circle-notch fa-spin status-spinner"></i>
                 <span>{progressStatus || 'Analyzing document...'}</span>
               </div>
-              <span className="doc-upload-progress-privacy">Zero Disk Storage</span>
+              <span className="doc-upload-progress-privacy">
+                <i className="fa-solid fa-shield-halved" style={{ marginRight: '4px' }}></i>
+                Zero Disk Storage
+              </span>
             </div>
           </div>
         ) : !user ? (
@@ -285,37 +306,55 @@ export default function DocumentUpload({ modelType = 'crop', showToast, onExtrac
             </div>
             <div className="doc-upload-text">
               <div className="doc-upload-title-row">
-                <span className="doc-upload-title">AI DOCUMENT AUTO-FILL (SOIL REPORT / PDF)</span>
-                <span className="doc-upload-tag">AI GEMINI</span>
+                <span className="doc-upload-title">SMART LAB REPORT AUTO-FILL</span>
               </div>
               <span className="doc-upload-desc">
-                Sign in to automatically scan and populate form inputs from your {getModelLabel()}.
+                Sign in to automatically scan and populate soil telemetry parameters from your {getModelLabel()}.
               </span>
+              <div className="doc-upload-meta-row">
+                <span className="doc-format-pill">PDF</span>
+                <span className="doc-format-pill">JPG</span>
+                <span className="doc-format-pill">PNG</span>
+                <span className="doc-format-pill">WEBP</span>
+                <span className="doc-security-pill">
+                  <i className="fa-solid fa-shield-halved"></i>
+                  Zero Disk Storage
+                </span>
+              </div>
             </div>
             <Link
               to="/login"
               className="doc-upload-action-btn"
               onClick={(e) => e.stopPropagation()}
             >
-              Sign In <i className="fa-solid fa-arrow-right" style={{ fontSize: '11px', marginLeft: '4px' }}></i>
+              Sign In to Auto-fill <i className="fa-solid fa-arrow-right" style={{ fontSize: '11px', marginLeft: '6px' }}></i>
             </Link>
           </div>
         ) : (
           <div className="doc-upload-idle-content">
             <div className="doc-upload-icon-wrapper">
-              <i className="fa-solid fa-file-arrow-up"></i>
+              <i className="fa-solid fa-file-lines"></i>
             </div>
             <div className="doc-upload-text">
               <div className="doc-upload-title-row">
                 <span className="doc-upload-title">AUTO-FILL FROM LAB REPORT / IMAGE</span>
-                <span className="doc-upload-tag">GEMINI AI</span>
               </div>
               <span className="doc-upload-desc">
                 Drop your <strong>{getModelLabel()}</strong> here or click to browse.
               </span>
-              <span className="doc-upload-meta">
-                Supports JPG, PNG, WEBP, PDF (Max 8MB) &bull; Zero Disk Storage
-              </span>
+              <div className="doc-upload-meta-row">
+                <span className="doc-format-pill">PDF</span>
+                <span className="doc-format-pill">JPG</span>
+                <span className="doc-format-pill">PNG</span>
+                <span className="doc-format-pill">WEBP</span>
+                <span className="doc-upload-meta-divider">&bull;</span>
+                <span className="doc-upload-meta-text">Max 8MB</span>
+                <span className="doc-upload-meta-divider">&bull;</span>
+                <span className="doc-security-pill">
+                  <i className="fa-solid fa-shield-halved"></i>
+                  Zero Disk Storage
+                </span>
+              </div>
             </div>
             <button
               type="button"
@@ -325,7 +364,7 @@ export default function DocumentUpload({ modelType = 'crop', showToast, onExtrac
                 triggerBrowse();
               }}
             >
-              <i className="fa-solid fa-plus" style={{ fontSize: '11px', marginRight: '5px' }}></i>
+              <i className="fa-solid fa-cloud-arrow-up" style={{ fontSize: '13px', marginRight: '7px' }}></i>
               Upload Report
             </button>
           </div>

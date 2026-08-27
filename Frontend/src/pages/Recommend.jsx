@@ -385,7 +385,8 @@ export default function Recommend({ showToast, mode = 'crop' }) {
 
     let computed = null;
     let isFromBackend = false;
-    const backendUrl = API_BASE_URL;
+    const controller = new AbortController();
+    const timeoutId = setTimeout(() => controller.abort(), 15000);
 
     try {
       if (mode === 'crop') {
@@ -393,6 +394,7 @@ export default function Recommend({ showToast, mode = 'crop' }) {
           method: 'POST',
           headers: { 'Content-Type': 'application/json' },
           credentials: 'include',
+          signal: controller.signal,
           body: JSON.stringify(cropFormData)
         });
 
@@ -405,6 +407,7 @@ export default function Recommend({ showToast, mode = 'crop' }) {
             method: 'POST',
             headers: { 'Content-Type': 'application/json' },
             credentials: 'include',
+            signal: controller.signal,
             body: JSON.stringify(cropFormData)
           });
           if (response.ok) {
@@ -417,6 +420,7 @@ export default function Recommend({ showToast, mode = 'crop' }) {
           method: 'POST',
           headers: { 'Content-Type': 'application/json' },
           credentials: 'include',
+          signal: controller.signal,
           body: JSON.stringify(fertilizerFormData)
         });
         if (response.ok) {
@@ -431,6 +435,7 @@ export default function Recommend({ showToast, mode = 'crop' }) {
           method: 'POST',
           headers: { 'Content-Type': 'application/json' },
           credentials: 'include',
+          signal: controller.signal,
           body: JSON.stringify(yieldFormData)
         });
         if (response.ok) {
@@ -442,7 +447,14 @@ export default function Recommend({ showToast, mode = 'crop' }) {
         }
       }
     } catch (err) {
-      console.warn('Backend API connection failed, executing fallback calculation engine:', err);
+      console.warn('Backend API connection issue, running local engine:', err);
+      if (err.name === 'AbortError') {
+        showToast?.('This is taking longer than usual — loaded instant advisory from local intelligence engine.', 'info');
+      } else {
+        showToast?.('Reconnecting to the server — this can take up to a minute on first use, loaded instant advisory.', 'info');
+      }
+    } finally {
+      clearTimeout(timeoutId);
     }
 
     // Client-side fallback engine if backend is offline

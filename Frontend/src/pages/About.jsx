@@ -19,7 +19,7 @@ export default function About() {
         </div>
 
         {/* Overview Split Grid */}
-        <div style={{ display: 'grid', gridTemplateColumns: '1.2fr 1fr', gap: '3.5rem', alignItems: 'center', marginBottom: '4rem' }}>
+        <div className="about-split-grid">
           <div>
             <span className="mono-accent">01 • THE CHALLENGE</span>
             <h2 style={{ fontSize: '2rem', fontWeight: 800, margin: '0.75rem 0 1rem 0', letterSpacing: '-0.03em' }}>
@@ -33,11 +33,11 @@ export default function About() {
             </p>
           </div>
 
-          <div style={{ border: '1px solid var(--agri-line)', overflow: 'hidden', backgroundColor: 'var(--agri-stage)' }}>
+          <div className="about-img-container" style={{ border: '1px solid var(--agri-line)', overflow: 'hidden', backgroundColor: 'var(--agri-stage)' }}>
             <img
               src="/Farmer_image/Truck_image.jpg"
               alt="Precision agricultural machinery in field"
-              style={{ width: '100%', height: '360px', objectFit: 'cover' }}
+              style={{ width: '100%', height: '100%', minHeight: '260px', objectFit: 'cover' }}
               onError={(e) => { e.currentTarget.onerror = null; e.currentTarget.src = '/Farmer_image/Truck_image.jpg'; }}
             />
           </div>
@@ -150,7 +150,7 @@ export default function About() {
         </div>
 
         {/* Technical Call to Action Console */}
-        <div style={{ border: '1px solid var(--agri-line)', backgroundColor: 'var(--agri-surface)', padding: '3.5rem 2.5rem', textAlign: 'center' }}>
+        <div className="about-cta-banner" style={{ border: '1px solid var(--agri-line)', backgroundColor: 'var(--agri-surface)', textAlign: 'center' }}>
           <span className="mono-accent" style={{ display: 'block', marginBottom: '0.75rem' }}>SIMULATOR READY</span>
           <h2 style={{ fontSize: '2.2rem', fontWeight: 900, letterSpacing: '-0.03em', marginBottom: '1rem', color: 'var(--agri-ink)' }}>
             Ready to Evaluate Your Field Parameters?

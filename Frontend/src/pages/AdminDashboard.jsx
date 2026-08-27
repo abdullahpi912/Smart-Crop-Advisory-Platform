@@ -344,12 +344,13 @@ export default function AdminDashboard({ showToast }) {
   }
 
   return (
-    <div style={{ display: 'flex', minHeight: 'calc(100vh - var(--nav-height, 60px))', paddingTop: 'var(--nav-height, 60px)' }}>
+    <div className="admin-dashboard-layout" style={{ display: 'flex', minHeight: 'calc(100vh - var(--nav-height, 60px))', paddingTop: 'var(--nav-height, 60px)' }}>
       
       {/* ══════════════════════════════════════════════════════════════════════
           FIXED ADMIN SIDEBAR (No general farmer links)
       ══════════════════════════════════════════════════════════════════════ */}
       <aside
+        className="admin-sidebar"
         style={{
           position: 'fixed',
           top: 'var(--nav-height, 60px)',
@@ -581,6 +582,7 @@ export default function AdminDashboard({ showToast }) {
           MAIN CONTENT AREA
       ══════════════════════════════════════════════════════════════════════ */}
       <main
+        className="admin-main-content"
         style={{
           marginLeft: '280px',
           flex: 1,
