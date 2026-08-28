@@ -315,16 +315,18 @@ export default function Navbar() {
               </div>
             </div>
 
-            {/* Circular Edge Toggle Chevron Button */}
-            <button
-              type="button"
-              className="cl-toggle-btn"
-              onClick={toggleCollapse}
-              aria-label={isCollapsed ? "Expand sidebar" : "Collapse sidebar"}
-              title={isCollapsed ? "Expand sidebar" : "Collapse sidebar"}
-            >
-              <i className="fa-solid fa-chevron-right cl-toggle-icon"></i>
-            </button>
+            {/* Circular Edge Toggle Chevron Button (Visible only when menu is open) */}
+            {isSidebarOpen && (
+              <button
+                type="button"
+                className="cl-toggle-btn"
+                onClick={toggleCollapse}
+                aria-label={isCollapsed ? "Expand sidebar" : "Collapse sidebar"}
+                title={isCollapsed ? "Expand sidebar" : "Collapse sidebar"}
+              >
+                <i className="fa-solid fa-chevron-right cl-toggle-icon"></i>
+              </button>
+            )}
           </header>
 
           {/* Sidebar Menu Body */}
