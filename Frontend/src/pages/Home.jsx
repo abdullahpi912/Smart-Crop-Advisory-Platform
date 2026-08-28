@@ -138,12 +138,14 @@ export default function Home() {
       <section className="sticky-analysis-section" ref={stickySectionRef} id="pipeline-stage">
         <div className="sticky-analysis-stage">
           {/* Background Marquee Motion */}
-          <div
-            className="marquee-bg-word"
-            style={{ transform: `translate(calc(-5% + ${stickyProgress * -300}px), -50%)` }}
-            aria-hidden="true"
-          >
-            FIELD INTELLIGENCE • ADVISORY PIPELINE • FIELD INTELLIGENCE
+          <div className="marquee-overflow-wrapper">
+            <div
+              className="marquee-bg-word"
+              style={{ transform: `translate(calc(-5% + ${stickyProgress * -300}px), -50%)` }}
+              aria-hidden="true"
+            >
+              FIELD INTELLIGENCE • ADVISORY PIPELINE • FIELD INTELLIGENCE
+            </div>
           </div>
 
           {/* Sticky Header Meta */}
