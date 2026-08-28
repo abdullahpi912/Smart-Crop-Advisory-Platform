@@ -526,13 +526,26 @@ export default function Recommend({ showToast, mode = 'crop' }) {
           </p>
         </div>
 
-        {/* Centered Model Title */}
-        <div className="mode-page-title" style={{ textAlign: 'center', marginBottom: '1.5rem' }}>
-          <h2 className="section-title-large" style={{ fontSize: '1.75rem' }}>
-            {mode === 'crop' && (<><i className="fa-solid fa-wheat-awn" style={{ marginRight: '10px' }}></i>CROP SELECTION</>)}
-            {mode === 'fertilizer' && (<><i className="fa-solid fa-flask-vial" style={{ marginRight: '10px' }}></i>FERTILIZER ADVISORY</>)}
-            {mode === 'yield' && (<><i className="fa-solid fa-chart-line" style={{ marginRight: '10px' }}></i>YIELD PREDICTION</>)}
-          </h2>
+        {/* Centered Model Title with Right-Aligned How It Works Button */}
+        <div className="mode-header-row">
+          <div></div>
+
+          <div className="mode-page-title">
+            <h2 className="section-title-large" style={{ fontSize: '1.75rem' }}>
+              {mode === 'crop' && (<><i className="fa-solid fa-wheat-awn" style={{ marginRight: '10px' }}></i>CROP SELECTION</>)}
+              {mode === 'fertilizer' && (<><i className="fa-solid fa-flask-vial" style={{ marginRight: '10px' }}></i>FERTILIZER ADVISORY</>)}
+              {mode === 'yield' && (<><i className="fa-solid fa-chart-line" style={{ marginRight: '10px' }}></i>YIELD PREDICTION</>)}
+            </h2>
+          </div>
+
+          <Link
+            to={`/how-it-works?model=${mode}`}
+            className="btn-how-it-works"
+            title={`Learn how the ${mode === 'crop' ? 'Crop Selection' : (mode === 'fertilizer' ? 'Fertilizer Advisory' : 'Yield Prediction')} model works`}
+          >
+            <i className="fa-solid fa-circle-question"></i>
+            <span>How It Works</span>
+          </Link>
         </div>
 
         {/* Dynamic Preset Switcher */}
@@ -577,14 +590,14 @@ export default function Recommend({ showToast, mode = 'crop' }) {
           {/* Left: Dynamic Form Panel */}
           <form className="console-panel" onSubmit={handleSubmit}>
             <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '1.5rem', borderBottom: '1px solid var(--agri-line)', paddingBottom: '0.75rem', flexWrap: 'wrap', gap: '0.5rem' }}>
-              <span className="mono-accent">
+              <span className="mono-accent" style={{ fontFamily: 'var(--font-display)', fontWeight: 700, letterSpacing: '0.04em' }}>
                 {mode === 'crop' ? 'SOIL & CLIMATE TELEMETRY' : (mode === 'fertilizer' ? 'DISTRICT & SOIL DOSAGE PARAMETERS' : 'REGIONAL CROP & ACREAGE TELEMETRY')}
               </span>
               <div style={{ display: 'flex', alignItems: 'center', gap: '1rem' }}>
-                <span className="mono-meta" style={{ color: 'var(--agri-accent)' }}>
-                  {mode === 'crop' ? 'RANDOM FOREST · 99.5% ACCURACY' : (mode === 'fertilizer' ? 'DECISION TREE · 95% TOP-1 / 98% TOP-3' : 'XGBOOST · R² 0.98')}
+                <span className="mono-meta" style={{ color: 'var(--agri-accent)', fontFamily: 'var(--font-display)', fontWeight: 600, letterSpacing: '0.04em' }}>
+                  {mode === 'crop' ? 'RANDOM FOREST' : (mode === 'fertilizer' ? 'DECISION TREE' : 'XGBOOST')}
                 </span>
-                <span className="mono-meta">
+                <span className="mono-meta" style={{ fontFamily: 'var(--font-display)', fontWeight: 600, letterSpacing: '0.04em' }}>
                   {mode === 'crop' ? '7 VECTORS REQUIRED' : (mode === 'fertilizer' ? '9 VECTORS REQUIRED' : '5 VECTORS REQUIRED')}
                 </span>
               </div>

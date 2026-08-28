@@ -141,21 +141,21 @@ export default function ResultCard({ result, isLoading, processingStage, mode = 
           <div className="report-specs-grid">
             <div className="report-spec-cell">
               <span className="mono-meta" style={{ display: 'block', marginBottom: '4px' }}>FARM ACREAGE</span>
-              <strong style={{ fontFamily: 'var(--font-mono)', fontSize: '0.95rem', color: 'var(--agri-ink)' }}>
+              <strong style={{ fontFamily: 'var(--font-display)', fontSize: '0.95rem', color: 'var(--agri-ink)' }}>
                 {result.inputs?.area ? `${result.inputs.area} Hectares` : '10.0 Hectares'}
               </strong>
             </div>
 
             <div className="report-spec-cell">
               <span className="mono-meta" style={{ display: 'block', marginBottom: '4px' }}>SEASON &amp; YEAR</span>
-              <strong style={{ fontFamily: 'var(--font-mono)', fontSize: '0.95rem', color: 'var(--agri-ink)' }}>
+              <strong style={{ fontFamily: 'var(--font-display)', fontSize: '0.95rem', color: 'var(--agri-ink)' }}>
                 {result.inputs?.season || 'Kharif'} • {result.inputs?.crop_year || 2024}
               </strong>
             </div>
 
             <div className="report-spec-cell" style={{ gridColumn: '1 / -1' }}>
               <span className="mono-meta" style={{ display: 'block', marginBottom: '4px' }}>STATE / REGION</span>
-              <strong style={{ fontFamily: 'var(--font-mono)', fontSize: '0.95rem', color: 'var(--agri-accent)' }}>
+              <strong style={{ fontFamily: 'var(--font-display)', fontSize: '0.95rem', color: 'var(--agri-accent)' }}>
                 {result.inputs?.state_name || 'Maharashtra'}
               </strong>
             </div>
@@ -191,7 +191,7 @@ export default function ResultCard({ result, isLoading, processingStage, mode = 
                           <span className="fertilizer-top3-badge">{`#0${idx + 1}`}</span>
                           <strong style={{ color: 'var(--agri-ink)', fontWeight: 700 }}>{cand.name}</strong>
                         </span>
-                        <span style={{ fontFamily: 'var(--font-mono)', fontWeight: 700, color: idx === 0 ? 'var(--agri-accent)' : 'var(--agri-muted)' }}>
+                        <span style={{ fontFamily: 'var(--font-display)', fontWeight: 700, color: idx === 0 ? 'var(--agri-accent)' : 'var(--agri-muted)' }}>
                           {confVal.toFixed(1)}%
                         </span>
                       </div>
@@ -215,21 +215,21 @@ export default function ResultCard({ result, isLoading, processingStage, mode = 
           <div className="report-specs-grid">
             <div className="report-spec-cell">
               <span className="mono-meta" style={{ display: 'block', marginBottom: '4px' }}>DISTRICT &amp; CROP</span>
-              <strong style={{ fontFamily: 'var(--font-mono)', fontSize: '0.95rem', color: 'var(--agri-ink)' }}>
+              <strong style={{ fontFamily: 'var(--font-display)', fontSize: '0.95rem', color: 'var(--agri-ink)' }}>
                 {result.inputs?.district_name || 'Kolhapur'} • {result.crop || result.inputs?.crop || 'Sugarcane'}
               </strong>
             </div>
 
             <div className="report-spec-cell">
               <span className="mono-meta" style={{ display: 'block', marginBottom: '4px' }}>SOIL COLOR &amp; pH</span>
-              <strong style={{ fontFamily: 'var(--font-mono)', fontSize: '0.95rem', color: 'var(--agri-ink)' }}>
+              <strong style={{ fontFamily: 'var(--font-display)', fontSize: '0.95rem', color: 'var(--agri-ink)' }}>
                 {result.inputs?.soil_color || 'Black'} • pH {result.inputs?.ph || 6.5}
               </strong>
             </div>
 
             <div className="report-spec-cell" style={{ gridColumn: '1 / -1' }}>
               <span className="mono-meta" style={{ display: 'block', marginBottom: '4px' }}>SOIL N-P-K NUTRIENT PROFILE</span>
-              <strong style={{ fontFamily: 'var(--font-mono)', fontSize: '0.95rem', color: 'var(--agri-accent)' }}>
+              <strong style={{ fontFamily: 'var(--font-display)', fontSize: '0.95rem', color: 'var(--agri-accent)' }}>
                 {result.npkSummary || `N: ${result.inputs?.nitrogen || 50} | P: ${result.inputs?.phosphorus || 20} | K: ${result.inputs?.potassium || 30}`}
               </strong>
             </div>
@@ -252,21 +252,21 @@ export default function ResultCard({ result, isLoading, processingStage, mode = 
           <div className="report-specs-grid">
             <div className="report-spec-cell">
               <span className="mono-meta" style={{ display: 'block', marginBottom: '4px' }}>SOIL N-P-K</span>
-              <strong style={{ fontFamily: 'var(--font-mono)', fontSize: '0.95rem', color: 'var(--agri-ink)' }}>
+              <strong style={{ fontFamily: 'var(--font-display)', fontSize: '0.95rem', color: 'var(--agri-ink)' }}>
                 {result.npkSummary || `N:${result.inputs?.nitrogen || 90} | P:${result.inputs?.phosphorus || 42} | K:${result.inputs?.potassium || 43}`}
               </strong>
             </div>
 
             <div className="report-spec-cell">
               <span className="mono-meta" style={{ display: 'block', marginBottom: '4px' }}>CLIMATE &amp; pH</span>
-              <strong style={{ fontFamily: 'var(--font-mono)', fontSize: '0.95rem', color: 'var(--agri-ink)' }}>
+              <strong style={{ fontFamily: 'var(--font-display)', fontSize: '0.95rem', color: 'var(--agri-ink)' }}>
                 {result.climateSummary || `pH ${result.inputs?.ph || 6.5} | ${result.inputs?.rainfall || 202}mm`}
               </strong>
             </div>
 
             <div className="report-spec-cell" style={{ gridColumn: '1 / -1' }}>
               <span className="mono-meta" style={{ display: 'block', marginBottom: '4px' }}>SOIL CHEMISTRY STATUS</span>
-              <strong style={{ fontFamily: 'var(--font-mono)', fontSize: '0.95rem', color: 'var(--agri-accent)' }}>
+              <strong style={{ fontFamily: 'var(--font-display)', fontSize: '0.95rem', color: 'var(--agri-accent)' }}>
                 {result.soilHealth || 'Optimal Balanced Soil Profile'}
               </strong>
             </div>

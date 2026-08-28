@@ -10,6 +10,7 @@ import CropLibrary from './pages/CropLibrary';
 import Dashboard from './pages/Dashboard';
 import About from './pages/About';
 import Contact from './pages/Contact';
+import HowItWorks from './pages/HowItWorks';
 import Login from './pages/Login';
 import Register from './pages/Register';
 import AdminLogin from './pages/AdminLogin';
@@ -85,6 +86,8 @@ export default function App() {
           <Route path="/dashboard.html" element={<Dashboard showToast={showToast} />} />
           <Route path="/about" element={<About />} />
           <Route path="/about.html" element={<About />} />
+          <Route path="/how-it-works" element={<HowItWorks />} />
+          <Route path="/how-it-works.html" element={<HowItWorks />} />
           <Route path="/contact" element={<Contact showToast={showToast} />} />
           <Route path="/contact.html" element={<Contact showToast={showToast} />} />
           <Route path="/login" element={<Login showToast={showToast} />} />

@@ -222,12 +222,7 @@ export default function Register({ showToast }) {
         {/* Left: Multi-Step Registration Form */}
         <div className="auth-form-column">
           <div style={{ marginBottom: '2rem' }}>
-            <div className="section-meta-row" style={{ marginBottom: '0.75rem' }}>
-              <span className="mono-accent">REGISTRATION • ENROLLMENT</span>
-              <div className="section-meta-rule" style={{ maxWidth: '30px' }}></div>
-              <span className="mono-meta">STEP 0{currentStep} OF 02</span>
-            </div>
-            <h1 style={{ fontSize: '2rem', fontWeight: 900, letterSpacing: '-0.03em', color: 'var(--agri-ink)' }}>
+            <h1 style={{ fontSize: '2rem', fontWeight: 900, letterSpacing: '-0.03em', color: 'var(--agri-ink)', margin: 0 }}>
               Farm Profile Registration
             </h1>
           </div>
@@ -506,8 +501,7 @@ export default function Register({ showToast }) {
         {/* Right: Technical Procedure Roadmap Panel */}
         <aside className="auth-sidebar-technical">
           <div>
-            <span className="mono-accent">SYSTEM GUIDE • ONBOARDING</span>
-            <h3 style={{ fontSize: '1.4rem', fontWeight: 800, marginTop: '4px', marginBottom: '0.5rem', color: 'var(--agri-ink)' }}>
+            <h3 style={{ fontSize: '1.4rem', fontWeight: 800, margin: '0 0 0.5rem 0', color: 'var(--agri-ink)' }}>
               Registration Procedure
             </h3>
             <p style={{ color: 'var(--agri-secondary)', fontSize: '0.92rem', lineHeight: 1.5, marginBottom: '2rem' }}>

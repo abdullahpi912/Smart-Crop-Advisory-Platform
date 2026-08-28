@@ -83,6 +83,11 @@ export default function Footer() {
               </div>
               <ul style={{ listStyle: 'none', display: 'flex', flexDirection: 'column', gap: '0.6rem' }}>
                 <li>
+                  <Link to="/how-it-works" className="mono-meta" style={{ color: 'var(--agri-secondary)', transition: 'color 0.2s' }}>
+                    HOW IT WORKS (GUIDE)
+                  </Link>
+                </li>
+                <li>
                   <Link to="/about" className="mono-meta" style={{ color: 'var(--agri-secondary)', transition: 'color 0.2s' }}>
                     ABOUT ARCHITECTURE
                   </Link>

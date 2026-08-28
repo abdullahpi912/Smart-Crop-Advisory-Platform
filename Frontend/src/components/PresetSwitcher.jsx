@@ -11,11 +11,6 @@ export default function PresetSwitcher({ activePreset, onSelectPreset }) {
 
   return (
     <div style={{ marginBottom: '1.75rem' }}>
-      <div className="section-meta-row" style={{ marginBottom: '0.75rem' }}>
-        <span className="mono-accent">PRESETS</span>
-        <div className="section-meta-rule" style={{ maxWidth: '30px' }}></div>
-        <span className="mono-meta">QUICK TEST FIELD PROFILES</span>
-      </div>
       <div className="presets-row">
         {presets.map((p) => {
           const isActive = activePreset === p.id;

@@ -94,11 +94,6 @@ export default function Home() {
       <section className="section-pad reveal" id="field-intelligence">
         <div className="page-container">
           <div className="section-header-editorial">
-            <div className="section-meta-row">
-              <span className="mono-accent">FIELD INPUTS</span>
-              <div className="section-meta-rule"></div>
-              <span className="mono-meta">PRIMARY AGRONOMIC VECTORS</span>
-            </div>
             <h2 className="section-title-large">Field Chemical &amp; Climate Parameters</h2>
             <p className="section-desc-editorial">
               Primary agronomic indicators used by the Crop Selection engine. Fertilizer Advisory and Yield Forecasting draw on additional regional and crop-specific vectors — see the full model breakdown on the About page.
@@ -139,8 +134,7 @@ export default function Home() {
           {/* Sticky Header Meta */}
           <div style={{ position: 'relative', zIndex: 2, display: 'flex', justifyContent: 'space-between', alignItems: 'center', borderBottom: '1px solid var(--agri-line)', paddingBottom: '1rem' }}>
             <div>
-              <span className="mono-accent">SYSTEM FLOW</span>
-              <h3 style={{ fontSize: '1.6rem', fontWeight: 800, marginTop: '4px' }}>AI Field Analysis Execution</h3>
+              <h3 style={{ fontSize: '1.6rem', fontWeight: 800, margin: 0 }}>AI Field Analysis Execution</h3>
             </div>
           </div>
 
@@ -188,11 +182,6 @@ export default function Home() {
         <div className="page-container">
           <div className="proof-grid">
             <div>
-              <div className="section-meta-row">
-                <span className="mono-accent">ARCHITECTURAL PROOF</span>
-                <div className="section-meta-rule" style={{ backgroundColor: 'var(--agri-accent)' }}></div>
-                <span className="mono-meta" style={{ color: '#85858B' }}>MULTI-MODEL ENGINE</span>
-              </div>
               <h2 className="section-title-large" style={{ color: '#EFEFEE' }}>
                 Precision Advisory Architecture
               </h2>
@@ -216,19 +205,22 @@ export default function Home() {
               <div style={{ display: 'grid', gridTemplateColumns: 'repeat(3, 1fr)', gap: '1.5rem', borderTop: '1px solid rgba(239,239,238,0.12)', paddingTop: '1.5rem', marginTop: '1.5rem' }}>
                 <div>
                   <span className="mono-meta" style={{ color: '#7C97FF' }}>CROP MODEL</span>
-                  <div style={{ fontSize: '1.2rem', fontWeight: 800, marginTop: '4px', color: '#EFEFEE' }}>99.5% Accuracy</div>
                   <span className="mono-meta" style={{ color: '#85858B' }}>Random Forest · 22 Classes</span>
                 </div>
                 <div>
                   <span className="mono-meta" style={{ color: '#7C97FF' }}>FERTILIZER MODEL</span>
-                  <div style={{ fontSize: '1.2rem', fontWeight: 800, marginTop: '4px', color: '#EFEFEE' }}>95% Top-1 · 98% Top-3</div>
                   <span className="mono-meta" style={{ color: '#85858B' }}>Decision Tree · 19 Classes</span>
                 </div>
                 <div>
                   <span className="mono-meta" style={{ color: '#7C97FF' }}>YIELD MODEL</span>
-                  <div style={{ fontSize: '1.2rem', fontWeight: 800, marginTop: '4px', color: '#EFEFEE' }}>R² 0.98</div>
                   <span className="mono-meta" style={{ color: '#85858B' }}>XGBoost · 242K+ Records</span>
                 </div>
+              </div>
+
+              <div style={{ marginTop: '1.75rem' }}>
+                <Link to="/how-it-works" className="btn-secondary-technical" style={{ padding: '8px 18px', fontSize: '11px', borderColor: 'rgba(239,239,238,0.25)', color: '#EFEFEE', backgroundColor: 'transparent' }}>
+                  <i className="fa-solid fa-circle-question" style={{ marginRight: '6px' }}></i> How These Models Work &rarr;
+                </Link>
               </div>
             </div>
 
@@ -283,11 +275,6 @@ export default function Home() {
       <section className="section-pad reveal" id="workflow">
         <div className="page-container">
           <div className="section-header-editorial">
-            <div className="section-meta-row">
-              <span className="mono-accent">WORKFLOW</span>
-              <div className="section-meta-rule"></div>
-              <span className="mono-meta">END-TO-END PROCESS</span>
-            </div>
             <h2 className="section-title-large">End-to-End Precision Advisory Workflow</h2>
             <p className="section-desc-editorial">
               How Cropling transforms raw soil chemical readings and regional parameters into actionable crop selection, targeted fertilizer recommendations, and harvest yield forecasts.
@@ -315,11 +302,6 @@ export default function Home() {
       <section className="section-pad reveal" id="why">
         <div className="page-container">
           <div className="section-header-editorial">
-            <div className="section-meta-row">
-              <span className="mono-accent">ADVANTAGE</span>
-              <div className="section-meta-rule"></div>
-              <span className="mono-meta">DATA-BACKED PRECISION</span>
-            </div>
             <h2 className="section-title-large">Smarter Soil &amp; Harvest Insights for Better Farming</h2>
             <p className="section-desc-editorial">
               Eliminate planting guesswork, reduce fertilizer expenses, forecast yield production, and preserve long-term soil health with automated agronomic guidance.
@@ -380,11 +362,6 @@ export default function Home() {
       <section className="section-pad reveal" id="faq">
         <div className="page-container">
           <div className="section-header-editorial" style={{ textAlign: 'center', maxWidth: '720px', margin: '0 auto 3rem auto' }}>
-            <div className="section-meta-row" style={{ justifyContent: 'center' }}>
-              <span className="mono-accent">FAQ</span>
-              <div className="section-meta-rule"></div>
-              <span className="mono-meta">QUESTIONS &amp; ANSWERS</span>
-            </div>
             <h2 className="section-title-large">Frequently Asked Questions</h2>
           </div>
 

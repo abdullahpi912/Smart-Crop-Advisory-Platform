@@ -130,8 +130,7 @@ export default function Contact({ showToast }) {
           {/* Telemetry Sidebar */}
           <div style={{ display: 'flex', flexDirection: 'column', gap: '1.5rem' }}>
             <div className="console-panel">
-              <span className="mono-accent">LOCATION • DIVISION</span>
-              <h3 style={{ fontSize: '1.2rem', fontWeight: 800, marginTop: '4px', marginBottom: '0.75rem' }}>
+              <h3 style={{ fontSize: '1.2rem', fontWeight: 800, margin: '0 0 0.75rem 0' }}>
                 Agronomy Headquarters
               </h3>
               <p style={{ color: 'var(--agri-secondary)', fontSize: '0.95rem', lineHeight: 1.6 }}>
@@ -142,8 +141,7 @@ export default function Contact({ showToast }) {
             </div>
 
             <div className="console-panel">
-              <span className="mono-accent">COMMUNICATIONS • DIRECT</span>
-              <h3 style={{ fontSize: '1.2rem', fontWeight: 800, marginTop: '4px', marginBottom: '0.75rem' }}>
+              <h3 style={{ fontSize: '1.2rem', fontWeight: 800, margin: '0 0 0.75rem 0' }}>
                 Advisory Support Desk
               </h3>
               <p style={{ color: 'var(--agri-secondary)', fontSize: '0.95rem', lineHeight: 1.6 }}>
@@ -153,8 +151,7 @@ export default function Contact({ showToast }) {
             </div>
 
             <div className="console-panel">
-              <span className="mono-accent">PLATFORM TELEMETRY</span>
-              <h3 style={{ fontSize: '1.2rem', fontWeight: 800, marginTop: '4px', marginBottom: '0.75rem' }}>
+              <h3 style={{ fontSize: '1.2rem', fontWeight: 800, margin: '0 0 0.75rem 0' }}>
                 System Health
               </h3>
               <div style={{ display: 'flex', alignItems: 'center', gap: '8px', marginBottom: '4px' }}>

@@ -1,4 +1,5 @@
 import React, { useState, useRef } from 'react';
+import { Link } from 'react-router-dom';
 import CropCard from '../components/CropCard';
 import CropDetailsModal from '../components/CropDetailsModal';
 
@@ -1331,29 +1332,40 @@ export default function CropLibrary() {
           </button>
         </div>
 
-        {/* Search Bar */}
-        <div className="crop-search-bar" style={{ marginTop: '1.5rem' }}>
-          <div className="console-field">
-            <div className="input-wrapper">
-              <input
-                type="text"
-                placeholder={
-                  activeModel === 'fertilizer'
-                    ? 'Search fertilizer formulas by name, NPK ratio, or soil type...'
-                    : activeModel === 'yield'
-                    ? 'Search crop yield benchmarks by crop name, season, or harvest duration...'
-                    : 'Search crops by name, category, or climate requirements...'
-                }
-                value={searchQuery}
-                onChange={(e) => setSearchQuery(e.target.value)}
-                style={{ paddingLeft: '2.5rem' }}
-              />
-              <i
-                className="fa-solid fa-magnifying-glass"
-                style={{ position: 'absolute', left: '1rem', top: '50%', transform: 'translateY(-50%)', color: 'var(--agri-muted)' }}
-              ></i>
+        {/* Search Bar & How It Works Row */}
+        <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', gap: '1rem', marginTop: '1.5rem', flexWrap: 'wrap' }}>
+          <div className="crop-search-bar" style={{ flex: 1, minWidth: '280px', marginTop: 0 }}>
+            <div className="console-field">
+              <div className="input-wrapper">
+                <input
+                  type="text"
+                  placeholder={
+                    activeModel === 'fertilizer'
+                      ? 'Search fertilizer formulas by name, NPK ratio, or soil type...'
+                      : activeModel === 'yield'
+                      ? 'Search crop yield benchmarks by crop name, season, or harvest duration...'
+                      : 'Search crops by name, category, or climate requirements...'
+                  }
+                  value={searchQuery}
+                  onChange={(e) => setSearchQuery(e.target.value)}
+                  style={{ paddingLeft: '2.5rem' }}
+                />
+                <i
+                  className="fa-solid fa-magnifying-glass"
+                  style={{ position: 'absolute', left: '1rem', top: '50%', transform: 'translateY(-50%)', color: 'var(--agri-muted)' }}
+                ></i>
+              </div>
             </div>
           </div>
+
+          <Link
+            to={`/how-it-works?model=${activeModel}`}
+            className="btn-how-it-works"
+            title={`Learn how the ${activeModel === 'crop' ? 'Crop Selection' : activeModel === 'fertilizer' ? 'Fertilizer Advisory' : 'Yield Prediction'} model works`}
+          >
+            <i className="fa-solid fa-circle-question"></i>
+            <span>How This Model Works</span>
+          </Link>
         </div>
 
         {/* Filter Category Chips */}

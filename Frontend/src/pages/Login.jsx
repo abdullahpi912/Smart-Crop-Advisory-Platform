@@ -171,13 +171,6 @@ export default function Login({ showToast }) {
           
           {/* Header Title Block */}
           <div style={{ marginBottom: '1.75rem' }}>
-            <div className="section-meta-row" style={{ marginBottom: '0.5rem' }}>
-              <span className="mono-accent">ACCESS • AUTHENTICATION</span>
-              <div className="section-meta-rule" style={{ maxWidth: '30px' }}></div>
-              <span className="mono-meta">
-                {roleTab === 'farmer' ? 'FARMER PORTAL' : 'ROOT CONSOLE'}
-              </span>
-            </div>
             <h1 style={{ fontSize: '2rem', fontWeight: 900, letterSpacing: '-0.03em', color: 'var(--agri-ink)', margin: 0 }}>
               {roleTab === 'farmer' ? 'Sign In to Cropling' : 'Administrator Sign In'}
             </h1>

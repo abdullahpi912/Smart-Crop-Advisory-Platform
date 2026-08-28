@@ -116,6 +116,7 @@ export default function Navbar() {
       ]
     },
     { path: '/crops', label: 'Crop Library', icon: 'fa-solid fa-seedling' },
+    { path: '/how-it-works', label: 'How It Works', icon: 'fa-solid fa-circle-question' },
     { path: '/dashboard', label: 'Farm Analytics', icon: 'fa-solid fa-chart-line' },
     { path: '/about', label: 'Architecture', icon: 'fa-solid fa-chart-pie' },
     { path: '/contact', label: 'Field Support', icon: 'fa-solid fa-headset' }

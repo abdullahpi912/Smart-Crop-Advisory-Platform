@@ -1957,6 +1957,7 @@ def login_user():
         log_login_attempt(user['username'], 'farmer', True)
 
         # Establish Flask session
+        session.permanent = True
         session['user_id'] = user['id']
         session['username'] = user['username']
 
@@ -2505,6 +2506,7 @@ def admin_login():
 
         # Clear session and establish Admin privileges
         session.clear()
+        session.permanent = True
         session['admin_id'] = admin['id']
         session['admin_username'] = admin['username']
         session['role'] = 'admin'

@@ -128,9 +128,6 @@ export default function AdminLogin({ showToast }) {
           boxShadow: '0 12px 36px rgba(0,0,0,0.06)'
         }}>
           <div style={{ marginBottom: '1.5rem' }}>
-            <div className="section-meta-row" style={{ marginBottom: '0.4rem' }}>
-              <span className="mono-accent">ADMINISTRATION • PRIVILEGED ACCESS</span>
-            </div>
             <h1 style={{ fontSize: '1.65rem', fontWeight: 900, color: 'var(--agri-ink)', letterSpacing: '-0.02em', margin: 0 }}>
               System Operator Sign In
             </h1>

@@ -10,10 +10,25 @@ export default function Dashboard({ showToast }) {
   const navigate = useNavigate();
 
   // ── State ────────────────────────────────────────────────
-  const [isAuthenticated, setIsAuthenticated]   = useState(false);
+  const [isAuthenticated, setIsAuthenticated]   = useState(() => {
+    try {
+      const stored = localStorage.getItem('cropling_user') || localStorage.getItem('agrisense_user');
+      return !!stored;
+    } catch (_) {
+      return false;
+    }
+  });
+  const [isLoadingAuth, setIsLoadingAuth]       = useState(true);
   const [isLoadingHistory, setIsLoadingHistory] = useState(true);
   const [history, setHistory]                   = useState([]);
-  const [userProfile, setUserProfile]           = useState(null);
+  const [userProfile, setUserProfile]           = useState(() => {
+    try {
+      const stored = localStorage.getItem('cropling_user') || localStorage.getItem('agrisense_user');
+      return stored ? JSON.parse(stored) : null;
+    } catch (_) {
+      return null;
+    }
+  });
 
   // Edit-profile modal
   const [showProfileModal, setShowProfileModal] = useState(false);
@@ -37,7 +52,10 @@ export default function Dashboard({ showToast }) {
     let isMounted = true;
 
     const fetchData = async () => {
-      if (isMounted) setIsLoadingHistory(true);
+      if (isMounted) {
+        setIsLoadingAuth(true);
+        setIsLoadingHistory(true);
+      }
 
       // Refresh and verify against backend session
       try {
@@ -47,6 +65,7 @@ export default function Dashboard({ showToast }) {
           if (d.user && isMounted) {
             setIsAuthenticated(true);
             setUserProfile(d.user);
+            setIsLoadingAuth(false);
             localStorage.setItem('cropling_user', JSON.stringify(d.user));
             localStorage.setItem('agrisense_user', JSON.stringify(d.user));
             const username = d.user.username || d.user.name || d.user.id || '';
@@ -107,6 +126,7 @@ export default function Dashboard({ showToast }) {
         setIsAuthenticated(false);
         setUserProfile(null);
         setHistory([]);
+        setIsLoadingAuth(false);
         setIsLoadingHistory(false);
       }
     };
@@ -308,7 +328,7 @@ export default function Dashboard({ showToast }) {
             <div className="dashboard-stat-cell">
               <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '0.75rem' }}>
                 <span className="mono-meta" style={{ color: 'var(--agri-accent)' }}>PRIMARY PLOT</span>
-                {isAuthenticated && (
+                {!isLoadingAuth && isAuthenticated && (
                   <button
                     type="button"
                     onClick={openProfileModal}
@@ -319,7 +339,12 @@ export default function Dashboard({ showToast }) {
                   </button>
                 )}
               </div>
-              {isAuthenticated ? (
+              {isLoadingAuth ? (
+                <div className="account-loading-wrapper">
+                  <div className="circle-spinner" aria-label="Loading account"></div>
+                  <span className="account-loading-text">Loading Account...</span>
+                </div>
+              ) : isAuthenticated ? (
                 <>
                   <strong style={{ fontFamily: 'var(--font-display)', fontSize: '1.4rem', color: 'var(--agri-ink)', display: 'block', lineHeight: 1.1 }}>
                     {userProfile?.fullname || userProfile?.name || 'My Farm Plot'}
@@ -343,9 +368,16 @@ export default function Dashboard({ showToast }) {
             {/* Total Advisories */}
             <div className="dashboard-stat-cell">
               <span className="mono-meta" style={{ display: 'block', marginBottom: '0.75rem' }}>TOTAL ADVISORIES RUN</span>
-              <strong style={{ fontFamily: 'var(--font-display)', fontSize: '2rem', color: 'var(--agri-ink)', lineHeight: 1 }}>
-                {totalRuns}
-              </strong>
+              {isLoadingHistory ? (
+                <div className="account-loading-wrapper" style={{ minHeight: '34px' }}>
+                  <div className="circle-spinner spinner-sm" aria-label="Loading total advisories"></div>
+                  <span className="account-loading-text" style={{ fontSize: '10px' }}>Loading...</span>
+                </div>
+              ) : (
+                <strong style={{ fontFamily: 'var(--font-display)', fontSize: '2rem', color: 'var(--agri-ink)', lineHeight: 1 }}>
+                  {totalRuns}
+                </strong>
+              )}
               <span className="mono-meta" style={{ display: 'block', marginTop: '8px', color: 'var(--agri-accent)' }}>
                 MULTI-MODEL TELEMETRY
               </span>
@@ -354,12 +386,21 @@ export default function Dashboard({ showToast }) {
             {/* Top Match */}
             <div className="dashboard-stat-cell">
               <span className="mono-meta" style={{ display: 'block', marginBottom: '0.75rem' }}>LATEST ADVISORY MATCH</span>
-              <strong style={{ fontFamily: 'var(--font-display)', fontSize: '1.3rem', color: 'var(--agri-ink)', lineHeight: 1.1, display: 'block' }}>
-                {topCropItem}
-              </strong>
-              <span className="mono-meta" style={{ display: 'block', marginTop: '6px', color: 'var(--agri-muted)' }}>
-                {isAuthenticated && history.length > 0 ? 'AVG CONFIDENCE: 98.6%' : 'AWAITING LOGGED DATA'}
-              </span>
+              {isLoadingHistory ? (
+                <div className="account-loading-wrapper" style={{ minHeight: '34px' }}>
+                  <div className="circle-spinner spinner-sm" aria-label="Loading latest match"></div>
+                  <span className="account-loading-text" style={{ fontSize: '10px' }}>Loading...</span>
+                </div>
+              ) : (
+                <>
+                  <strong style={{ fontFamily: 'var(--font-display)', fontSize: '1.3rem', color: 'var(--agri-ink)', lineHeight: 1.1, display: 'block' }}>
+                    {topCropItem}
+                  </strong>
+                  <span className="mono-meta" style={{ display: 'block', marginTop: '6px', color: 'var(--agri-muted)' }}>
+                    {isAuthenticated && history.length > 0 ? 'LATEST ADVISORY OUTPUT' : 'AWAITING LOGGED DATA'}
+                  </span>
+                </>
+              )}
             </div>
 
             {/* Engine Telemetry */}
@@ -381,8 +422,7 @@ export default function Dashboard({ showToast }) {
           <div className="console-panel" style={{ padding: 0 }}>
             <div style={{ padding: '1.5rem 2rem', borderBottom: '1px solid var(--agri-line)', display: 'flex', justifyContent: 'space-between', alignItems: 'center', flexWrap: 'wrap', gap: '1rem' }}>
               <div>
-                <span className="mono-accent">TELEMETRY LOGS</span>
-                <h3 style={{ fontSize: '1.3rem', fontWeight: 800, marginTop: '2px' }}>Soil, Fertilizer &amp; Yield Advisory History</h3>
+                <h3 style={{ fontSize: '1.3rem', fontWeight: 800, margin: 0 }}>Soil, Fertilizer &amp; Yield Advisory History</h3>
               </div>
               <div style={{ display: 'flex', gap: '0.75rem', alignItems: 'center' }}>
                 {isAuthenticated && history.length > 0 && (
@@ -540,8 +580,7 @@ export default function Dashboard({ showToast }) {
           <div className="modal-dialog-technical" onClick={(e) => e.stopPropagation()}>
             <div className="modal-header-technical">
               <div>
-                <span className="mono-accent">PROFILE • CONFIG</span>
-                <h3 style={{ fontSize: '1.2rem', fontWeight: 800, marginTop: '2px' }}>Farm Account Settings</h3>
+                <h3 style={{ fontSize: '1.2rem', fontWeight: 800, margin: 0 }}>Farm Account Settings</h3>
               </div>
               <button onClick={closeProfileModal} style={{ background: 'none', border: 'none', cursor: 'pointer', color: 'var(--agri-ink)', fontSize: '1.2rem' }}>
                 <i className="fa-solid fa-xmark"></i>

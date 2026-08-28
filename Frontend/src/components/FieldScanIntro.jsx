@@ -10,7 +10,7 @@ export default function FieldScanIntro() {
       id: 'crop',
       title: 'Crop Selection',
       icon: 'fa-wheat-awn',
-      tag: 'RANDOM FOREST • 99.5%',
+      tag: 'RANDOM FOREST',
       inputCount: 7,
       primary: 'Paddy Rice 🌾',
       subtitle: 'Optimal for current NPK & rainfall vectors',
@@ -26,7 +26,7 @@ export default function FieldScanIntro() {
       id: 'fertilizer',
       title: 'Fertilizer Advisory',
       icon: 'fa-flask-vial',
-      tag: 'DECISION TREE • 95% TOP-1',
+      tag: 'DECISION TREE',
       inputCount: 9,
       primary: 'Urea (46% N)',
       subtitle: 'Targeted Nitrogen deficit replenishment',
@@ -42,7 +42,7 @@ export default function FieldScanIntro() {
       id: 'yield',
       title: 'Yield Forecasting',
       icon: 'fa-chart-line',
-      tag: 'XGBOOST • R² 0.98',
+      tag: 'XGBOOST',
       inputCount: 5,
       primary: '6.85 Metric Tonnes',
       subtitle: 'Projected 2.74 Tonnes / Hectare on 2.5 ha',
@@ -73,13 +73,6 @@ export default function FieldScanIntro() {
         <div className="hero-unified-grid">
           {/* Left Column: Typography, Value Proposition & Action CTAs */}
           <div className="hero-unified-left">
-            {/* Section Eyebrow Meta */}
-            <div className="section-meta-row" style={{ marginBottom: '0.15rem' }}>
-              <span className="mono-accent">PRECISION AGRONOMY</span>
-              <div className="section-meta-rule" style={{ maxWidth: '30px' }}></div>
-              <span className="mono-meta">3-MODEL AI PLATFORM</span>
-            </div>
-
             {/* Main Headline */}
             <h1 className="hero-display-title">
               GROW SMARTER.<br />

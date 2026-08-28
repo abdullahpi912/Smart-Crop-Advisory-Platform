@@ -16,8 +16,7 @@ export default function About() {
         {/* Overview Split Grid */}
         <div className="about-split-grid">
           <div>
-            <span className="mono-accent">01 • THE CHALLENGE</span>
-            <h2 style={{ fontSize: '2rem', fontWeight: 800, margin: '0.75rem 0 1rem 0', letterSpacing: '-0.03em' }}>
+            <h2 style={{ fontSize: '2rem', fontWeight: 800, margin: '0 0 1rem 0', letterSpacing: '-0.03em' }}>
               Eliminating Seasonal Guesswork
             </h2>
             <p style={{ color: 'var(--agri-secondary)', fontSize: '1.05rem', lineHeight: 1.7, marginBottom: '1.25rem' }}>
@@ -40,12 +39,6 @@ export default function About() {
 
         {/* Agronomic Values Grid */}
         <div style={{ borderTop: '1px solid var(--agri-line)', paddingTop: '4rem', marginBottom: '4rem' }}>
-          <div className="section-meta-row" style={{ marginBottom: '2rem' }}>
-            <span className="mono-accent">02 • PILLARS</span>
-            <div className="section-meta-rule"></div>
-            <span className="mono-meta">CORE AGRONOMIC PRINCIPLES</span>
-          </div>
-
           <div className="why-editorial-grid">
             <div className="why-editorial-cell">
               <span className="mono-meta" style={{ color: 'var(--agri-accent)' }}>01 • SOIL HEALTH</span>
@@ -95,12 +88,6 @@ export default function About() {
 
         {/* 03 THE MODELS Technical Breakdown */}
         <div style={{ borderTop: '1px solid var(--agri-line)', paddingTop: '4rem', marginBottom: '4rem' }}>
-          <div className="section-meta-row" style={{ marginBottom: '1rem' }}>
-            <span className="mono-accent">03 • THE MODELS</span>
-            <div className="section-meta-rule"></div>
-            <span className="mono-meta">TECHNICAL BREAKDOWN</span>
-          </div>
-
           <h2 style={{ fontSize: '2rem', fontWeight: 800, margin: '0 0 0.75rem 0', letterSpacing: '-0.03em', color: 'var(--agri-ink)' }}>
             Three Models, Three Jobs
           </h2>
@@ -117,7 +104,6 @@ export default function About() {
                   Given 7 soil and climate readings — Nitrogen, Phosphorus, Potassium, temperature, humidity, soil pH, and rainfall — this model selects the best-suited crop from 22 possible classes. Trained on 2,200 balanced samples, it found that rainfall and humidity are the strongest signals: water availability drives crop choice more than any single nutrient.
                 </p>
               </div>
-              <span className="mono-meta" style={{ color: 'var(--agri-muted)' }}>99.5% ACCURACY</span>
             </div>
 
             <div className="why-editorial-cell">
@@ -128,7 +114,6 @@ export default function About() {
                   Given a crop and the field's district, soil color, and current N-P-K/pH/rainfall/temperature readings, this model recommends the fertilizer blend to apply — one of 19 types such as Urea, DAP, or 12:32:16 NPK — plus a ranked top-3 shortlist with confidence scores, since a single hard answer overstates certainty this task actually has. Trained on real Western Maharashtra district data; crop and soil nutrient levels together determine the recommendation.
                 </p>
               </div>
-              <span className="mono-meta" style={{ color: 'var(--agri-muted)' }}>95% TOP-1 · 98% TOP-3</span>
             </div>
 
             <div className="why-editorial-cell">
@@ -139,14 +124,12 @@ export default function About() {
                   Given a crop, state, season, year, and field area, this model estimates production in tonnes. Unlike the other two models, this predicts a continuous number, not a category — a sugarcane field and a lentil field aren't directly comparable in raw tonnage, so forecasts are always specific to the selected crop. Trained on 242,000+ real district-level Indian government agricultural records spanning 1997–2015.
                 </p>
               </div>
-              <span className="mono-meta" style={{ color: 'var(--agri-muted)' }}>R² = 0.98</span>
             </div>
           </div>
         </div>
 
         {/* Technical Call to Action Console */}
         <div className="about-cta-banner" style={{ border: '1px solid var(--agri-line)', backgroundColor: 'var(--agri-surface)', textAlign: 'center' }}>
-          <span className="mono-accent" style={{ display: 'block', marginBottom: '0.75rem' }}>SIMULATOR READY</span>
           <h2 style={{ fontSize: '2.2rem', fontWeight: 900, letterSpacing: '-0.03em', marginBottom: '1rem', color: 'var(--agri-ink)' }}>
             Ready to Evaluate Your Field Parameters?
           </h2>

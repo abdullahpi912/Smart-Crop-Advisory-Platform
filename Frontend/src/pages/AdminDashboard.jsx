@@ -603,13 +603,6 @@ export default function AdminDashboard({ showToast }) {
           gap: '1rem'
         }}>
           <div>
-            <div className="section-meta-row" style={{ marginBottom: '0.25rem' }}>
-              <span className="mono-accent">ROOT CONSOLE // TOOL 0{
-                activeTab === 'login_logs' ? '1' : activeTab === 'prediction_logs' ? '2' : activeTab === 'users' ? '3' : '4'
-              }</span>
-              <div className="section-meta-rule" style={{ maxWidth: '24px' }}></div>
-              <span className="mono-meta" style={{ color: 'var(--agri-accent)' }}>OPERATOR: {adminUser.toUpperCase()}</span>
-            </div>
             <h1 style={{ fontSize: '1.8rem', fontWeight: 900, letterSpacing: '-0.02em', color: 'var(--agri-ink)', margin: 0 }}>
               {activeTab === 'login_logs' && 'Login Audit Logs'}
               {activeTab === 'prediction_logs' && 'Prediction Telemetry & Advisory History'}
