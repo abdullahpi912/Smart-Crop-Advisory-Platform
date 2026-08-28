@@ -819,29 +819,44 @@ def admin_row_to_log(row):
 @app.route('/api/health', methods=['GET'])
 @limiter.exempt
 def health_check():
-    """HTTP GET: Health check endpoint verifying backend + database status."""
-    try:
-        conn = get_connection()
-        cursor = conn.cursor()
-        cursor.execute("SELECT COUNT(*) FROM advisory_logs")
-        total_logs = cursor.fetchone()[0]
-        cursor.close(); conn.close()
-        db_status = 'connected'
-    except Exception as e:
-        total_logs = 0
-        db_status = 'unavailable' if is_production else f'unavailable ({e})'
-
+    """HTTP GET: Fast in-memory health check verifying server process & 3 ML models without DB network I/O."""
+    models_loaded = (
+        CROP_MODEL is not None and
+        FERT_MODEL is not None and
+        FERT_ENCODER is not None and
+        YIELD_MODEL is not None
+    )
     return jsonify({
-        'status': 'healthy',
-        'backend': 'Flask REST API + MySQL',
-        'database': db_status,
-        'total_logs': total_logs,
+        'status': 'ok',
+        'models_loaded': models_loaded,
         'models': {
             'crop_recommendation': 'loaded' if CROP_MODEL is not None else 'offline',
             'fertilizer_recommendation': 'loaded' if (FERT_MODEL is not None and FERT_ENCODER is not None) else 'offline',
-            'crop_yield_prediction': 'loaded' if YIELD_MODEL is not None else 'offline'
+            'crop_yield': 'loaded' if YIELD_MODEL is not None else 'offline'
         }
     }), 200
+
+
+@app.route('/api/health/db', methods=['GET'])
+@limiter.exempt
+def db_health_check():
+    """HTTP GET: Dedicated database health check verifying MySQL connectivity."""
+    try:
+        conn = get_connection()
+        cursor = conn.cursor()
+        cursor.execute("SELECT 1")
+        cursor.fetchone()
+        cursor.close()
+        conn.close()
+        return jsonify({
+            'status': 'ok',
+            'database': 'connected'
+        }), 200
+    except Exception as e:
+        return jsonify({
+            'status': 'error',
+            'database': 'unavailable' if is_production else f'unavailable ({e})'
+        }), 503
 
 
 @app.route('/api/options', methods=['GET'])
