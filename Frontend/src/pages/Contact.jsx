@@ -32,14 +32,9 @@ export default function Contact({ showToast }) {
     <main style={{ padding: 'calc(var(--nav-height) + 2rem) 0 5rem 0' }}>
       <div className="page-container">
         {/* Header */}
-        <div className="section-header-editorial">
-          <div className="section-meta-row">
-            <span className="mono-accent">COMMUNICATIONS • SUPPORT</span>
-            <div className="section-meta-rule"></div>
-            <span className="mono-meta">FIELD INQUIRY TERMINAL</span>
-          </div>
-          <h1 className="section-title-large">Field Support &amp; System Inquiries</h1>
-          <p className="section-desc-editorial">
+        <div className="section-header-editorial" style={{ textAlign: 'center', marginBottom: '2.5rem' }}>
+          <h1 className="section-title-large" style={{ margin: '0 auto' }}>Field Support &amp; System Inquiries</h1>
+          <p className="section-desc-editorial" style={{ margin: '0.85rem auto 0 auto', maxWidth: '780px' }}>
             Have questions regarding ML model calibrations, suggestions for new crop species datasets, or need assistance configuring farm profiles? Transmit your query below.
           </p>
         </div>

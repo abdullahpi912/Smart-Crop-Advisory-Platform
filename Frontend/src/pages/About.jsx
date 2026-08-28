@@ -6,14 +6,9 @@ export default function About() {
     <main style={{ padding: 'calc(var(--nav-height) + 2rem) 0 5rem 0' }}>
       <div className="page-container">
         {/* Editorial Header */}
-        <div className="section-header-editorial">
-          <div className="section-meta-row">
-            <span className="mono-accent">ABOUT • ARCHITECTURE</span>
-            <div className="section-meta-rule"></div>
-            <span className="mono-meta">PRECISION SOIL INTELLIGENCE</span>
-          </div>
-          <h1 className="section-title-large">Data-Backed Agronomic Intelligence</h1>
-          <p className="section-desc-editorial">
+        <div className="section-header-editorial" style={{ textAlign: 'center', marginBottom: '2.5rem' }}>
+          <h1 className="section-title-large" style={{ margin: '0 auto' }}>Data-Backed Agronomic Intelligence</h1>
+          <p className="section-desc-editorial" style={{ margin: '0.85rem auto 0 auto', maxWidth: '780px' }}>
             Empowering agricultural growers and agronomy advisors with three integrated machine learning models for crop selection, fertilizer dosage optimization, and harvest yield forecasting to maximize returns and protect long-term soil health.
           </p>
         </div>

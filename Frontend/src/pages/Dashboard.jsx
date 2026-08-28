@@ -295,14 +295,9 @@ export default function Dashboard({ showToast }) {
       <main style={{ padding: 'calc(var(--nav-height) + 2rem) 0 5rem 0' }}>
         <div className="page-container">
           {/* Header */}
-          <div className="section-header-editorial">
-            <div className="section-meta-row">
-              <span className="mono-accent">CONSOLE • DASHBOARD</span>
-              <div className="section-meta-rule"></div>
-              <span className="mono-meta">FARM INTELLIGENCE TELEMETRY</span>
-            </div>
-            <h1 className="section-title-large">Farm Dashboard &amp; Recommendation History</h1>
-            <p className="section-desc-editorial">
+          <div className="section-header-editorial" style={{ textAlign: 'center', marginBottom: '2.5rem' }}>
+            <h1 className="section-title-large" style={{ margin: '0 auto' }}>Farm Dashboard &amp; Recommendation History</h1>
+            <p className="section-desc-editorial" style={{ margin: '0.85rem auto 0 auto', maxWidth: '780px' }}>
               Review field soil chemical logs, track crop recommendations, fertilizer applications, and regional yield outputs across planting seasons.
             </p>
           </div>

@@ -519,14 +519,9 @@ export default function Recommend({ showToast, mode = 'crop' }) {
     <main style={{ padding: 'calc(var(--nav-height) + 2rem) 0 5rem 0' }}>
       <div className="page-container">
         {/* Section Header */}
-        <div className="section-header-editorial">
-          <div className="section-meta-row">
-            <span className="mono-accent">SIMULATOR • CONSOLE</span>
-            <div className="section-meta-rule"></div>
-            <span className="mono-meta">AGRICULTURAL ML INFERENCE ENGINE</span>
-          </div>
-          <h1 className="section-title-large">Field Advisory &amp; Yield Console</h1>
-          <p className="section-desc-editorial">
+        <div className="section-header-editorial" style={{ textAlign: 'center', marginBottom: '2.5rem' }}>
+          <h1 className="section-title-large" style={{ margin: '0 auto' }}>Field Advisory &amp; Yield Console</h1>
+          <p className="section-desc-editorial" style={{ margin: '0.85rem auto 0 auto', maxWidth: '780px' }}>
             Execute machine learning inference across crop selection, tailored fertilizer dosage recommendations, and regional crop yield production forecasts.
           </p>
         </div>
