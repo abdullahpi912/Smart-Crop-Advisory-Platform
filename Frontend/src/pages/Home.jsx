@@ -4,6 +4,7 @@ import FieldScanIntro from '../components/FieldScanIntro';
 
 export default function Home() {
   const [activeFaq, setActiveFaq] = useState(null);
+  const [activePipelineStep, setActivePipelineStep] = useState(0);
   const [stickyProgress, setStickyProgress] = useState(0);
 
   const stickySectionRef = useRef(null);
@@ -12,7 +13,7 @@ export default function Home() {
     setActiveFaq(activeFaq === index ? null : index);
   };
 
-  // Passive Single Scroll Listener for Sticky Stage Progress
+  // Passive Scroll Listener for Sticky Stage Progress & Step Activation
   useEffect(() => {
     const prefersReducedMotion = window.matchMedia('(prefers-reduced-motion: reduce)').matches;
     if (prefersReducedMotion) return;
@@ -22,12 +23,23 @@ export default function Home() {
     const handleScroll = () => {
       if (!ticking) {
         window.requestAnimationFrame(() => {
-          // Sticky section scroll progress
           if (stickySectionRef.current) {
             const rect = stickySectionRef.current.getBoundingClientRect();
-            const sectionHeight = stickySectionRef.current.offsetHeight - window.innerHeight;
-            const progress = Math.min(Math.max(-rect.top / sectionHeight, 0), 1);
-            setStickyProgress(progress);
+            const windowHeight = window.innerHeight;
+            
+            // Total scroll distance during which the section is pinned
+            const totalScrollable = stickySectionRef.current.offsetHeight - windowHeight;
+            if (totalScrollable > 0) {
+              // As the user scrolls through the pinned section, -rect.top goes from 0 to totalScrollable
+              const rawProgress = -rect.top / totalScrollable;
+              const progress = Math.min(Math.max(rawProgress, 0), 1);
+              setStickyProgress(progress);
+
+              // 4 distinct steps: 1 scroll per step (0 -> 1 -> 2 -> 3)
+              // Freezes at step 3 when scroll reaches end, then section unpins and scrolls to next section
+              const step = Math.min(Math.floor(progress * 4), 3);
+              setActivePipelineStep(step);
+            }
           }
 
           ticking = false;
@@ -37,7 +49,13 @@ export default function Home() {
     };
 
     window.addEventListener('scroll', handleScroll, { passive: true });
-    return () => window.removeEventListener('scroll', handleScroll);
+    window.addEventListener('resize', handleScroll);
+    handleScroll();
+
+    return () => {
+      window.removeEventListener('scroll', handleScroll);
+      window.removeEventListener('resize', handleScroll);
+    };
   }, []);
 
   const faqs = [
@@ -77,9 +95,6 @@ export default function Home() {
     { num: '05', title: 'Farm History Telemetry', desc: 'Store advisory reports into your secure farm plot log to track soil enrichment across harvest cycles.', tag: 'DATABASE' },
     { num: '06', title: 'Yield Optimization', desc: 'Execute data-backed planting and nutrient schedules to maximize commercial yield and profitability.', tag: 'EXECUTION' }
   ];
-
-  // Pipeline stage index based on sticky scroll progress
-  const activePipelineStep = Math.min(Math.floor(stickyProgress * 4), 3);
 
   return (
     <main>
@@ -125,16 +140,16 @@ export default function Home() {
           {/* Background Marquee Motion */}
           <div
             className="marquee-bg-word"
-            style={{ transform: `translate(calc(-10% + ${stickyProgress * -150}px), -50%)` }}
+            style={{ transform: `translate(calc(-5% + ${stickyProgress * -300}px), -50%)` }}
             aria-hidden="true"
           >
-            FIELD INTELLIGENCE • ADVISORY PIPELINE
+            FIELD INTELLIGENCE • ADVISORY PIPELINE • FIELD INTELLIGENCE
           </div>
 
           {/* Sticky Header Meta */}
-          <div style={{ position: 'relative', zIndex: 2, display: 'flex', justifyContent: 'space-between', alignItems: 'center', borderBottom: '1px solid var(--agri-line)', paddingBottom: '1rem' }}>
+          <div style={{ position: 'relative', zIndex: 2, display: 'flex', justifyContent: 'space-between', alignItems: 'center', borderBottom: '1px solid var(--agri-line)', paddingBottom: '1.25rem' }}>
             <div>
-              <h3 style={{ fontSize: '1.6rem', fontWeight: 800, margin: 0 }}>AI Field Analysis Execution</h3>
+              <h3 style={{ fontSize: '1.75rem', fontWeight: 800, margin: 0, color: 'var(--agri-ink)' }}>AI Field Analysis Execution</h3>
             </div>
           </div>
 
@@ -149,14 +164,15 @@ export default function Home() {
               <div
                 key={node.num}
                 className={`pipeline-node ${activePipelineStep === idx ? 'active-node' : ''}`}
+                onClick={() => setActivePipelineStep(idx)}
               >
                 <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '0.75rem' }}>
-                  <span className="mono-meta" style={{ color: 'var(--agri-accent)' }}>{node.metric}</span>
+                  <span className="mono-meta" style={{ color: 'var(--agri-accent)', fontWeight: 600 }}>{node.metric}</span>
                 </div>
                 <h4 style={{ fontSize: '1.15rem', fontWeight: 800, letterSpacing: '-0.02em', marginBottom: '0.5rem', color: 'var(--agri-ink)' }}>
                   {node.stage}
                 </h4>
-                <p style={{ fontSize: '0.88rem', color: 'var(--agri-secondary)', lineHeight: 1.5 }}>
+                <p style={{ fontSize: '0.88rem', color: 'var(--agri-secondary)', lineHeight: 1.5, margin: 0 }}>
                   {node.detail}
                 </p>
               </div>
@@ -164,11 +180,11 @@ export default function Home() {
           </div>
 
           {/* Sticky Footer Trace */}
-          <div style={{ position: 'relative', zIndex: 2, display: 'flex', justifyContent: 'space-between', alignItems: 'center', borderTop: '1px solid var(--agri-line)', paddingTop: '1rem' }}>
+          <div style={{ position: 'relative', zIndex: 2, display: 'flex', justifyContent: 'space-between', alignItems: 'center', borderTop: '1px solid var(--agri-line)', paddingTop: '1.25rem' }}>
             <span className="mono-meta" style={{ color: 'var(--agri-muted)' }}>
               SCROLL DRIVEN ADVISORY SIMULATION
             </span>
-            <span className="mono-meta" style={{ color: 'var(--agri-accent)' }}>
+            <span className="mono-meta" style={{ color: 'var(--agri-accent)', fontWeight: 700 }}>
               CROPLING 3-MODEL PIPELINE READY
             </span>
           </div>
@@ -189,31 +205,34 @@ export default function Home() {
                 Traditional crop selection relies on historical seasonal intuition, which can fail under soil degradation or climate shifts. Cropling combines multi-parameter classification and regression models to deliver statistical recommendations across crop suitability, fertilizer requirements, and harvest yield estimates.
               </p>
 
-              <div style={{ display: 'grid', gridTemplateColumns: 'repeat(2, 1fr)', gap: '1.5rem', borderTop: '1px solid rgba(239,239,238,0.12)', paddingTop: '1.5rem' }}>
+              <div className="ai-proof-overview-grid">
                 <div>
-                  <span className="mono-meta" style={{ color: '#7C97FF' }}>INPUT PARAMETERS</span>
-                  <div style={{ fontSize: '1.2rem', fontWeight: 800, marginTop: '4px', color: '#EFEFEE' }}>Soil &amp; Climate Vectors</div>
-                  <span className="mono-meta" style={{ color: '#85858B' }}>NPK, pH, Climate, Region &amp; Area</span>
+                  <span className="mono-meta" style={{ color: '#7C97FF', display: 'block', marginBottom: '4px' }}>INPUT PARAMETERS</span>
+                  <div style={{ fontSize: '1.2rem', fontWeight: 800, color: '#EFEFEE' }}>Soil &amp; Climate Vectors</div>
+                  <span className="mono-meta" style={{ color: '#85858B', display: 'block', marginTop: '4px' }}>NPK, pH, Climate, Region &amp; Area</span>
                 </div>
                 <div>
-                  <span className="mono-meta" style={{ color: '#7C97FF' }}>ADVISORY ENGINE</span>
-                  <div style={{ fontSize: '1.2rem', fontWeight: 800, marginTop: '4px', color: '#EFEFEE' }}>3-Model Suite</div>
-                  <span className="mono-meta" style={{ color: '#85858B' }}>Crop, Fertilizer &amp; Yield Regressor</span>
+                  <span className="mono-meta" style={{ color: '#7C97FF', display: 'block', marginBottom: '4px' }}>ADVISORY ENGINE</span>
+                  <div style={{ fontSize: '1.2rem', fontWeight: 800, color: '#EFEFEE' }}>3-Model Suite</div>
+                  <span className="mono-meta" style={{ color: '#85858B', display: 'block', marginTop: '4px' }}>Crop, Fertilizer &amp; Yield Regressor</span>
                 </div>
               </div>
 
-              <div style={{ display: 'grid', gridTemplateColumns: 'repeat(3, 1fr)', gap: '1.5rem', borderTop: '1px solid rgba(239,239,238,0.12)', paddingTop: '1.5rem', marginTop: '1.5rem' }}>
+              <div className="ai-proof-models-grid">
                 <div>
-                  <span className="mono-meta" style={{ color: '#7C97FF' }}>CROP MODEL</span>
-                  <span className="mono-meta" style={{ color: '#85858B' }}>Random Forest · 22 Classes</span>
+                  <span className="mono-meta" style={{ color: '#7C97FF', display: 'block', marginBottom: '6px' }}>CROP MODEL</span>
+                  <div style={{ fontSize: '1.05rem', fontWeight: 700, color: '#EFEFEE', marginBottom: '2px' }}>Random Forest</div>
+                  <span className="mono-meta" style={{ color: '#85858B', display: 'block' }}>22 Crop Classes</span>
                 </div>
                 <div>
-                  <span className="mono-meta" style={{ color: '#7C97FF' }}>FERTILIZER MODEL</span>
-                  <span className="mono-meta" style={{ color: '#85858B' }}>Decision Tree · 19 Classes</span>
+                  <span className="mono-meta" style={{ color: '#7C97FF', display: 'block', marginBottom: '6px' }}>FERTILIZER MODEL</span>
+                  <div style={{ fontSize: '1.05rem', fontWeight: 700, color: '#EFEFEE', marginBottom: '2px' }}>Decision Tree</div>
+                  <span className="mono-meta" style={{ color: '#85858B', display: 'block' }}>19 Soil &amp; Crop Classes</span>
                 </div>
                 <div>
-                  <span className="mono-meta" style={{ color: '#7C97FF' }}>YIELD MODEL</span>
-                  <span className="mono-meta" style={{ color: '#85858B' }}>XGBoost · 242K+ Records</span>
+                  <span className="mono-meta" style={{ color: '#7C97FF', display: 'block', marginBottom: '6px' }}>YIELD MODEL</span>
+                  <div style={{ fontSize: '1.05rem', fontWeight: 700, color: '#EFEFEE', marginBottom: '2px' }}>XGBoost Regressor</div>
+                  <span className="mono-meta" style={{ color: '#85858B', display: 'block' }}>242K+ Production Records</span>
                 </div>
               </div>
 

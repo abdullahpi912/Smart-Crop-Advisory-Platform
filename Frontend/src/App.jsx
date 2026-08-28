@@ -60,10 +60,13 @@ export default function App() {
       }
     );
 
-    const revealElements = document.querySelectorAll('.reveal');
-    revealElements.forEach((el) => observer.observe(el));
+    const timer = setTimeout(() => {
+      const revealElements = document.querySelectorAll('.reveal');
+      revealElements.forEach((el) => observer.observe(el));
+    }, 60);
 
     return () => {
+      clearTimeout(timer);
       observer.disconnect();
     };
   }, [location.pathname]);
