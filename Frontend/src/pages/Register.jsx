@@ -183,27 +183,15 @@ export default function Register({ showToast }) {
       const data = await response.json();
 
       if (response.ok && response.status === 201) {
-        const userData = {
-          userId: data.user_id,
-          username: data.username,
-          fullname: formData.fullname,
-          email: formData.email,
-          phone: `${formData.countryCode} ${formData.phone}`,
-          region: formData.region,
-          registeredAt: new Date().toLocaleString()
-        };
-
         try {
-          localStorage.setItem('cropling_user', JSON.stringify(userData));
-          localStorage.setItem('agrisense_user', JSON.stringify(userData));
           sessionStorage.removeItem('cropling_reg_draft');
           sessionStorage.removeItem('agrisense_reg_draft');
         } catch (err) { }
 
-        showToast?.('Farm profile registered successfully! Loading console...', 'success');
+        showToast?.('Farm profile registered successfully! Please sign in to continue.', 'success');
 
         setTimeout(() => {
-          navigate('/dashboard');
+          navigate('/login');
         }, 1400);
       } else {
         showToast?.(data.error || 'Registration failed.', 'error');
