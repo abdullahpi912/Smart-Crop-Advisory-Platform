@@ -490,7 +490,7 @@ export default function Recommend({ showToast, mode = 'crop' }) {
             currentUsername = s.username || s.userId;
           }
         }
-      } catch (_) {}
+      } catch (_) { }
 
       if (currentUsername) {
         try {

@@ -26,7 +26,7 @@ export default function Home() {
           if (stickySectionRef.current) {
             const rect = stickySectionRef.current.getBoundingClientRect();
             const windowHeight = window.innerHeight;
-            
+
             // Total scroll distance during which the section is pinned
             const totalScrollable = stickySectionRef.current.offsetHeight - windowHeight;
             if (totalScrollable > 0) {
