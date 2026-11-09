@@ -888,7 +888,6 @@ def get_crops():
 
 
 @app.route('/api/logs', methods=['GET'])
-@app.route('/api/recommendations', methods=['GET'])
 @login_required
 def get_logs():
     """HTTP GET: Retrieve authenticated farmer's advisory logs from MySQL, newest first."""
@@ -947,7 +946,6 @@ def get_log_by_id(log_id):
 # ==========================================
 
 @app.route('/api/predict', methods=['POST'])
-@app.route('/api/recommendations', methods=['POST'])
 def predict_crop():
     """HTTP POST: Predict crop recommendation using ML model and log entry."""
     try:

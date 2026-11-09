@@ -124,6 +124,36 @@ class MockConnection:
                 last_updated TEXT
             );
 
+            CREATE TABLE IF NOT EXISTS recommendations (
+                id INTEGER PRIMARY KEY AUTOINCREMENT,
+                rec_id TEXT UNIQUE NOT NULL,
+                user_id INTEGER,
+                crop_name TEXT NOT NULL,
+                recommended_display TEXT,
+                category TEXT,
+                confidence TEXT,
+                nitrogen REAL,
+                phosphorus REAL,
+                potassium REAL,
+                temperature REAL,
+                humidity REAL,
+                ph REAL,
+                rainfall REAL,
+                soil_health TEXT,
+                notes TEXT,
+                created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
+            );
+
+            CREATE TABLE IF NOT EXISTS farm_profiles (
+                id INTEGER PRIMARY KEY AUTOINCREMENT,
+                user_id INTEGER NOT NULL,
+                farm_name TEXT NOT NULL,
+                location TEXT,
+                area_acres REAL,
+                soil_type TEXT,
+                created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
+            );
+
             CREATE TABLE IF NOT EXISTS admins (
                 id INTEGER PRIMARY KEY AUTOINCREMENT,
                 username TEXT UNIQUE NOT NULL,
@@ -168,9 +198,7 @@ class MockConnection:
 
 test_db = MockConnection()
 
-# Monkeypatch get_connection before importing app
 import db
-db.get_connection = lambda: test_db
 
 # Set test environment
 os.environ['SECRET_KEY'] = 'test_dev_secret_key_testing_123456789'
@@ -181,10 +209,18 @@ from app import app, init_db, limiter
 
 class ComprehensiveTestSuite(unittest.TestCase):
     def setUp(self):
+        import sys
+        self.app_mod = sys.modules['app']
+        self._orig_db_get_connection = db.get_connection
+        self._orig_app_get_connection = getattr(self.app_mod, 'get_connection', None)
+        db.get_connection = lambda: test_db
+        self.app_mod.get_connection = lambda: test_db
+
         self.app = app
         self.app.config['TESTING'] = True
         self.app.config['DEBUG'] = False
         self.app.config['RATELIMIT_ENABLED'] = False
+        self._orig_limiter_enabled = getattr(limiter, 'enabled', True)
         if hasattr(limiter, 'enabled'):
             limiter.enabled = False
         self.client = self.app.test_client()
@@ -194,11 +230,20 @@ class ComprehensiveTestSuite(unittest.TestCase):
         cur.executescript("""
             DELETE FROM users;
             DELETE FROM advisory_logs;
+            DELETE FROM recommendations;
+            DELETE FROM farm_profiles;
             DELETE FROM admins;
             DELETE FROM login_logs;
             DELETE FROM admin_action_logs;
         """)
         test_db.sqlite_conn.commit()
+
+    def tearDown(self):
+        db.get_connection = self._orig_db_get_connection
+        if self._orig_app_get_connection is not None:
+            self.app_mod.get_connection = self._orig_app_get_connection
+        if hasattr(limiter, 'enabled'):
+            limiter.enabled = self._orig_limiter_enabled
 
     # ════════════════════════════════════════════════════════════════════════
     # PART 1 TESTS: Farmer Registration & Profile without soil_type

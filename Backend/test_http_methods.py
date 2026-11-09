@@ -10,20 +10,53 @@ import unittest
 # Ensure Backend directory is in path
 sys.path.insert(0, os.path.dirname(os.path.abspath(__file__)))
 
-from app import app
+import db
+from app import app, limiter
+from test_admin_and_isolation import MockConnection
+
+http_test_db = MockConnection()
 
 class TestHTTPMethods(unittest.TestCase):
     def setUp(self):
         """Set up test client before each test case."""
+        import sys
+        self.app_mod = sys.modules['app']
+        self._orig_db_get_connection = db.get_connection
+        self._orig_app_get_connection = getattr(self.app_mod, 'get_connection', None)
+        db.get_connection = lambda: http_test_db
+        self.app_mod.get_connection = lambda: http_test_db
+
         app.config['TESTING'] = True
         app.config['RATELIMIT_ENABLED'] = False
+        self._orig_limiter_enabled = getattr(limiter, 'enabled', True)
+        if hasattr(limiter, 'enabled'):
+            limiter.enabled = False
         self.app = app.test_client()
         self.app.testing = True
         try:
-            from app import limiter
             limiter.reset()
         except Exception:
             pass
+
+        # Re-initialize clean test tables
+        cur = http_test_db.sqlite_conn.cursor()
+        cur.executescript("""
+            DELETE FROM users;
+            DELETE FROM advisory_logs;
+            DELETE FROM recommendations;
+            DELETE FROM farm_profiles;
+            DELETE FROM admins;
+            DELETE FROM login_logs;
+            DELETE FROM admin_action_logs;
+        """)
+        http_test_db.sqlite_conn.commit()
+
+    def tearDown(self):
+        db.get_connection = self._orig_db_get_connection
+        if self._orig_app_get_connection is not None:
+            self.app_mod.get_connection = self._orig_app_get_connection
+        if hasattr(limiter, 'enabled'):
+            limiter.enabled = self._orig_limiter_enabled
 
     # ----------------------------------------------------
     # 0. SKELETON ROOT TEST
@@ -51,6 +84,17 @@ class TestHTTPMethods(unittest.TestCase):
 
     def test_02_get_logs(self):
         """Test GET /api/logs endpoint."""
+        with self.app.session_transaction() as sess:
+            sess['user_id'] = 1
+            sess['username'] = 'test_farmer'
+
+        payload = {
+            "logId": "#LOG-8942",
+            "recommendedItem": "Organic Compost & Bio-fertilizer",
+            "category": "Organic Soil Amendment"
+        }
+        self.app.post('/api/logs', data=json.dumps(payload), content_type='application/json')
+
         response = self.app.get('/api/logs')
         self.assertEqual(response.status_code, 200)
         data = json.loads(response.data)
@@ -60,6 +104,17 @@ class TestHTTPMethods(unittest.TestCase):
 
     def test_03_get_log_by_id(self):
         """Test GET /api/logs/<log_id> endpoint."""
+        with self.app.session_transaction() as sess:
+            sess['user_id'] = 1
+            sess['username'] = 'test_farmer'
+
+        payload = {
+            "logId": "#LOG-8942",
+            "recommendedItem": "Organic Compost & Bio-fertilizer",
+            "category": "Organic Soil Amendment"
+        }
+        self.app.post('/api/logs', data=json.dumps(payload), content_type='application/json')
+
         response = self.app.get('/api/logs/LOG-8942')
         self.assertEqual(response.status_code, 200)
         data = json.loads(response.data)
@@ -128,6 +183,13 @@ class TestHTTPMethods(unittest.TestCase):
         with self.app.session_transaction() as sess:
             sess['user_id'] = 1
             sess['username'] = 'test_farmer'
+
+        payload = {
+            "logId": "#LOG-8942",
+            "recommendedItem": "Organic Compost & Bio-fertilizer",
+            "category": "Organic Soil Amendment"
+        }
+        self.app.post('/api/logs', data=json.dumps(payload), content_type='application/json')
 
         update_payload = {
             "dosageAdvice": "Updated dosage: Apply 60kg/ha during early tillering stage",

@@ -17,12 +17,19 @@ class TestRateLimitingExemptions(unittest.TestCase):
     def setUp(self):
         app.config['TESTING'] = True
         app.config['RATELIMIT_ENABLED'] = True
+        self._orig_limiter_enabled = getattr(limiter, 'enabled', True)
+        if hasattr(limiter, 'enabled'):
+            limiter.enabled = True
         self.client = app.test_client()
         # Reset limiter storage if possible
         try:
             limiter.reset()
         except Exception:
             pass
+
+    def tearDown(self):
+        if hasattr(limiter, 'enabled'):
+            limiter.enabled = self._orig_limiter_enabled
 
     def test_dummy_limiter_standalone(self):
         """Test that DummyLimiter handles decorators both with and without arguments."""

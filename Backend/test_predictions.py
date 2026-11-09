@@ -39,7 +39,7 @@ class TestCroplingMultiModelAPI(unittest.TestCase):
         health_data = r_health.get_json()
         self.assertIn(health_data.get('models', {}).get('crop_recommendation'), ['loaded', 'offline'])
         self.assertIn(health_data.get('models', {}).get('fertilizer_recommendation'), ['loaded', 'offline'])
-        self.assertIn(health_data.get('models', {}).get('crop_yield_prediction'), ['loaded', 'offline'])
+        self.assertIn(health_data.get('models', {}).get('crop_yield'), ['loaded', 'offline'])
 
     def test_02_options_catalog(self):
         r = self.client.get('/api/options')
@@ -162,6 +162,9 @@ class TestCroplingMultiModelAPI(unittest.TestCase):
         self.assertIn('greater than 0', r4.get_json().get('error', ''))
 
     def test_08_logs_endpoint(self):
+        with self.client.session_transaction() as sess:
+            sess['user_id'] = 1
+            sess['username'] = 'test_farmer'
         r = self.client.get('/api/logs')
         self.assertEqual(r.status_code, 200)
         data = r.get_json()
