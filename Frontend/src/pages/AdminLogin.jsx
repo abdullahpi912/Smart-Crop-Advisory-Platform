@@ -6,51 +6,17 @@ export default function AdminLogin({ showToast }) {
   const navigate = useNavigate();
   const [username, setUsername] = useState('');
   const [password, setPassword] = useState('');
-  const [favoriteNumber, setFavoriteNumber] = useState('');
-  const [securityPhrase, setSecurityPhrase] = useState('');
-  const [hint, setHint] = useState('');
-  const [hintLoading, setHintLoading] = useState(false);
   const [loading, setLoading] = useState(false);
   const [errorMsg, setErrorMsg] = useState('');
 
   const backendUrl = API_BASE_URL;
 
-  const fetchHint = async (user) => {
-    const trimmed = (user || '').trim();
-    if (!trimmed) {
-      setHint('');
-      return;
-    }
-    setHintLoading(true);
-    try {
-      const response = await fetch(`${backendUrl}/api/admin/login-hint?username=${encodeURIComponent(trimmed)}`);
-      if (response.ok) {
-        const data = await response.json();
-        if (data && data.hint) {
-          setHint(data.hint);
-        } else {
-          setHint('');
-        }
-      } else {
-        setHint('');
-      }
-    } catch (e) {
-      setHint('');
-    } finally {
-      setHintLoading(false);
-    }
-  };
-
-  const handleUsernameBlur = () => {
-    fetchHint(username);
-  };
-
   const handleSubmit = async (e) => {
     e.preventDefault();
     setErrorMsg('');
 
-    if (!username.trim() || !password || !favoriteNumber.trim() || !securityPhrase.trim()) {
-      setErrorMsg('Please enter all four required credentials: username, password, favorite number, and security phrase.');
+    if (!username.trim() || !password) {
+      setErrorMsg('Please enter both administrator username and password.');
       return;
     }
 
@@ -63,9 +29,7 @@ export default function AdminLogin({ showToast }) {
         credentials: 'include',
         body: JSON.stringify({
           username: username.trim(),
-          password: password,
-          favorite_number: favoriteNumber.trim(),
-          security_phrase: securityPhrase.trim()
+          password: password
         })
       });
 
@@ -116,7 +80,7 @@ export default function AdminLogin({ showToast }) {
             </span>
           </div>
           <span className="mono-meta" style={{ color: 'var(--agri-accent)', fontSize: '10px', border: '1px solid var(--agri-accent)', padding: '2px 6px' }}>
-            4-FACTOR RESTRICTED
+            ADMIN ACCESS
           </span>
         </div>
 
@@ -132,7 +96,7 @@ export default function AdminLogin({ showToast }) {
               System Operator Sign In
             </h1>
             <p style={{ color: 'var(--agri-secondary)', fontSize: '0.85rem', marginTop: '0.35rem', lineHeight: 1.4 }}>
-              Enter all four administrator security factors to authenticate.
+              Enter administrator username and password to authenticate.
             </p>
           </div>
 
@@ -152,9 +116,9 @@ export default function AdminLogin({ showToast }) {
           )}
 
           <form onSubmit={handleSubmit}>
-            {/* Factor 1: Username */}
+            {/* Field 1: Username */}
             <div className="console-field" style={{ marginBottom: '1.25rem' }}>
-              <label htmlFor="admin-username">1. Administrator Username</label>
+              <label htmlFor="admin-username">Administrator Username</label>
               <div className="input-wrapper">
                 <input
                   type="text"
@@ -165,14 +129,13 @@ export default function AdminLogin({ showToast }) {
                   required
                   value={username}
                   onChange={(e) => setUsername(e.target.value)}
-                  onBlur={handleUsernameBlur}
                 />
               </div>
             </div>
 
-            {/* Factor 2: Password */}
-            <div className="console-field" style={{ marginBottom: '1.25rem' }}>
-              <label htmlFor="admin-password">2. Master Password</label>
+            {/* Field 2: Password */}
+            <div className="console-field" style={{ marginBottom: '1.75rem' }}>
+              <label htmlFor="admin-password">Administrator Password</label>
               <div className="input-wrapper">
                 <input
                   type="password"
@@ -187,51 +150,6 @@ export default function AdminLogin({ showToast }) {
               </div>
             </div>
 
-            {/* Factor 3: Favorite Number */}
-            <div className="console-field" style={{ marginBottom: '1.25rem' }}>
-              <label htmlFor="admin-fav-number">3. Favorite Number</label>
-              <div className="input-wrapper">
-                <input
-                  type="password"
-                  id="admin-fav-number"
-                  name="favorite_number"
-                  placeholder="Enter secret favorite number"
-                  autoComplete="off"
-                  required
-                  value={favoriteNumber}
-                  onChange={(e) => setFavoriteNumber(e.target.value)}
-                />
-              </div>
-            </div>
-
-            {/* Factor 4: Security Phrase & Dynamic Hint */}
-            <div className="console-field" style={{ marginBottom: '1.75rem' }}>
-              <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '0.35rem' }}>
-                <label htmlFor="admin-security-phrase" style={{ margin: 0 }}>4. Security Phrase</label>
-                {hintLoading ? (
-                  <span className="mono-meta" style={{ fontSize: '10px', color: 'var(--agri-muted)' }}>
-                    <i className="fa-solid fa-spinner fa-spin" style={{ marginRight: '4px' }}></i> Loading hint...
-                  </span>
-                ) : hint ? (
-                  <span className="mono-meta" style={{ fontSize: '11px', color: 'var(--agri-accent)', fontWeight: 600 }}>
-                    Hint: {hint}
-                  </span>
-                ) : null}
-              </div>
-              <div className="input-wrapper">
-                <input
-                  type="password"
-                  id="admin-security-phrase"
-                  name="security_phrase"
-                  placeholder="Enter secret security phrase"
-                  autoComplete="off"
-                  required
-                  value={securityPhrase}
-                  onChange={(e) => setSecurityPhrase(e.target.value)}
-                />
-              </div>
-            </div>
-
             <button
               type="submit"
               className="btn-primary-technical"
@@ -241,7 +159,7 @@ export default function AdminLogin({ showToast }) {
               {loading ? (
                 <span><i className="fa-solid fa-spinner fa-spin" style={{ marginRight: '8px' }}></i> AUTHENTICATING...</span>
               ) : (
-                <span><i className="fa-solid fa-shield-halved" style={{ marginRight: '8px' }}></i> VERIFY 4-FACTOR AUTH & SIGN IN</span>
+                <span><i className="fa-solid fa-shield-halved" style={{ marginRight: '8px' }}></i> SIGN IN TO ADMIN CONSOLE</span>
               )}
             </button>
           </form>
@@ -251,7 +169,7 @@ export default function AdminLogin({ showToast }) {
               <i className="fa-solid fa-arrow-left" style={{ marginRight: '4px' }}></i> Farmer Portal
             </Link>
             <span className="mono-meta" style={{ fontSize: '10px', color: 'var(--agri-muted)' }}>
-              HASH-SECURED 4FA
+              SECURE ADMIN ACCESS
             </span>
           </div>
         </div>

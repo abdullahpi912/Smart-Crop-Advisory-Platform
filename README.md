@@ -30,7 +30,7 @@
 - **Backend**: Python 3.10+, Flask, Flask-CORS, Flask-Limiter, Werkzeug Security
 - **Database**: MySQL (`agrisense_db` / Cloud Aiven MySQL), MySQL Connector/Python with connection pooling
 - **Machine Learning**: 
-  - **scikit-learn**: Random Forest Classifier (Crop Recommendation) & Decision Tree Classifier + LabelEncoder (Fertilizer Recommendation)
+  - **scikit-learn**: Naive Bayes (GaussianNB) (Crop Recommendation) & Decision Tree Classifier + LabelEncoder (Fertilizer Recommendation)
   - **XGBoost**: XGBoost Regressor Pipeline with `log1p` target transformation and `expm1` inverse decoding (Crop Yield Prediction)
   - **Data Processing**: NumPy, Pandas, Joblib
 - **Testing**: Python `unittest` test suites, Postman v2.1 API Collections
@@ -71,7 +71,7 @@ Smart-Crop-Advisory-Platform/
 │   ├── package.json                       # Frontend dependencies & scripts
 │   └── vite.config.js                     # Vite build configuration
 ├── Model/
-│   ├── crop_recommendation_model.pkl      # Trained Random Forest ML model (Crop Recommendation)
+│   ├── crop_recommendation_model.pkl      # Trained Naive Bayes (GaussianNB) ML model (Crop Recommendation)
 │   ├── crop_yield_model.pkl               # Trained XGBoost Pipeline ML model (Crop Yield Prediction)
 │   └── Fertilizer Recommendation/
 │       ├── fertilizer_recommendation_model_v2.pkl  # Trained Decision Tree model
@@ -167,7 +167,7 @@ The React frontend runs at `http://localhost:5173`.
 | **PUT** | `/profile` | Update authenticated farmer profile details | **Yes** | No |
 | **PUT** | `/api/user/change-password` | Change farmer password after verifying old password | **Yes** | No |
 | **DELETE** | `/api/user/account` | Delete farmer account and cascaded records | **Yes** | No |
-| **POST** | `/api/predict` | Predict crop recommendation from soil & climate metrics | No | **Yes (Random Forest)** |
+| **POST** | `/api/predict` | Predict crop recommendation from soil & climate metrics | No | **Yes (Naive Bayes (GaussianNB))** |
 | **POST** | `/api/predict/fertilizer` | Predict fertilizer recommendation & top-3 shortlist | No | **Yes (Decision Tree)** |
 | **POST** | `/api/predict/yield` | Forecast crop harvest production in tonnes & tonnes/ha | No | **Yes (XGBoost Regressor)** |
 | **GET** | `/api/logs` | Retrieve authenticated farmer's advisory logs | **Yes** | No |
@@ -176,7 +176,7 @@ The React frontend runs at `http://localhost:5173`.
 | **PUT** | `/api/logs/<id>` | Update advisory log entry | **Yes** | No |
 | **DELETE** | `/api/logs/<id>` | Delete single advisory log record | **Yes** | No |
 | **DELETE** | `/api/logs` | Clear all advisory logs for authenticated farmer | **Yes** | No |
-| **POST** | `/api/recommendations` | Submit soil parameters for ML crop prediction & link to user | **Yes** | **Yes (Random Forest)** |
+| **POST** | `/api/recommendations` | Submit soil parameters for ML crop prediction & link to user | **Yes** | **Yes (Naive Bayes (GaussianNB))** |
 | **GET** | `/api/recommendations` | Retrieve user-specific recommendation history | **Yes** | No |
 | **GET** | `/api/recommendations/<id>` | Retrieve single recommendation record for user | **Yes** | No |
 | **PUT** | `/api/recommendations/<id>` | Update recommendation notes / feedback | **Yes** | No |
@@ -199,7 +199,7 @@ The React frontend runs at `http://localhost:5173`.
 ## 🤖 Machine Learning Model Details
 
 ### 1. Crop Recommendation Model
-- **Algorithm**: Random Forest Classifier (tuned via GridSearchCV)
+- **Algorithm**: Naive Bayes (GaussianNB) (selected by 5-fold cross-validation comparison of 8 algorithms with 99.49% mean CV accuracy)
 - **Features (7)**: `N` (Nitrogen), `P` (Phosphorus), `K` (Potassium), `temperature` (°C), `humidity` (%), `ph` (scale), `rainfall` (mm)
 - **Target (22 Classes)**: Rice, Maize, Chickpea, Kidneybeans, Pigeonpeas, Mothbeans, Mungbean, Blackgram, Lentil, Pomegranate, Banana, Mango, Grapes, Watermelon, Muskmelon, Apple, Orange, Papaya, Coconut, Cotton, Jute, Coffee
 - **Artifact**: `Model/crop_recommendation_model.pkl`

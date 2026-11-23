@@ -448,10 +448,12 @@ export default function Recommend({ showToast, mode = 'crop' }) {
       }
     } catch (err) {
       console.warn('Backend API connection issue, running local engine:', err);
-      if (err.name === 'AbortError') {
-        showToast?.('This is taking longer than usual — loaded instant advisory from local intelligence engine.', 'info');
-      } else {
-        showToast?.('Reconnecting to the server — this can take up to a minute on first use, loaded instant advisory.', 'info');
+      if (mode !== 'yield') {
+        if (err.name === 'AbortError') {
+          showToast?.('This is taking longer than usual — loaded instant advisory from local intelligence engine.', 'info');
+        } else {
+          showToast?.('Reconnecting to the server — this can take up to a minute on first use, loaded instant advisory.', 'info');
+        }
       }
     } finally {
       clearTimeout(timeoutId);
@@ -459,6 +461,9 @@ export default function Recommend({ showToast, mode = 'crop' }) {
 
     // Client-side fallback engine if backend is offline
     if (!computed) {
+      if (mode === 'yield') {
+        showToast?.('Server is waking up. Showing offline estimate. Retry in 30 seconds for the ML forecast.', 'warning');
+      }
       const payload = mode === 'crop' ? cropFormData : (mode === 'fertilizer' ? fertilizerFormData : yieldFormData);
       computed = calculateRecommendation({
         ...payload,
