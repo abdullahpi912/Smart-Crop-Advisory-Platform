@@ -1526,10 +1526,11 @@ def analyze_document():
 
     # Multi-model fallback sequence for optimal speed, availability, and vision accuracy
     CANDIDATE_GEMINI_MODELS = [
+        "gemini-3.5-flash-lite",
         "gemini-3.5-flash",
+        "gemini-3.1-flash-lite",
+        "gemini-3.8-flash",
         "gemini-3.6-flash",
-        "gemini-3.7-flash",
-        "gemini-2.5-pro",
     ]
 
     def _call_gemini():
@@ -1571,7 +1572,7 @@ def analyze_document():
     except Exception as api_err:
         err_msg = str(api_err).lower()
         logger.warning("[AI EXTRACTION] All Gemini models failed: %s", api_err)
-        if any(w in err_msg for w in ['429', 'quota', 'rate', 'resourceexhausted']):
+        if any(w in err_msg for w in ['429', 'quota', 'rate', 'resourceexhausted', '503', 'unavailable', 'high demand']):
             return jsonify({
                 'status': 'error',
                 'error': 'AI analysis quota is temporarily busy. Please wait a minute and try again.'
