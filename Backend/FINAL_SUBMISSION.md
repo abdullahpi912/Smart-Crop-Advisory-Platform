@@ -10,7 +10,7 @@ This document represents the **Final Project Submission Report** for the **Cropl
 All project backend and machine learning requirements have been successfully implemented, tested, and verified:
 - Every planned route from `Backend/routes_plan.md` is fully implemented in `Backend/app.py`.
 - **Three Machine Learning Models** are dynamically loaded and served in real time:
-  1. **Crop Recommendation**: Tuned Random Forest Classifier (`Model/crop_recommendation_model.pkl`) serving `POST /api/predict` and `POST /api/recommendations`.
+  1. **Crop Recommendation**: Naive Bayes (GaussianNB) (`Model/crop_recommendation_model.pkl`) serving `POST /api/predict` and `POST /api/recommendations`.
   2. **Fertilizer Recommendation**: Decision Tree Classifier with LabelEncoder (`Model/Fertilizer Recommendation/fertilizer_recommendation_model_v2.pkl` & `fertilizer_label_encoder_v2.pkl`) serving `POST /api/predict/fertilizer`.
   3. **Crop Yield Prediction**: XGBoost Regressor Pipeline with logarithmic scaling (`Model/crop_yield_model.pkl`) serving `POST /api/predict/yield`.
 - Data persistence is maintained in MySQL across server restarts.
@@ -25,7 +25,7 @@ All project backend and machine learning requirements have been successfully imp
 ## 2. Files Changed
 
 1. **[Backend/app.py](file:///e:/Intern/Smart-Crop-Advisory-Platform/Backend/app.py)**:
-   - Added dynamic ML loaders for all 3 models (Random Forest, Decision Tree + LabelEncoder, and XGBoost Pipeline).
+   - Added dynamic ML loaders for all 3 models (Naive Bayes (GaussianNB), Decision Tree + LabelEncoder, and XGBoost Pipeline).
    - Implemented `POST /api/predict` (public crop recommendation).
    - Implemented `POST /api/predict/fertilizer` (fertilizer recommendation & top-3 shortlist).
    - Implemented `POST /api/predict/yield` (crop yield & production forecasting in metric tonnes).
@@ -53,7 +53,7 @@ All project backend and machine learning requirements have been successfully imp
 ## 3. Machine Learning Models Summary
 
 1. **Crop Recommendation**:
-   - **Model**: Random Forest Classifier
+   - **Model**: Naive Bayes (GaussianNB)
    - **Features**: N, P, K, Temperature, Humidity, pH, Rainfall
    - **Classes**: 22 crops
 2. **Fertilizer Recommendation**:

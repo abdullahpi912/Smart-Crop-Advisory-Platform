@@ -19,7 +19,7 @@ This document contains the complete API route design and implementation status f
 | **PUT** | `/api/user/change-password` | Change farmer password after verifying current password | **Yes** | No | Implemented |
 | **DELETE** | `/api/user/account` | Delete farmer account and cascaded records | **Yes** | No | Implemented |
 | **GET** | `/api/crops` | Retrieve crop metadata catalog | No | No | Implemented |
-| **POST** | `/api/predict` | Crop recommendation prediction using Random Forest | No | **Yes (Random Forest)** | Implemented |
+| **POST** | `/api/predict` | Crop recommendation prediction using Naive Bayes (GaussianNB) | No | **Yes (Naive Bayes (GaussianNB))** | Implemented |
 | **POST** | `/api/predict/fertilizer` | Fertilizer recommendation & top-3 probability shortlist using Decision Tree | No | **Yes (Decision Tree)** | Implemented |
 | **POST** | `/api/predict/yield` | Crop harvest production forecast in tonnes using XGBoost Regressor | No | **Yes (XGBoost Regressor)** | Implemented |
 | **GET** | `/api/logs` | Retrieve authenticated farmer's advisory logs history | **Yes** | No | Implemented |
@@ -28,7 +28,7 @@ This document contains the complete API route design and implementation status f
 | **PUT** | `/api/logs/<id>` | Update advisory log entry | **Yes** | No | Implemented |
 | **DELETE** | `/api/logs/<id>` | Delete single advisory log entry | **Yes** | No | Implemented |
 | **DELETE** | `/api/logs` | Clear all advisory logs for authenticated farmer | **Yes** | No | Implemented |
-| **POST** | `/api/recommendations` | Submit soil parameters for ML model prediction linked to logged-in user | **Yes** | **Yes (Random Forest)** | Implemented |
+| **POST** | `/api/recommendations` | Submit soil parameters for ML model prediction linked to logged-in user | **Yes** | **Yes (Naive Bayes (GaussianNB))** | Implemented |
 | **GET** | `/api/recommendations` | Retrieve user-specific crop recommendation history | **Yes** | No | Implemented |
 | **GET** | `/api/recommendations/<id>` | Retrieve single recommendation record for user | **Yes** | No | Implemented |
 | **PUT** | `/api/recommendations/<id>` | Update user recommendation record notes / field feedback | **Yes** | No | Implemented |
@@ -56,7 +56,7 @@ This document contains the complete API route design and implementation status f
    - Administrative routes (`/api/admin/*`) require 4-factor authenticated operator session (`@admin_required`).
 
 2. **Machine Learning Pipeline Integration**:
-   - **Model 1 (Crop Recommendation)**: Random Forest Classifier trained on 7 environmental metrics over 22 crop classes.
+   - **Model 1 (Crop Recommendation)**: Naive Bayes (GaussianNB) trained on 7 environmental metrics over 22 crop classes.
    - **Model 2 (Fertilizer Recommendation)**: Decision Tree Classifier with LabelEncoder predicting primary nutrient formulations and top-3 shortlists.
    - **Model 3 (Crop Yield Prediction)**: XGBoost Regressor Pipeline with logarithmic `Area` scaling forecasting yield in tonnes.
 

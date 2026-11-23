@@ -110,29 +110,18 @@ def sync_schema():
             id INT AUTO_INCREMENT PRIMARY KEY,
             username VARCHAR(50) UNIQUE NOT NULL,
             password_hash VARCHAR(255) NOT NULL,
-            favorite_number_hash VARCHAR(255) NOT NULL,
-            security_phrase_hash VARCHAR(255) NOT NULL,
-            security_phrase_hint VARCHAR(100) NOT NULL,
             created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
         );
     """)
 
-    # Admins column migrations
+    # Admins column migrations (remove legacy multi-factor columns if present)
     try:
         cursor.execute("DESCRIBE admins")
         admin_cols = [row[0] if isinstance(row, tuple) else row['Field'] for row in cursor.fetchall()]
-        if 'favorite_number' in admin_cols:
-            cursor.execute("ALTER TABLE admins DROP COLUMN favorite_number")
-            print(" -> Dropped legacy plaintext favorite_number column from admins.")
-        if 'favorite_number_hash' not in admin_cols:
-            cursor.execute("ALTER TABLE admins ADD COLUMN favorite_number_hash VARCHAR(255) NOT NULL DEFAULT ''")
-            print(" -> Added favorite_number_hash column to admins.")
-        if 'security_phrase_hash' not in admin_cols:
-            cursor.execute("ALTER TABLE admins ADD COLUMN security_phrase_hash VARCHAR(255) NOT NULL DEFAULT ''")
-            print(" -> Added security_phrase_hash column to admins.")
-        if 'security_phrase_hint' not in admin_cols:
-            cursor.execute("ALTER TABLE admins ADD COLUMN security_phrase_hint VARCHAR(100) NOT NULL DEFAULT ''")
-            print(" -> Added security_phrase_hint column to admins.")
+        for col_name in ['favorite_number', 'favorite_number_hash', 'security_phrase_hash', 'security_phrase_hint']:
+            if col_name in admin_cols:
+                cursor.execute(f"ALTER TABLE admins DROP COLUMN {col_name}")
+                print(f" -> Dropped legacy {col_name} column from admins.")
     except Exception as e:
         print(f"Notice (admins schema sync): {e}")
 

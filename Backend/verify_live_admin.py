@@ -26,7 +26,7 @@ def is_valid_hash(hash_val):
 
 def verify_admin_security(target_username=None):
     print("=" * 60)
-    print("CROPLING ADMIN & SECURITY AUDIT VERIFICATION (4-FACTOR)")
+    print("CROPLING ADMIN & SECURITY AUDIT VERIFICATION")
     print("=" * 60)
 
     username_to_check = target_username or os.environ.get('ADMIN_USERNAME') or (sys.argv[1] if len(sys.argv) > 1 else None)
@@ -38,13 +38,13 @@ def verify_admin_security(target_username=None):
         # 1. Verify admins table structure and admin record
         if username_to_check:
             cursor.execute(
-                "SELECT id, username, password_hash, favorite_number_hash, security_phrase_hash, security_phrase_hint, created_at "
+                "SELECT id, username, password_hash, created_at "
                 "FROM admins WHERE username = %s",
                 (username_to_check,)
             )
         else:
             cursor.execute(
-                "SELECT id, username, password_hash, favorite_number_hash, security_phrase_hash, security_phrase_hint, created_at "
+                "SELECT id, username, password_hash, created_at "
                 "FROM admins ORDER BY id ASC LIMIT 1"
             )
             
@@ -64,33 +64,12 @@ def verify_admin_security(target_username=None):
         else:
             print("[WARN] Password hash format unrecognized or unpopulated.")
 
-        # 3. Verify favorite number hash is cryptographic
-        fn_hash = admin.get('favorite_number_hash')
-        if is_valid_hash(fn_hash):
-            print("[PASS] Favorite Number Security: Cryptographically hashed (zero plaintext stored).")
-        else:
-            print("[WARN] Favorite number hash format unrecognized or unpopulated (re-provision via create_admin.py).")
-
-        # 4. Verify security phrase hash is cryptographic
-        sp_hash = admin.get('security_phrase_hash')
-        if is_valid_hash(sp_hash):
-            print("[PASS] Security Phrase Security: Cryptographically hashed (zero plaintext stored).")
-        else:
-            print("[WARN] Security phrase hash format unrecognized or unpopulated (re-provision via create_admin.py).")
-
-        # 5. Verify security phrase hint presence
-        hint = admin.get('security_phrase_hint')
-        if hint and len(hint.strip()) > 0:
-            print(f"[PASS] Security Phrase Hint: Configured ('{hint}')")
-        else:
-            print("[WARN] Security phrase hint empty or missing.")
-
-        # 6. Verify login_logs audit table exists
+        # 3. Verify login_logs audit table exists
         cursor.execute("SELECT COUNT(*) as count FROM login_logs")
         log_count = cursor.fetchone()['count']
         print(f"[PASS] Audit System: 'login_logs' table active ({log_count} total entries logged).")
 
-        # 7. Verify admin_action_logs audit table exists
+        # 4. Verify admin_action_logs audit table exists
         cursor.execute("SELECT COUNT(*) as count FROM admin_action_logs")
         action_count = cursor.fetchone()['count']
         print(f"[PASS] Audit System: 'admin_action_logs' table active ({action_count} total entries logged).")

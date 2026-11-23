@@ -275,12 +275,22 @@ def init_db():
                 id INT AUTO_INCREMENT PRIMARY KEY,
                 username VARCHAR(50) UNIQUE NOT NULL,
                 password_hash VARCHAR(255) NOT NULL,
-                favorite_number_hash VARCHAR(255) NOT NULL,
-                security_phrase_hash VARCHAR(255) NOT NULL,
-                security_phrase_hint VARCHAR(100) NOT NULL,
                 created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
             );
         """)
+
+        # Clean up legacy multi-factor columns if table pre-existed
+        try:
+            cursor.execute("DESCRIBE admins")
+            admin_cols = [row[0] if isinstance(row, tuple) else row['Field'] for row in cursor.fetchall()]
+            for legacy_col in ['favorite_number', 'favorite_number_hash', 'security_phrase_hash', 'security_phrase_hint']:
+                if legacy_col in admin_cols:
+                    try:
+                        cursor.execute(f"ALTER TABLE admins DROP COLUMN {legacy_col}")
+                    except Exception:
+                        pass
+        except Exception as col_err:
+            logger.info("[DB INIT] admins columns check notice: %s", col_err)
 
         # 7. Login logs table
         cursor.execute("""
@@ -510,24 +520,28 @@ FERTILIZER_METADATA = {
 
 
 def predict_crop_ml(n, p, k, temp, hum, ph, rain):
-    """Predicts crop label using trained ML model with fallback to Agronomic Engine."""
+    """Predicts crop label and confidence using trained ML model with fallback to Agronomic Engine."""
     if CROP_MODEL is not None:
         try:
-            features = np.array([[n, p, k, temp, hum, ph, rain]])
-            pred = CROP_MODEL.predict(features)[0]
-            return str(pred).lower()
-        except Exception as e:
+            df = pd.DataFrame([{
+                'N': n, 'P': p, 'K': k,
+                'temperature': temp, 'humidity': hum, 'ph': ph, 'rainfall': rain
+            }])
+            pred = CROP_MODEL.predict(df)[0]
+            probs = CROP_MODEL.predict_proba(df)[0]
+            max_prob = float(np.max(probs)) * 100.0
+            return str(pred).lower(), f"{max_prob:.1f}%"
+        except Exception:
             try:
-                df = pd.DataFrame([{
-                    'N': n, 'P': p, 'K': k,
-                    'temperature': temp, 'humidity': hum, 'ph': ph, 'rainfall': rain
-                }])
-                pred = CROP_MODEL.predict(df)[0]
-                return str(pred).lower()
+                features = np.array([[n, p, k, temp, hum, ph, rain]])
+                pred = CROP_MODEL.predict(features)[0]
+                probs = CROP_MODEL.predict_proba(features)[0]
+                max_prob = float(np.max(probs)) * 100.0
+                return str(pred).lower(), f"{max_prob:.1f}%"
             except Exception as ex:
                 logger.warning("[ML MODEL] Crop inference notice: %s", ex)
 
-    return match_crop_agronomic(n, p, k, temp, hum, ph, rain)
+    return match_crop_agronomic(n, p, k, temp, hum, ph, rain), "Rule-based"
 
 
 
@@ -976,8 +990,7 @@ def predict_crop():
             return jsonify({'status': 'error', 'error': 'Temperature must be between -20°C and 65°C'}), 400
 
         # Perform crop recommendation using ML model (with agronomic fallback)
-        raw_crop = predict_crop_ml(n, p, k, temp, hum, ph, rain)
-        confidence_str = "99.1%" if CROP_MODEL is not None else "98.5%"
+        raw_crop, confidence_str = predict_crop_ml(n, p, k, temp, hum, ph, rain)
 
         # Lookup crop display info
         crop_info = CROP_METADATA.get(raw_crop, {
@@ -994,7 +1007,7 @@ def predict_crop():
             'status': 'success',
             'logId': log_id,
             'timestamp': timestamp,
-            'type': 'Crop Match (ML Model)' if CROP_MODEL is not None else 'Crop Match (Agronomic Engine)',
+            'type': 'Crop Match (ML Model)' if confidence_str != 'Rule-based' else 'Crop Match (Agronomic Engine)',
             'crop': raw_crop,
             'recommendedItem': crop_info['display'],
             'category': crop_info['category'],
@@ -2179,8 +2192,7 @@ def create_user_recommendation():
         rain = float(data.get('rainfall', 150.0))
 
         # Predict using loaded ML model (or fallback)
-        raw_crop = predict_crop_ml(n, p, k, temp, hum, ph, rain)
-        confidence_str = "99.1%"
+        raw_crop, confidence_str = predict_crop_ml(n, p, k, temp, hum, ph, rain)
 
         crop_info = CROP_METADATA.get(raw_crop, {
             'display': raw_crop.capitalize(),
@@ -2444,60 +2456,33 @@ def create_user_farm():
 @app.route('/api/admin/login-hint', methods=['GET'])
 @limiter.limit("20 per minute")
 def admin_login_hint():
-    """HTTP GET: Retrieve visible security phrase hint for a given admin username (no secret data returned).
-    Returns identical response shape and 200 status code for all requests to prevent username enumeration."""
-    username = (request.args.get('username') or '').strip()
-    if not username:
-        return jsonify({'status': 'success', 'hint': ''}), 200
-
-    try:
-        conn = get_connection()
-        cursor = conn.cursor(dictionary=True)
-        cursor.execute("SELECT security_phrase_hint FROM admins WHERE username = %s", (username,))
-        row = cursor.fetchone()
-        cursor.close(); conn.close()
-
-        hint_value = (row['security_phrase_hint'] or '').strip() if row and row.get('security_phrase_hint') else ''
-
-        return jsonify({
-            'status': 'success',
-            'hint': hint_value
-        }), 200
-    except Exception as e:
-        logger.warning("[HINT ENDPOINT] Database exception suppressed to prevent enumeration: %s", e)
-        return jsonify({
-            'status': 'success',
-            'hint': ''
-        }), 200
+    """HTTP GET: Retrieve visible security phrase hint for a given admin username (deprecated/fallback)."""
+    return jsonify({
+        'status': 'success',
+        'hint': ''
+    }), 200
 
 
 @app.route('/admin/login', methods=['POST'])
 @app.route('/api/admin/login', methods=['POST'])
 @limiter.limit("10 per minute")
 def admin_login():
-    """HTTP POST: Authenticate administrator (4-factor: Username, Password, Favorite Number, Security Phrase)."""
+    """HTTP POST: Authenticate administrator (Username and Password)."""
     if not request.is_json and not request.data:
         return jsonify({'error': 'Request body is required'}), 400
 
     data = request.get_json(silent=True) or {}
     username = (data.get('username') or '').strip()
     password = data.get('password') or ''
-    favorite_number = data.get('favorite_number') if data.get('favorite_number') is not None else data.get('favoriteNumber')
-    security_phrase = data.get('security_phrase') if data.get('security_phrase') is not None else data.get('securityPhrase')
 
-    if favorite_number is not None:
-        favorite_number = str(favorite_number).strip()
-    if security_phrase is not None:
-        security_phrase = str(security_phrase).strip()
-
-    if not username or not password or not favorite_number or not security_phrase:
-        return jsonify({'error': 'Username, password, favorite number, and security phrase are all required'}), 400
+    if not username or not password:
+        return jsonify({'error': 'Username and password are required'}), 400
 
     try:
         conn = get_connection()
         cursor = conn.cursor(dictionary=True)
         cursor.execute(
-            "SELECT id, username, password_hash, favorite_number_hash, security_phrase_hash FROM admins WHERE username = %s",
+            "SELECT id, username, password_hash FROM admins WHERE username = %s",
             (username,)
         )
         admin = cursor.fetchone()
@@ -2505,10 +2490,7 @@ def admin_login():
 
         valid_auth = False
         if admin:
-            pwd_ok = check_password_hash(admin['password_hash'], password)
-            fn_ok = bool(admin.get('favorite_number_hash')) and check_password_hash(admin['favorite_number_hash'], favorite_number)
-            sp_ok = bool(admin.get('security_phrase_hash')) and check_password_hash(admin['security_phrase_hash'], security_phrase)
-            valid_auth = pwd_ok and fn_ok and sp_ok
+            valid_auth = check_password_hash(admin['password_hash'], password)
 
         if not admin or not valid_auth:
             log_login_attempt(username, 'admin', False)

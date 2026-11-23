@@ -158,9 +158,6 @@ class MockConnection:
                 id INTEGER PRIMARY KEY AUTOINCREMENT,
                 username TEXT UNIQUE NOT NULL,
                 password_hash TEXT NOT NULL,
-                favorite_number_hash TEXT NOT NULL,
-                security_phrase_hash TEXT NOT NULL,
-                security_phrase_hint TEXT NOT NULL,
                 created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
             );
 
@@ -298,111 +295,69 @@ class ComprehensiveTestSuite(unittest.TestCase):
         self.assertEqual(data['user']['fullname'], 'Kavita R. Patel')
 
     # ════════════════════════════════════════════════════════════════════════
-    # PART 2 TESTS: 4-Factor Admin Auth, Dynamic Hint, Audit Logging & Admin API
+    # PART 2 TESTS: Admin Auth (Username & Password), Audit Logging & Admin API
     # ════════════════════════════════════════════════════════════════════════
     def test_part2_admin_login_and_audit_logging(self):
-        """Verify 4-factor admin authentication (Username, Password, Favorite Number, Security Phrase) and audit logging."""
+        """Verify admin authentication (Username and Password) and audit logging."""
         test_user = "fake_admin_test_001"
         test_pass = "FakeDummyAdminPass_9981"
-        test_fn = "9988"
-        test_phrase = "fake_test_phrase_xyz"
-        test_hint = "Testing Hint Visible Reminder"
 
-        # Provision test admin in database with all 4 factors
+        # Provision test admin in database with username and password
         cur = test_db.cursor()
         cur.execute(
-            "INSERT INTO admins (username, password_hash, favorite_number_hash, security_phrase_hash, security_phrase_hint) VALUES (?, ?, ?, ?, ?)",
+            "INSERT INTO admins (username, password_hash) VALUES (?, ?)",
             (
                 test_user,
-                generate_password_hash(test_pass),
-                generate_password_hash(test_fn),
-                generate_password_hash(test_phrase),
-                test_hint
+                generate_password_hash(test_pass)
             )
         )
         test_db.commit()
 
-        # 1. Test Login Hint GET endpoint
+        # 1. Test Login Hint GET endpoint (returns 200 with empty hint)
         hint_res = self.client.get(f'/api/admin/login-hint?username={test_user}')
         self.assertEqual(hint_res.status_code, 200)
         self.assertEqual(hint_res.get_json()['status'], 'success')
-        self.assertEqual(hint_res.get_json()['hint'], test_hint)
+        self.assertEqual(hint_res.get_json()['hint'], '')
 
-        # Non-existent user hint returns identical 200 shape with empty hint (anti-enumeration)
-        hint_none_res = self.client.get('/api/admin/login-hint?username=non_existent_admin')
-        self.assertEqual(hint_none_res.status_code, 200)
-        self.assertEqual(hint_none_res.get_json()['status'], 'success')
-        self.assertEqual(hint_none_res.get_json()['hint'], '')
-
-        # Empty/missing username parameter also returns 200 with empty hint
-        hint_empty_res = self.client.get('/api/admin/login-hint')
-        self.assertEqual(hint_empty_res.status_code, 200)
-        self.assertEqual(hint_empty_res.get_json()['hint'], '')
-
-        # 2. Failed admin login: missing required factor
+        # 2. Failed admin login: missing required password
         fail_missing = self.client.post('/admin/login', json={
-            'username': test_user,
-            'password': test_pass
+            'username': test_user
         })
         self.assertEqual(fail_missing.status_code, 400)
 
         # 3. Failed admin login: wrong password
         fail1 = self.client.post('/admin/login', json={
             'username': test_user,
-            'password': 'WrongPassword123',
-            'favorite_number': test_fn,
-            'security_phrase': test_phrase
+            'password': 'WrongPassword123'
         })
         self.assertEqual(fail1.status_code, 401)
 
-        # 4. Failed admin login: wrong favorite number
+        # 4. Failed admin login: non-existent username
         fail2 = self.client.post('/admin/login', json={
-            'username': test_user,
-            'password': test_pass,
-            'favorite_number': '0000',
-            'security_phrase': test_phrase
+            'username': 'non_existent_admin',
+            'password': test_pass
         })
         self.assertEqual(fail2.status_code, 401)
 
-        # 5. Failed admin login: wrong security phrase
-        fail3 = self.client.post('/admin/login', json={
-            'username': test_user,
-            'password': test_pass,
-            'favorite_number': test_fn,
-            'security_phrase': 'wrong_phrase_guess'
-        })
-        self.assertEqual(fail3.status_code, 401)
-
-        # 6. Failed admin login: non-existent username
-        fail4 = self.client.post('/admin/login', json={
-            'username': 'non_existent_admin',
-            'password': test_pass,
-            'favorite_number': test_fn,
-            'security_phrase': test_phrase
-        })
-        self.assertEqual(fail4.status_code, 401)
-
-        # 7. Successful admin login with all 4 correct factors
+        # 5. Successful admin login with username and password
         succ_res = self.client.post('/admin/login', json={
             'username': test_user,
-            'password': test_pass,
-            'favorite_number': test_fn,
-            'security_phrase': test_phrase
+            'password': test_pass
         })
         self.assertEqual(succ_res.status_code, 200)
         self.assertEqual(succ_res.get_json()['admin_username'], test_user)
 
-        # 8. Verify session check
+        # 6. Verify session check
         check_res = self.client.get('/api/admin/session-check')
         self.assertEqual(check_res.status_code, 200)
         self.assertTrue(check_res.get_json()['authenticated'])
         self.assertEqual(check_res.get_json()['admin_username'], test_user)
 
-        # 9. Verify login_logs audit table records attempts
+        # 7. Verify login_logs audit table records attempts
         logs_res = self.client.get('/api/admin/login-logs')
         self.assertEqual(logs_res.status_code, 200)
         logs = logs_res.get_json()['logs']
-        self.assertGreaterEqual(len(logs), 4)
+        self.assertGreaterEqual(len(logs), 3)
 
     def test_part2_admin_required_decorator_protection(self):
         """Verify @admin_required rejects unauthenticated callers and regular farmers with 403."""
@@ -420,24 +375,19 @@ class ComprehensiveTestSuite(unittest.TestCase):
 
     def test_part2_admin_user_crud_and_action_logging(self):
         """Verify admin can create, list, update, and delete farmer accounts with action audit trails."""
-        # Provision & login admin with 4 factors
+        # Provision & login admin with username and password
         cur = test_db.cursor()
         cur.execute(
-            "INSERT INTO admins (username, password_hash, favorite_number_hash, security_phrase_hash, security_phrase_hint) VALUES (?, ?, ?, ?, ?)",
+            "INSERT INTO admins (username, password_hash) VALUES (?, ?)",
             (
                 'fake_root_admin',
-                generate_password_hash('FakeRootPass_7721'),
-                generate_password_hash('1234'),
-                generate_password_hash('fake_phrase_root'),
-                'Root Hint'
+                generate_password_hash('FakeRootPass_7721')
             )
         )
         test_db.commit()
         self.client.post('/admin/login', json={
             'username': 'fake_root_admin',
-            'password': 'FakeRootPass_7721',
-            'favorite_number': '1234',
-            'security_phrase': 'fake_phrase_root'
+            'password': 'FakeRootPass_7721'
         })
 
         # 1. Admin creates farmer
@@ -550,16 +500,13 @@ class ComprehensiveTestSuite(unittest.TestCase):
         client_c.post('/login', json={'username': 'farmer_c', 'password': 'Password@123'})
         client_c.post('/api/predict', json={'nitrogen': 50, 'phosphorus': 30, 'potassium': 30, 'rainfall': 100})
 
-        # 2. Login as Admin with 4 factors
+        # 2. Login as Admin with username and password
         cur = test_db.cursor()
         cur.execute(
-            "INSERT INTO admins (username, password_hash, favorite_number_hash, security_phrase_hash, security_phrase_hint) VALUES (?, ?, ?, ?, ?)",
+            "INSERT INTO admins (username, password_hash) VALUES (?, ?)",
             (
                 'fake_auditor_admin',
-                generate_password_hash('FakeAuditPass_5541'),
-                generate_password_hash('5541'),
-                generate_password_hash('fake_phrase_auditor'),
-                'Auditor Hint'
+                generate_password_hash('FakeAuditPass_5541')
             )
         )
         test_db.commit()
@@ -567,9 +514,7 @@ class ComprehensiveTestSuite(unittest.TestCase):
         admin_client = self.app.test_client()
         admin_client.post('/admin/login', json={
             'username': 'fake_auditor_admin',
-            'password': 'FakeAuditPass_5541',
-            'favorite_number': '5541',
-            'security_phrase': 'fake_phrase_auditor'
+            'password': 'FakeAuditPass_5541'
         })
 
         # 3. Fetch admin prediction logs

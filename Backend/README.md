@@ -1,7 +1,7 @@
 # Cropling - Flask Backend API
 
 This is the Flask backend REST API serving three production machine learning models:
-1. **Crop Recommendation** (`Model/crop_recommendation_model.pkl`) — Tuned Random Forest Classifier
+1. **Crop Recommendation** (`Model/crop_recommendation_model.pkl`) — Naive Bayes (GaussianNB)
 2. **Fertilizer Recommendation** (`Model/Fertilizer Recommendation/fertilizer_recommendation_model_v2.pkl` & `fertilizer_label_encoder_v2.pkl`) — Decision Tree Classifier with LabelEncoder
 3. **Crop Yield Prediction** (`Model/crop_yield_model.pkl`) — XGBoost Regressor Pipeline
 

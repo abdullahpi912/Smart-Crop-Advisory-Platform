@@ -77,9 +77,6 @@ CREATE TABLE IF NOT EXISTS admins (
     id INT AUTO_INCREMENT PRIMARY KEY,
     username VARCHAR(50) UNIQUE NOT NULL,
     password_hash VARCHAR(255) NOT NULL,
-    favorite_number_hash VARCHAR(255) NOT NULL,
-    security_phrase_hash VARCHAR(255) NOT NULL,
-    security_phrase_hint VARCHAR(100) NOT NULL,  -- the displayed hint only, e.g. "I am fine" — never the real answer
     created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
 );
 
