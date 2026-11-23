@@ -1391,7 +1391,7 @@ def predict_crop_yield():
 def analyze_document():
     """
     HTTP POST: Extract agronomic and soil parameters from uploaded image/PDF lab report
-    using Google Gemini API (gemini-flash-latest / multi-model fallback). Zero disk persistence.
+    using Google Gemini API (gemini-3.5-flash-lite / multi-model fallback). Zero disk persistence.
     """
     current_key = os.environ.get("GEMINI_API_KEY") or gemini_api_key
     if not current_key or not GENAI_AVAILABLE:
@@ -1526,12 +1526,11 @@ def analyze_document():
 
     # Multi-model fallback sequence for optimal speed, availability, and vision accuracy
     CANDIDATE_GEMINI_MODELS = [
-        "gemini-flash-latest",
+        "gemini-3.5-flash-lite",
         "gemini-3.5-flash",
-        "gemini-3.6-flash",
-        "gemini-3.7-flash",
-        "gemini-flash-lite-latest",
-        "gemini-2.5-pro",
+        "gemini-3.1-flash-lite",
+        "gemini-3.8-flash",
+        "gemini-2.5-flash-lite",
     ]
 
     def _call_gemini():
