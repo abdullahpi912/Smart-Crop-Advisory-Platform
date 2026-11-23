@@ -16,10 +16,15 @@ import Register from './pages/Register';
 import AdminLogin from './pages/AdminLogin';
 import AdminDashboard from './pages/AdminDashboard';
 import NotFound from './pages/NotFound';
+import { API_BASE_URL } from './lib/apiConfig';
 
 export default function App() {
   const [toast, setToast] = useState({ message: '', type: 'info' });
   const location = useLocation();
+
+  useEffect(() => {
+    fetch(`${API_BASE_URL}/api/health`).catch(() => {});
+  }, []);
 
   const showToast = (message, type = 'info') => {
     setToast({ message, type });

@@ -136,19 +136,30 @@ export default function DocumentUpload({ modelType = 'crop', showToast, onExtrac
     }, 180);
 
     const controller = new AbortController();
-    const timeoutId = setTimeout(() => controller.abort(), 45000);
+    const timeoutId = setTimeout(() => controller.abort(), 70000);
 
     try {
       const formData = new FormData();
       formData.append('file', file);
       formData.append('model_type', modelType);
 
-      const response = await fetch(`${API_BASE_URL}/api/analyze-document`, {
+      let response = await fetch(`${API_BASE_URL}/api/analyze-document`, {
         method: 'POST',
         credentials: 'include',
         signal: controller.signal,
         body: formData
       });
+
+      if (response.status === 502) {
+        showToast?.('AI was busy, trying once more...', 'info');
+        await new Promise((res) => setTimeout(res, 1500));
+        response = await fetch(`${API_BASE_URL}/api/analyze-document`, {
+          method: 'POST',
+          credentials: 'include',
+          signal: controller.signal,
+          body: formData
+        });
+      }
 
       if (progressTimerRef.current) clearInterval(progressTimerRef.current);
       setUploadProgress(100);

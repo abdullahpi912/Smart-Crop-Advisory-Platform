@@ -123,6 +123,7 @@ function SearchableCombobox({ id, options = [], value, onChange, placeholder = '
 
 export default function Recommend({ showToast, mode = 'crop' }) {
   const location = useLocation();
+  const backendUrl = API_BASE_URL;
 
   const [preset, setPreset] = useState('custom');
   const [highlightedFields, setHighlightedFields] = useState(new Set());
@@ -390,20 +391,41 @@ export default function Recommend({ showToast, mode = 'crop' }) {
 
     try {
       if (mode === 'crop') {
-        let response = await fetch(`${backendUrl}/api/recommendations`, {
-          method: 'POST',
-          headers: { 'Content-Type': 'application/json' },
-          credentials: 'include',
-          signal: controller.signal,
-          body: JSON.stringify(cropFormData)
-        });
+        const isSignedIn = Boolean(
+          localStorage.getItem('cropling_user') ||
+          localStorage.getItem('agrisense_user') ||
+          localStorage.getItem('cropling_session') ||
+          localStorage.getItem('agrisense_session')
+        );
 
-        if (response.ok) {
-          const resData = await response.json();
-          computed = resData.recommendation || resData;
-          isFromBackend = true;
+        if (isSignedIn) {
+          let response = await fetch(`${backendUrl}/api/recommendations`, {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            credentials: 'include',
+            signal: controller.signal,
+            body: JSON.stringify(cropFormData)
+          });
+
+          if (response.ok) {
+            const resData = await response.json();
+            computed = resData.recommendation || resData;
+            isFromBackend = true;
+          } else {
+            response = await fetch(`${backendUrl}/api/predict`, {
+              method: 'POST',
+              headers: { 'Content-Type': 'application/json' },
+              credentials: 'include',
+              signal: controller.signal,
+              body: JSON.stringify(cropFormData)
+            });
+            if (response.ok) {
+              computed = await response.json();
+              isFromBackend = true;
+            }
+          }
         } else {
-          response = await fetch(`${backendUrl}/api/predict`, {
+          const response = await fetch(`${backendUrl}/api/predict`, {
             method: 'POST',
             headers: { 'Content-Type': 'application/json' },
             credentials: 'include',
